@@ -150,6 +150,11 @@ public class DateUtils {
 
 ## Comments
 
+### Language
+- ALL comments MUST be in Vietnamese
+- Use Vietnamese for class, method, and inline comments
+- Use Vietnamese for TODO, FIXME, and NOTE comments
+
 ### When to Comment
 - Complex business logic
 - Non-obvious algorithms
@@ -160,6 +165,21 @@ public class DateUtils {
 - Obvious code
 - Self-explanatory method names
 - Redundant information
+
+### Examples
+```java
+// Tạo mã nhân viên 6 ký tự duy nhất
+private String generateEmployeeCode() {
+    // Thử tối đa 10 lần để tránh vòng lặp vô hạn
+    for (int i = 0; i < 10; i++) {
+        String code = RandomStringUtils.randomAlphanumeric(6).toUpperCase();
+        if (!userRepository.existsByEmployeeCode(code)) {
+            return code;
+        }
+    }
+    throw new RuntimeException("Không thể tạo mã nhân viên duy nhất");
+}
+```
 
 ## Code Review Checklist
 - [ ] Follows layered architecture
