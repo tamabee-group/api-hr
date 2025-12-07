@@ -1,7 +1,8 @@
-package com.tamabee.api_hr.service.core;
+package com.tamabee.api_hr.service.core.impl;
 
 import com.tamabee.api_hr.entity.core.EmailVerificationEntity;
 import com.tamabee.api_hr.repository.EmailVerificationRepository;
+import com.tamabee.api_hr.service.core.IEmailVerificationService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
@@ -15,11 +16,12 @@ import java.util.Random;
 
 @Service
 @RequiredArgsConstructor
-public class EmailVerificationService {
+public class EmailVerificationServiceImpl implements IEmailVerificationService {
     
     private final EmailVerificationRepository emailVerificationRepository;
     private final JavaMailSender mailSender;
     
+    @Override
     @Transactional
     public void sendVerificationCode(String email, String companyName, String language) {
         // Xóa tất cả mã cũ của email này
@@ -52,12 +54,20 @@ public class EmailVerificationService {
         } catch (Exception e) {
             System.err.println("Failed to send email: " + e.getMessage());
             e.printStackTrace();
-            // Không throw exception để vẫn lưu được vào DB
         }
     }
     
-    @Transactional
+    @Override
+    @Transactional(readOnly = true)
     public boolean verifyCode(String email, String code) {
+        return emailVerificationRepository
+            .findValidCode(email, code, LocalDateTime.now())
+            .isPresent();
+    }
+    
+    @Override
+    @Transactional
+    public boolean verifyAndMarkUsed(String email, String code) {
         return emailVerificationRepository
             .findValidCode(email, code, LocalDateTime.now())
             .map(verification -> {
@@ -103,11 +113,14 @@ public class EmailVerificationService {
     
     private String loadTemplate(String language, String companyName, String code) {
         try {
-            String templatePath = "/templates/email/verification-" + language + ".html";
+            String templatePath = "/templates/email/" + language + "/email-verification.html";
             var resource = getClass().getResourceAsStream(templatePath);
             if (resource == null) {
-                templatePath = "/templates/email/verification-vi.html";
+                templatePath = "/templates/email/vi/email-verification.html";
                 resource = getClass().getResourceAsStream(templatePath);
+            }
+            if (resource == null) {
+                throw new RuntimeException("Template not found: " + templatePath);
             }
             String template = new String(resource.readAllBytes());
             return template

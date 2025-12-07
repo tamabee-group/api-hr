@@ -19,6 +19,9 @@ public interface EmailVerificationRepository extends JpaRepository<EmailVerifica
     @Query("SELECT e FROM EmailVerificationEntity e WHERE e.email = :email AND e.used = true ORDER BY e.createdAt DESC")
     List<EmailVerificationEntity> findByEmailAndUsedTrue(@Param("email") String email);
     
+    @Query("SELECT CASE WHEN COUNT(e) > 0 THEN true ELSE false END FROM EmailVerificationEntity e WHERE e.email = :email AND e.used = true")
+    boolean existsByEmailAndUsedTrue(@Param("email") String email);
+    
     @Query("SELECT e FROM EmailVerificationEntity e WHERE e.email = :email AND e.used = false")
     List<EmailVerificationEntity> findByEmailAndUsedFalse(@Param("email") String email);
     

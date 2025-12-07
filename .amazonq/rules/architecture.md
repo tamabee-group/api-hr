@@ -1,12 +1,13 @@
 # Architecture Rules
 
 ## Project Structure
-Follow strict layered architecture: Controller → Service → Repository → Entity
+Follow strict layered architecture: Controller → Service (Interface + Impl) → Mapper → Repository → Entity
 
 Package organization by business domain:
 - **admin**: Tamabee internal management (manage companies, deposits, plans)
 - **company**: Company self-management (manage employees, view wallet)
 - **core**: Shared components (entities, repositories, security, utils)
+- **mapper**: DTO ↔ Entity conversion (organized by domain)
 
 ```
 src/main/java/com/tamabee/apihr/
@@ -18,14 +19,18 @@ src/main/java/com/tamabee/apihr/
 │   │   ├── AdminWalletController.java
 │   │   └── AdminUserController.java
 │   ├── service/                    # Admin business logic
-│   │   ├── AdminCompanyService.java
-│   │   ├── AdminDepositService.java
-│   │   ├── AdminPlanService.java
-│   │   └── AdminWalletService.java
+│   │   ├── IAdminCompanyService.java
+│   │   ├── IAdminDepositService.java
+│   │   ├── IAdminPlanService.java
+│   │   ├── IAdminWalletService.java
+│   │   └── impl/
+│   │       ├── AdminCompanyServiceImpl.java
+│   │       ├── AdminDepositServiceImpl.java
+│   │       ├── AdminPlanServiceImpl.java
+│   │       └── AdminWalletServiceImpl.java
 │   ├── dto/                        # Admin DTOs
 │   │   ├── request/
 │   │   └── response/
-│   └── mapper/                     # Admin mappers
 │
 ├── company/                        # COMPANY SELF-MANAGEMENT
 │   ├── controller/                 # Company REST endpoints
@@ -34,14 +39,28 @@ src/main/java/com/tamabee/apihr/
 │   │   ├── CompanyWalletController.java
 │   │   └── CompanyDepositRequestController.java
 │   ├── service/                    # Company business logic
-│   │   ├── CompanyEmployeeService.java
-│   │   ├── CompanyProfileService.java
-│   │   ├── CompanyWalletService.java
-│   │   └── CompanyDepositRequestService.java
+│   │   ├── ICompanyEmployeeService.java
+│   │   ├── ICompanyProfileService.java
+│   │   ├── ICompanyWalletService.java
+│   │   └── impl/
+│   │       ├── CompanyEmployeeServiceImpl.java
+│   │       ├── CompanyProfileServiceImpl.java
+│   │       └── CompanyWalletServiceImpl.java
 │   ├── dto/                        # Company DTOs
 │   │   ├── request/
 │   │   └── response/
-│   └── mapper/                     # Company mappers
+│
+├── mapper/                         # DTO ↔ ENTITY MAPPING
+│   ├── core/                       # Core entity mappers
+│   │   ├── UserMapper.java
+│   │   ├── CompanyMapper.java
+│   │   └── WalletMapper.java
+│   ├── admin/                      # Admin-specific mappers
+│   │   ├── AdminCompanyMapper.java
+│   │   └── AdminUserMapper.java
+│   └── company/                    # Company-specific mappers
+│       ├── CompanySettingMapper.java
+│       └── CompanyProfileMapper.java
 │
 └── core/                           # SHARED COMPONENTS
     ├── entity/                     # JPA entities (shared by all)
@@ -91,9 +110,13 @@ src/main/java/com/tamabee/apihr/
     ├── dto/                        # Shared DTOs
     │   └── BaseResponse.java
     └── service/                    # Shared services
-        ├── EmailService.java
-        ├── EmployeeCodeService.java
-        └── AuditService.java
+        ├── IEmailService.java
+        ├── IAuthService.java
+        ├── IEmailVerificationService.java
+        └── impl/
+            ├── EmailServiceImpl.java
+            ├── AuthServiceImpl.java
+            └── EmailVerificationServiceImpl.java
 ```
 
 ## Package Responsibilities
@@ -164,10 +187,13 @@ src/main/java/com/tamabee/apihr/
 - **Company controllers**: Auto-inject companyId from token
 
 ### Service Layer
+- **MUST follow Interface + Implementation pattern**
+- Interface: `I{Entity}Service` (e.g., IUserService, IAuthService)
+- Implementation: `{Entity}ServiceImpl` in `impl/` subfolder
 - Implement business logic
 - Handle transactions with @Transactional
 - Call repository methods (from core/repository)
-- Use mapper for DTO ↔ Entity conversion
+- **Inject and use Mapper** for DTO ↔ Entity conversion
 - Throw custom exceptions for error handling
 - Create reusable methods for repeated logic (>2 times)
 - **Admin services**: Access all companies
@@ -180,11 +206,14 @@ src/main/java/com/tamabee/apihr/
 - Always check deleted field first in WHERE clause
 - Shared by both admin and company services
 
-### Mapper Layer
+### Mapper Layer (mapper/)
+- **All mappers MUST be @Component**
+- Organized by domain: `mapper/core/`, `mapper/admin/`, `mapper/company/`
 - Convert between DTO and Entity
-- Use MapStruct or manual mapping
-- Handle null values properly
-- Map relationships carefully
+- Handle null values properly (always check null)
+- **Naming**: `toEntity()`, `toResponse()`, `toDto()`, `updateEntity()`
+- **NO business logic** - only data transformation
+- Injected into Service layer
 - Separate mappers for admin and company DTOs
 
 ### Entity Layer (core/entity)
@@ -198,22 +227,29 @@ src/main/java/com/tamabee/apihr/
 
 ### Admin Package
 - Controller: `Admin{Entity}Controller` (e.g., AdminCompanyController)
-- Service: `Admin{Entity}Service` + `Admin{Entity}ServiceImpl`
-- Mapper: `Admin{Entity}Mapper`
+- Service Interface: `IAdmin{Entity}Service`
+- Service Implementation: `Admin{Entity}ServiceImpl` in `service/impl/`
 - DTO: `Admin{Entity}Request`, `Admin{Entity}Response`
 
 ### Company Package
 - Controller: `Company{Entity}Controller` (e.g., CompanyEmployeeController)
-- Service: `Company{Entity}Service` + `Company{Entity}ServiceImpl`
-- Mapper: `Company{Entity}Mapper`
+- Service Interface: `ICompany{Entity}Service`
+- Service Implementation: `Company{Entity}ServiceImpl` in `service/impl/`
 - DTO: `Company{Entity}Request`, `Company{Entity}Response`
 
 ### Core Package
-- Entity: `{Entity}` (e.g., User, Company, Wallet)
+- Entity: `{Entity}Entity` (e.g., UserEntity, CompanyEntity, WalletEntity)
 - Repository: `{Entity}Repository` (e.g., UserRepository)
+- Service Interface: `I{Entity}Service` (e.g., IAuthService)
+- Service Implementation: `{Entity}ServiceImpl` in `service/impl/`
 - Enum: `{Name}` (e.g., UserRole, TransactionType)
 - Util: `{Purpose}Utils` or `{Purpose}Generator`
 - Exception: `{Type}Exception`
+
+### Mapper Package
+- Core Mapper: `{Entity}Mapper` in `mapper/core/` (e.g., UserMapper, CompanyMapper)
+- Admin Mapper: `Admin{Entity}Mapper` in `mapper/admin/`
+- Company Mapper: `Company{Entity}Mapper` in `mapper/company/`
 
 ## Performance Optimization
 - Use Pageable for all list APIs

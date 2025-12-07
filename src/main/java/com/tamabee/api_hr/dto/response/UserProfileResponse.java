@@ -1,20 +1,9 @@
-package com.tamabee.api_hr.entity.user;
+package com.tamabee.api_hr.dto.response;
 
-import com.tamabee.api_hr.entity.BaseEntity;
-import jakarta.persistence.*;
 import lombok.Data;
-import lombok.EqualsAndHashCode;
 
 @Data
-@Entity
-@Table(name = "user_profiles")
-@EqualsAndHashCode(callSuper = true)
-public class UserProfileEntity extends BaseEntity {
-    
-    @OneToOne
-    @JoinColumn(name = "user_id", nullable = false)
-    private UserEntity user;
-    
+public class UserProfileResponse {
     private String name;
     private String phone;
     private String address;
@@ -22,8 +11,6 @@ public class UserProfileEntity extends BaseEntity {
     private String dateOfBirth;
     private String gender;
     private String avatar;
-    
-    @Column(unique = true, length = 8)
     private String referralCode;
     
     // Bank info

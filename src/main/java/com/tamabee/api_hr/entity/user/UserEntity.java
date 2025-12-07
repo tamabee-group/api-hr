@@ -13,6 +13,9 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class UserEntity extends BaseEntity {
     
+    @Column(unique = true, length = 10)
+    private String employeeCode;
+    
     @Column(unique = true, nullable = false)
     private String email;
     
@@ -32,4 +35,10 @@ public class UserEntity extends BaseEntity {
     
     @Column(nullable = false)
     private String language;
+    
+    @Column(nullable = false)
+    private Long companyId = 0L;
+    
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private UserProfileEntity profile;
 }
