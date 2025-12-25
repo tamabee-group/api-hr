@@ -3,9 +3,9 @@ spring:
     name: api-hr
 
   datasource:
-    url: jdbc:postgresql://tamabee.vn:5432/stg_hr_tamabee
-    username: quanghiep
-    password: avatar
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/stg_hr_tamabee}
+    username: ${DATABASE_USERNAME:quanghiep}
+    password: ${DATABASE_PASSWORD:avatar}
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -61,3 +61,17 @@ jwt:
   secret: ${JWT_SECRET:TamabeeHRSecretKeyForJWTTokenGenerationMustBeLongEnough}
   access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
   refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:2592000000}
+
+database:
+  tunnel:
+    enabled: ${DATABASE_TUNNEL_ENABLED:false}
+    ssh:
+      host: ${SSH_HOST:tamabee.vn}
+      port: ${SSH_PORT:22}
+      username: ${SSH_USERNAME:root}
+      password: ${SSH_PASSWORD:}
+    local:
+      port: ${LOCAL_PORT:5433}
+    remote:
+      host: ${REMOTE_HOST:localhost}
+      port: ${REMOTE_PORT:5432}

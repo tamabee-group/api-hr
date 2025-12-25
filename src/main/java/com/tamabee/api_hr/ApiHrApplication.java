@@ -1,5 +1,6 @@
 package com.tamabee.api_hr;
 
+import com.tamabee.api_hr.config.SshTunnelInitializer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 
@@ -7,7 +8,9 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 public class ApiHrApplication {
 
 	public static void main(String[] args) {
-		SpringApplication.run(ApiHrApplication.class, args);
+		SpringApplication app = new SpringApplication(ApiHrApplication.class);
+		app.addInitializers(new SshTunnelInitializer());
+		app.run(args);
 	}
 
 }
