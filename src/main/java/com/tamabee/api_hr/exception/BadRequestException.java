@@ -24,4 +24,11 @@ public class BadRequestException extends BaseException {
     public BadRequestException(ErrorCode errorCode) {
         super(HttpStatus.BAD_REQUEST, errorCode);
     }
+
+    /**
+     * Factory method cho lỗi role không hợp lệ
+     */
+    public static BadRequestException invalidRole(String role) {
+        return new BadRequestException("Role không hợp lệ: " + role, ErrorCode.INVALID_ROLE);
+    }
 }

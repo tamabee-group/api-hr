@@ -35,10 +35,13 @@ public enum ErrorCode {
     EMAIL_EXISTS("EMAIL_EXISTS", "Email đã tồn tại"),
     EMAIL_NOT_FOUND("EMAIL_NOT_FOUND", "Email không tồn tại trong hệ thống"),
     EMPLOYEE_CODE_EXISTS("EMPLOYEE_CODE_EXISTS", "Mã nhân viên đã tồn tại"),
+    INVALID_ROLE("INVALID_ROLE", "Role không hợp lệ"),
+    ACCESS_DENIED("ACCESS_DENIED", "Không có quyền truy cập tài nguyên này"),
 
     // === COMPANY ===
     COMPANY_NOT_FOUND("COMPANY_NOT_FOUND", "Không tìm thấy công ty"),
     COMPANY_NAME_EXISTS("COMPANY_NAME_EXISTS", "Tên công ty đã tồn tại"),
+    INVALID_REFERRAL_CODE("INVALID_REFERRAL_CODE", "Mã giới thiệu không hợp lệ"),
 
     // === FILE ===
     FILE_UPLOAD_FAILED("FILE_UPLOAD_FAILED", "Lỗi khi tải file lên"),

@@ -3,17 +3,20 @@ package com.tamabee.api_hr.service.admin.impl;
 import com.tamabee.api_hr.dto.request.CreateTamabeeUserRequest;
 import com.tamabee.api_hr.dto.request.UpdateUserProfileRequest;
 import com.tamabee.api_hr.dto.response.UserResponse;
+import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.entity.user.UserProfileEntity;
 import com.tamabee.api_hr.enums.UserStatus;
 import com.tamabee.api_hr.exception.ConflictException;
 import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.mapper.core.UserMapper;
+import com.tamabee.api_hr.repository.CompanyRepository;
 import com.tamabee.api_hr.repository.UserRepository;
 import com.tamabee.api_hr.service.admin.IEmployeeManagerService;
 import com.tamabee.api_hr.service.core.IEmailService;
 import com.tamabee.api_hr.service.core.IUploadService;
 import com.tamabee.api_hr.util.EmployeeCodeGenerator;
+import com.tamabee.api_hr.util.LocaleUtil;
 import com.tamabee.api_hr.util.ReferralCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -29,7 +32,10 @@ import java.util.UUID;
 @RequiredArgsConstructor
 public class EmployeeManagerServiceImpl implements IEmployeeManagerService {
 
+    private static final Long TAMABEE_COMPANY_ID = 0L;
+
     private final UserRepository userRepository;
+    private final CompanyRepository companyRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final IEmailService emailService;
@@ -61,15 +67,29 @@ public class EmployeeManagerServiceImpl implements IEmployeeManagerService {
         // Tạo mật khẩu tạm thời
         String temporaryPassword = UUID.randomUUID().toString().substring(0, 8);
 
-        // Tạo user entity (chưa có employeeCode)
+        // Lấy companyId (mặc định là Tamabee)
+        Long companyId = TAMABEE_COMPANY_ID;
+
+        // Xác định timezone: nếu là Tamabee thì dùng mặc định, ngược lại lấy từ company
+        // locale
+        String timezone;
+        if (TAMABEE_COMPANY_ID.equals(companyId)) {
+            timezone = LocaleUtil.getDefaultTimezone();
+        } else {
+            CompanyEntity company = companyRepository.findById(companyId)
+                    .orElseThrow(() -> NotFoundException.company(companyId));
+            timezone = LocaleUtil.toTimezone(company.getLocale());
+        }
+
+        // Tạo user entity
         UserEntity user = new UserEntity();
         user.setEmail(request.getEmail());
         user.setPassword(passwordEncoder.encode(temporaryPassword));
         user.setRole(request.getRole());
         user.setStatus(UserStatus.ACTIVE);
         user.setLanguage(request.getLanguage());
-        user.setLocale("Asia/Tokyo"); // Tamabee mặc định múi giờ Nhật Bản
-        user.setCompanyId(0L); // Tamabee user companyId = 0
+        user.setLocale(timezone);
+        user.setCompanyId(companyId);
 
         // Tạo mã giới thiệu duy nhất
         String referralCode;
@@ -90,10 +110,12 @@ public class EmployeeManagerServiceImpl implements IEmployeeManagerService {
 
         user.setProfile(profile);
 
-        // Đếm số nhân viên hiện tại của Tamabee để tạo mã
-        long employeeCount = userRepository.countByCompanyId(0L);
-        String employeeCode = EmployeeCodeGenerator.generate(0L, employeeCount + 1);
+        // Tạo mã nhân viên duy nhất từ companyId và ngày sinh
+        String employeeCode = EmployeeCodeGenerator.generateUnique(0L, request.getDateOfBirth(), userRepository);
         user.setEmployeeCode(employeeCode);
+
+        // Tính toán % hoàn thiện profile
+        user.calculateProfileCompleteness();
 
         // Lưu vào database
         UserEntity savedUser = userRepository.save(user);
@@ -151,6 +173,9 @@ public class EmployeeManagerServiceImpl implements IEmployeeManagerService {
             profile.setEmergencyContactRelation(request.getEmergencyContactRelation());
         if (request.getEmergencyContactAddress() != null)
             profile.setEmergencyContactAddress(request.getEmergencyContactAddress());
+
+        // Tính toán lại % hoàn thiện profile
+        user.calculateProfileCompleteness();
 
         UserEntity savedUser = userRepository.save(user);
         return userMapper.toResponse(savedUser);

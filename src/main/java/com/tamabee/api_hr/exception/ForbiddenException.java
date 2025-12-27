@@ -24,4 +24,11 @@ public class ForbiddenException extends BaseException {
     public ForbiddenException(ErrorCode errorCode) {
         super(HttpStatus.FORBIDDEN, errorCode);
     }
+
+    /**
+     * Factory method cho lỗi không có quyền truy cập
+     */
+    public static ForbiddenException accessDenied() {
+        return new ForbiddenException("Bạn không có quyền truy cập tài nguyên này", ErrorCode.ACCESS_DENIED);
+    }
 }

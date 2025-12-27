@@ -3,6 +3,7 @@ package com.tamabee.api_hr.controller.admin;
 import com.tamabee.api_hr.dto.request.CreateTamabeeUserRequest;
 import com.tamabee.api_hr.dto.request.UpdateUserProfileRequest;
 import com.tamabee.api_hr.dto.response.UserResponse;
+import com.tamabee.api_hr.enums.RoleConstants;
 import com.tamabee.api_hr.model.response.BaseResponse;
 import com.tamabee.api_hr.service.admin.IEmployeeManagerService;
 import jakarta.validation.Valid;
@@ -15,26 +16,39 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+/**
+ * Controller quản lý nhân viên Tamabee
+ * Chỉ ADMIN_TAMABEE có quyền truy cập
+ */
 @RestController
 @RequestMapping("/api/admin/users")
 @RequiredArgsConstructor
-@PreAuthorize("hasAnyRole('ADMIN_TAMABEE', 'MANAGER_TAMABEE')")
+@PreAuthorize(RoleConstants.HAS_ADMIN_TAMABEE)
 public class AdminUserController {
 
     private final IEmployeeManagerService employeeManagerService;
 
+    /**
+     * Lấy danh sách nhân viên Tamabee (phân trang)
+     */
     @GetMapping
     public ResponseEntity<BaseResponse<Page<UserResponse>>> getTamabeeUsers(Pageable pageable) {
         Page<UserResponse> users = employeeManagerService.getTamabeeUsers(pageable);
         return ResponseEntity.ok(BaseResponse.success(users, "Lấy danh sách người dùng thành công"));
     }
 
+    /**
+     * Lấy thông tin chi tiết nhân viên Tamabee theo ID
+     */
     @GetMapping("/{id}")
     public ResponseEntity<BaseResponse<UserResponse>> getTamabeeUser(@PathVariable Long id) {
         UserResponse user = employeeManagerService.getTamabeeUser(id);
         return ResponseEntity.ok(BaseResponse.success(user, "Lấy thông tin người dùng thành công"));
     }
 
+    /**
+     * Tạo nhân viên Tamabee mới
+     */
     @PostMapping
     public ResponseEntity<BaseResponse<UserResponse>> createTamabeeUser(
             @Valid @RequestBody CreateTamabeeUserRequest request) {
@@ -44,6 +58,9 @@ public class AdminUserController {
                 .body(BaseResponse.created(user, "Tạo người dùng thành công"));
     }
 
+    /**
+     * Cập nhật thông tin nhân viên Tamabee
+     */
     @PutMapping("/{id}")
     public ResponseEntity<BaseResponse<UserResponse>> updateUserProfile(
             @PathVariable Long id,
@@ -52,6 +69,9 @@ public class AdminUserController {
         return ResponseEntity.ok(BaseResponse.success(user, "Cập nhật thông tin thành công"));
     }
 
+    /**
+     * Upload avatar cho nhân viên Tamabee
+     */
     @PostMapping("/{id}/avatar")
     public ResponseEntity<BaseResponse<String>> uploadAvatar(
             @PathVariable Long id,

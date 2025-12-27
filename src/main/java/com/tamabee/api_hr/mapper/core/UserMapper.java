@@ -4,27 +4,30 @@ import com.tamabee.api_hr.dto.response.UserProfileResponse;
 import com.tamabee.api_hr.dto.response.UserResponse;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.model.request.RegisterRequest;
+import com.tamabee.api_hr.util.LocaleUtil;
 import org.springframework.stereotype.Component;
 
 @Component
 public class UserMapper {
-    
+
     /**
      * Convert RegisterRequest to UserEntity (partial)
+     * Chuyển đổi locale code (vi, ja) sang timezone (Asia/Ho_Chi_Minh, Asia/Tokyo)
      */
     public UserEntity toEntity(RegisterRequest request) {
         if (request == null) {
             return null;
         }
-        
+
         UserEntity entity = new UserEntity();
         entity.setEmail(request.getEmail());
-        entity.setLocale(request.getLocale());
+        // Chuyển đổi locale code sang timezone
+        entity.setLocale(LocaleUtil.toTimezone(request.getLocale()));
         entity.setLanguage(request.getLanguage());
-        
+
         return entity;
     }
-    
+
     /**
      * Convert UserEntity to UserResponse
      */
@@ -32,7 +35,7 @@ public class UserMapper {
         if (entity == null) {
             return null;
         }
-        
+
         UserResponse response = new UserResponse();
         response.setId(entity.getId());
         response.setEmployeeCode(entity.getEmployeeCode());
@@ -42,9 +45,10 @@ public class UserMapper {
         response.setLocale(entity.getLocale());
         response.setLanguage(entity.getLanguage());
         response.setCompanyId(entity.getCompanyId());
+        response.setProfileCompleteness(entity.getProfileCompleteness());
         response.setCreatedAt(entity.getCreatedAt());
         response.setUpdatedAt(entity.getUpdatedAt());
-        
+
         if (entity.getProfile() != null) {
             UserProfileResponse profile = new UserProfileResponse();
             profile.setName(entity.getProfile().getName());
@@ -64,7 +68,7 @@ public class UserMapper {
             profile.setEmergencyContactAddress(entity.getProfile().getEmergencyContactAddress());
             response.setProfile(profile);
         }
-        
+
         return response;
     }
 }

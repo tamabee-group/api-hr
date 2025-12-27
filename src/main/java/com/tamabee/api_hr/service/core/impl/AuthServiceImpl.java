@@ -2,6 +2,7 @@ package com.tamabee.api_hr.service.core.impl;
 
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
+import com.tamabee.api_hr.entity.user.UserProfileEntity;
 import com.tamabee.api_hr.entity.wallet.WalletEntity;
 import com.tamabee.api_hr.enums.ErrorCode;
 import com.tamabee.api_hr.enums.UserRole;
@@ -17,7 +18,9 @@ import com.tamabee.api_hr.mapper.core.WalletMapper;
 import com.tamabee.api_hr.model.request.LoginRequest;
 import com.tamabee.api_hr.model.request.RegisterRequest;
 import com.tamabee.api_hr.model.response.LoginResponse;
+import com.tamabee.api_hr.util.EmployeeCodeGenerator;
 import com.tamabee.api_hr.util.JwtUtil;
+import com.tamabee.api_hr.util.ReferralCodeGenerator;
 import com.tamabee.api_hr.repository.CompanyRepository;
 import com.tamabee.api_hr.repository.EmailVerificationRepository;
 import com.tamabee.api_hr.repository.UserRepository;
@@ -50,16 +53,34 @@ public class AuthServiceImpl implements IAuthService {
         validateEmailNotExists(request.getEmail());
         validateEmailVerified(request.getEmail());
         validateCompanyNameNotExists(request.getCompanyName());
+        validateReferralCode(request.getReferralCode());
 
         CompanyEntity company = createCompany(request);
         createWallet(company.getId());
-        createUser(request, company.getId());
+        UserEntity user = createUser(request, company.getId());
+
+        // Cập nhật owner cho company
+        company.setOwner(user);
+        companyRepository.save(company);
     }
 
     private void validateEmailVerified(String email) {
         boolean isVerified = emailVerificationRepository.existsByEmailAndUsedTrue(email);
         if (!isVerified) {
             throw new BadRequestException(ErrorCode.EMAIL_NOT_VERIFIED);
+        }
+    }
+
+    /**
+     * Kiểm tra mã giới thiệu có hợp lệ không
+     * Nếu có nhập mã giới thiệu thì phải tồn tại trong hệ thống
+     */
+    private void validateReferralCode(String referralCode) {
+        if (referralCode != null && !referralCode.isEmpty()) {
+            boolean exists = userRepository.existsByProfileReferralCode(referralCode);
+            if (!exists) {
+                throw new BadRequestException(ErrorCode.INVALID_REFERRAL_CODE);
+            }
         }
     }
 
@@ -73,13 +94,29 @@ public class AuthServiceImpl implements IAuthService {
         walletRepository.save(wallet);
     }
 
-    private void createUser(RegisterRequest request, Long companyId) {
+    private UserEntity createUser(RegisterRequest request, Long companyId) {
         UserEntity user = userMapper.toEntity(request);
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(UserRole.ADMIN_COMPANY);
         user.setStatus(UserStatus.ACTIVE);
         user.setCompanyId(companyId);
-        userRepository.save(user);
+
+        // Tạo mã nhân viên duy nhất từ companyId và ngày sinh
+        String employeeCode = EmployeeCodeGenerator.generateUnique(companyId, null, userRepository);
+        user.setEmployeeCode(employeeCode);
+
+        // Tạo profile với mã giới thiệu
+        UserProfileEntity profile = new UserProfileEntity();
+        String referralCode;
+        do {
+            referralCode = ReferralCodeGenerator.generate();
+        } while (userRepository.existsByProfileReferralCode(referralCode));
+        profile.setReferralCode(referralCode);
+        profile.setUser(user);
+        user.setProfile(profile);
+
+        user.calculateProfileCompleteness();
+        return userRepository.save(user);
     }
 
     @Override

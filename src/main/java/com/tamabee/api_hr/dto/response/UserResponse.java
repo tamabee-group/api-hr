@@ -16,6 +16,7 @@ public class UserResponse {
     private String locale;
     private String language;
     private Long companyId;
+    private Integer profileCompleteness;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
     private UserProfileResponse profile;
