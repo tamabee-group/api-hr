@@ -75,33 +75,25 @@
 | core    | `/api/auth/**`    | Public (no auth)                   |
 | core    | `/api/users/me`   | All authenticated users            |
 
-### Controller Level
-
-```java
-@RestController
-@RequestMapping("/api/admin/companies")
-@PreAuthorize("hasRole('ADMIN_TAMABEE')")
-public class CompanyManagerController { }
-```
-
-### Method Level (khi cần override)
-
-```java
-@GetMapping("/{id}")
-@PreAuthorize("hasRole('ADMIN_TAMABEE') or (hasRole('ADMIN_COMPANY') and @securityService.hasCompanyAccess(#id))")
-public ResponseEntity<BaseResponse<CompanyResponse>> getCompanyById(@PathVariable Long id) { }
-```
-
-### Role Descriptions
-
-- `ADMIN_TAMABEE`: Toàn quyền hệ thống Tamabee (companies, deposits, plans, users)
-- `ADMIN_COMPANY`: Quản lý công ty (employees, wallet)
-- `MANAGER_COMPANY`: Quản lý cấp trung công ty
-- `EMPLOYEE`: Nhân viên (chỉ xem thông tin cá nhân)
-
 ## Performance
 
 - Use Pageable for all list APIs
 - Use `@Transactional(readOnly = true)` for read operations
 - Lazy load relationships by default
 - Response time targets: Simple < 100ms, Complex < 500ms, List < 200ms
+
+## Database Migration (Flyway)
+
+- Hibernate chỉ map Java objects to tables, KHÔNG tạo indexes/constraints
+- Flyway quản lý ALL schema: tables, indexes, foreign keys, enum types
+- Migration naming: `V{number}__{description}.sql`
+- Luôn dùng `CREATE INDEX IF NOT EXISTS`, `CREATE TYPE ... EXCEPTION WHEN duplicate_object`
+- Entity KHÔNG dùng `@ManyToOne`, `@OneToMany` - chỉ dùng Long cho foreign key fields
+
+## Email Service
+
+- Templates location: `src/main/resources/templates/email/{language}/`
+- Inline CSS only, max-width 600px
+- Placeholders format: `{variableName}`
+- Brand color: `#00b1ce`
+- Always provide fallback to English template
