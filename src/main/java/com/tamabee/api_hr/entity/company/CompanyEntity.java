@@ -2,6 +2,7 @@ package com.tamabee.api_hr.entity.company;
 
 import com.tamabee.api_hr.entity.BaseEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
+import com.tamabee.api_hr.enums.CompanyStatus;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
@@ -10,7 +11,10 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "companies", indexes = {
-        @Index(name = "idx_email", columnList = "email", unique = true)
+        @Index(name = "idx_email", columnList = "email", unique = true),
+        @Index(name = "idx_companies_plan_id", columnList = "planId"),
+        @Index(name = "idx_companies_deleted", columnList = "deleted"),
+        @Index(name = "idx_companies_status", columnList = "status")
 })
 public class CompanyEntity extends BaseEntity {
 
@@ -40,6 +44,10 @@ public class CompanyEntity extends BaseEntity {
     @Column(nullable = false)
     private String language;
 
+    // Gói dịch vụ subscription
+    @Column(name = "plan_id")
+    private Long planId;
+
     // Nhân viên tư vấn (giới thiệu công ty)
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "referred_by_employee_id")
@@ -52,4 +60,9 @@ public class CompanyEntity extends BaseEntity {
     @OneToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "owner_id")
     private UserEntity owner;
+
+    // Trạng thái công ty (ACTIVE, INACTIVE)
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private CompanyStatus status = CompanyStatus.ACTIVE;
 }

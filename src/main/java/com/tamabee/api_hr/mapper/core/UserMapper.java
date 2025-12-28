@@ -32,6 +32,13 @@ public class UserMapper {
      * Convert UserEntity to UserResponse
      */
     public UserResponse toResponse(UserEntity entity) {
+        return toResponse(entity, null);
+    }
+
+    /**
+     * Convert UserEntity to UserResponse với companyName
+     */
+    public UserResponse toResponse(UserEntity entity, String companyName) {
         if (entity == null) {
             return null;
         }
@@ -45,6 +52,7 @@ public class UserMapper {
         response.setLocale(entity.getLocale());
         response.setLanguage(entity.getLanguage());
         response.setCompanyId(entity.getCompanyId());
+        response.setCompanyName(companyName);
         response.setProfileCompleteness(entity.getProfileCompleteness());
         response.setCreatedAt(entity.getCreatedAt());
         response.setUpdatedAt(entity.getUpdatedAt());
@@ -59,9 +67,17 @@ public class UserMapper {
             profile.setGender(entity.getProfile().getGender());
             profile.setAvatar(entity.getProfile().getAvatar());
             profile.setReferralCode(entity.getProfile().getReferralCode());
+            profile.setBankAccountType(entity.getProfile().getBankAccountType());
+            profile.setJapanBankType(entity.getProfile().getJapanBankType());
             profile.setBankName(entity.getProfile().getBankName());
             profile.setBankAccount(entity.getProfile().getBankAccount());
             profile.setBankAccountName(entity.getProfile().getBankAccountName());
+            profile.setBankCode(entity.getProfile().getBankCode());
+            profile.setBankBranchCode(entity.getProfile().getBankBranchCode());
+            profile.setBankBranchName(entity.getProfile().getBankBranchName());
+            profile.setBankAccountCategory(entity.getProfile().getBankAccountCategory());
+            profile.setBankSymbol(entity.getProfile().getBankSymbol());
+            profile.setBankNumber(entity.getProfile().getBankNumber());
             profile.setEmergencyContactName(entity.getProfile().getEmergencyContactName());
             profile.setEmergencyContactPhone(entity.getProfile().getEmergencyContactPhone());
             profile.setEmergencyContactRelation(entity.getProfile().getEmergencyContactRelation());

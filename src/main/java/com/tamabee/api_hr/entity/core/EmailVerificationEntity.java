@@ -16,22 +16,18 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 @EqualsAndHashCode(callSuper = true)
 public class EmailVerificationEntity extends BaseEntity {
-    
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    private Long id;
-    
+
     @Column(nullable = false)
     private String email;
-    
+
     @Column(nullable = false, length = 6)
     private String code;
-    
+
     @Column(nullable = false)
     private LocalDateTime expiredAt;
-    
+
     @Column(nullable = false)
     private Boolean used = false;
-    
+
     private String companyName;
 }

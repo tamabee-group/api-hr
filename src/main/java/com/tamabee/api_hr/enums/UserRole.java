@@ -6,5 +6,5 @@ public enum UserRole {
     EMPLOYEE_TAMABEE,
     ADMIN_COMPANY,
     MANAGER_COMPANY,
-    USER_COMPANY
+    EMPLOYEE_COMPANY
 }

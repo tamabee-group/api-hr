@@ -40,4 +40,24 @@ public class NotFoundException extends BaseException {
     public static NotFoundException email(String email) {
         return new NotFoundException("Email không tồn tại trong hệ thống: " + email, ErrorCode.EMAIL_NOT_FOUND);
     }
+
+    public static NotFoundException plan(Long id) {
+        return new NotFoundException("Không tìm thấy gói dịch vụ với id: " + id, ErrorCode.PLAN_NOT_FOUND);
+    }
+
+    public static NotFoundException setting(String key) {
+        return new NotFoundException("Không tìm thấy cấu hình với key: " + key, ErrorCode.SETTING_NOT_FOUND);
+    }
+
+    public static NotFoundException wallet(Long companyId) {
+        return new NotFoundException("Không tìm thấy ví của công ty với id: " + companyId, ErrorCode.WALLET_NOT_FOUND);
+    }
+
+    public static NotFoundException deposit(Long id) {
+        return new NotFoundException("Không tìm thấy yêu cầu nạp tiền với id: " + id, ErrorCode.DEPOSIT_NOT_FOUND);
+    }
+
+    public static NotFoundException commission(Long id) {
+        return new NotFoundException("Không tìm thấy hoa hồng với id: " + id, ErrorCode.COMMISSION_NOT_FOUND);
+    }
 }

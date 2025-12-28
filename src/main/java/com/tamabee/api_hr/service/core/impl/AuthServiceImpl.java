@@ -14,7 +14,7 @@ import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.exception.UnauthorizedException;
 import com.tamabee.api_hr.mapper.core.CompanyMapper;
 import com.tamabee.api_hr.mapper.core.UserMapper;
-import com.tamabee.api_hr.mapper.core.WalletMapper;
+import com.tamabee.api_hr.mapper.core.WalletFactory;
 import com.tamabee.api_hr.model.request.LoginRequest;
 import com.tamabee.api_hr.model.request.RegisterRequest;
 import com.tamabee.api_hr.model.response.LoginResponse;
@@ -25,6 +25,7 @@ import com.tamabee.api_hr.repository.CompanyRepository;
 import com.tamabee.api_hr.repository.EmailVerificationRepository;
 import com.tamabee.api_hr.repository.UserRepository;
 import com.tamabee.api_hr.repository.WalletRepository;
+import com.tamabee.api_hr.service.admin.ISettingService;
 import com.tamabee.api_hr.service.core.IAuthService;
 import lombok.RequiredArgsConstructor;
 
@@ -32,6 +33,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+
+import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
@@ -44,8 +47,9 @@ public class AuthServiceImpl implements IAuthService {
     private final PasswordEncoder passwordEncoder;
     private final UserMapper userMapper;
     private final CompanyMapper companyMapper;
-    private final WalletMapper walletMapper;
+    private final WalletFactory walletFactory;
     private final JwtUtil jwtUtil;
+    private final ISettingService settingService;
 
     @Override
     @Transactional
@@ -56,12 +60,33 @@ public class AuthServiceImpl implements IAuthService {
         validateReferralCode(request.getReferralCode());
 
         CompanyEntity company = createCompany(request);
-        createWallet(company.getId());
+
+        // Tính toán freeTrialEndDate dựa trên referral code
+        LocalDateTime freeTrialEndDate = calculateFreeTrialEndDate(request.getReferralCode());
+        createWallet(company.getId(), freeTrialEndDate);
+
         UserEntity user = createUser(request, company.getId());
 
         // Cập nhật owner cho company
         company.setOwner(user);
         companyRepository.save(company);
+    }
+
+    /**
+     * Tính toán ngày hết hạn free trial
+     * - Không có referral code: freeTrialMonths (mặc định 2 tháng)
+     * - Có referral code: freeTrialMonths + referralBonusMonths (mặc định 3 tháng)
+     */
+    private LocalDateTime calculateFreeTrialEndDate(String referralCode) {
+        int freeTrialMonths = settingService.getFreeTrialMonths();
+        int totalMonths = freeTrialMonths;
+
+        // Nếu có mã giới thiệu hợp lệ, cộng thêm bonus months
+        if (referralCode != null && !referralCode.isEmpty()) {
+            totalMonths += settingService.getReferralBonusMonths();
+        }
+
+        return LocalDateTime.now().plusMonths(totalMonths);
     }
 
     private void validateEmailVerified(String email) {
@@ -77,7 +102,7 @@ public class AuthServiceImpl implements IAuthService {
      */
     private void validateReferralCode(String referralCode) {
         if (referralCode != null && !referralCode.isEmpty()) {
-            boolean exists = userRepository.existsByProfileReferralCode(referralCode);
+            boolean exists = userRepository.existsByProfileReferralCodeAndDeletedFalse(referralCode);
             if (!exists) {
                 throw new BadRequestException(ErrorCode.INVALID_REFERRAL_CODE);
             }
@@ -89,8 +114,8 @@ public class AuthServiceImpl implements IAuthService {
         return companyRepository.save(company);
     }
 
-    private void createWallet(Long companyId) {
-        WalletEntity wallet = walletMapper.createForCompany(companyId);
+    private void createWallet(Long companyId, LocalDateTime freeTrialEndDate) {
+        WalletEntity wallet = walletFactory.createForCompany(companyId, freeTrialEndDate);
         walletRepository.save(wallet);
     }
 
@@ -110,7 +135,7 @@ public class AuthServiceImpl implements IAuthService {
         String referralCode;
         do {
             referralCode = ReferralCodeGenerator.generate();
-        } while (userRepository.existsByProfileReferralCode(referralCode));
+        } while (userRepository.existsByProfileReferralCodeAndDeletedFalse(referralCode));
         profile.setReferralCode(referralCode);
         profile.setUser(user);
         user.setProfile(profile);
@@ -123,8 +148,8 @@ public class AuthServiceImpl implements IAuthService {
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
         // Tìm user bằng email hoặc mã nhân viên
-        UserEntity user = userRepository.findByEmail(request.getEmail())
-                .or(() -> userRepository.findByEmployeeCode(request.getEmail()))
+        UserEntity user = userRepository.findByEmailAndDeletedFalse(request.getEmail())
+                .or(() -> userRepository.findByEmployeeCodeAndDeletedFalse(request.getEmail()))
                 .orElseThrow(UnauthorizedException::invalidCredentials);
 
         if (!passwordEncoder.matches(request.getPassword(), user.getPassword())) {
@@ -141,7 +166,9 @@ public class AuthServiceImpl implements IAuthService {
                 user.getId(),
                 user.getEmail());
 
-        UserResponse userResponse = userMapper.toResponse(user);
+        // Lấy tên công ty
+        String companyName = getCompanyName(user.getCompanyId());
+        UserResponse userResponse = userMapper.toResponse(user, companyName);
 
         return new LoginResponse(accessToken, refreshToken, userResponse);
     }
@@ -149,7 +176,7 @@ public class AuthServiceImpl implements IAuthService {
     @Override
     @Transactional
     public void resetPassword(String email, String newPassword) {
-        UserEntity user = userRepository.findByEmail(email)
+        UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
                 .orElseThrow(() -> NotFoundException.user(email));
 
         user.setPassword(passwordEncoder.encode(newPassword));
@@ -159,7 +186,7 @@ public class AuthServiceImpl implements IAuthService {
     @Override
     @Transactional(readOnly = true)
     public void validateEmailExists(String email) {
-        if (!userRepository.existsByEmail(email)) {
+        if (!userRepository.existsByEmailAndDeletedFalse(email)) {
             throw NotFoundException.email(email);
         }
     }
@@ -167,7 +194,7 @@ public class AuthServiceImpl implements IAuthService {
     @Override
     @Transactional(readOnly = true)
     public void validateEmailNotExists(String email) {
-        if (userRepository.existsByEmail(email)) {
+        if (userRepository.existsByEmailAndDeletedFalse(email)) {
             throw ConflictException.emailExists(email);
         }
         if (companyRepository.existsByEmail(email)) {
@@ -192,7 +219,7 @@ public class AuthServiceImpl implements IAuthService {
         }
 
         String email = (String) claims.get("sub");
-        UserEntity user = userRepository.findByEmail(email)
+        UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
                 .orElseThrow(() -> NotFoundException.user(email));
 
         String newAccessToken = jwtUtil.generateAccessToken(
@@ -201,7 +228,9 @@ public class AuthServiceImpl implements IAuthService {
                 user.getRole().name(),
                 user.getCompanyId());
 
-        UserResponse userResponse = userMapper.toResponse(user);
+        // Lấy tên công ty
+        String companyName = getCompanyName(user.getCompanyId());
+        UserResponse userResponse = userMapper.toResponse(user, companyName);
 
         return new LoginResponse(newAccessToken, refreshToken, userResponse);
     }
@@ -215,8 +244,24 @@ public class AuthServiceImpl implements IAuthService {
         }
 
         String email = authentication.getName();
-        UserEntity user = userRepository.findByEmail(email)
+        UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
                 .orElseThrow(() -> NotFoundException.user(email));
-        return userMapper.toResponse(user);
+
+        // Lấy tên công ty
+        String companyName = getCompanyName(user.getCompanyId());
+        return userMapper.toResponse(user, companyName);
+    }
+
+    /**
+     * Lấy tên công ty từ companyId
+     * Trả về null nếu là user Tamabee (companyId = 0)
+     */
+    private String getCompanyName(Long companyId) {
+        if (companyId == null || companyId == 0) {
+            return null;
+        }
+        return companyRepository.findById(companyId)
+                .map(CompanyEntity::getName)
+                .orElse(null);
     }
 }

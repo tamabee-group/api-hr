@@ -43,6 +43,28 @@ public enum ErrorCode {
     COMPANY_NAME_EXISTS("COMPANY_NAME_EXISTS", "Tên công ty đã tồn tại"),
     INVALID_REFERRAL_CODE("INVALID_REFERRAL_CODE", "Mã giới thiệu không hợp lệ"),
 
+    // === PLAN ===
+    PLAN_NOT_FOUND("PLAN_NOT_FOUND", "Không tìm thấy gói dịch vụ"),
+    PLAN_IN_USE("PLAN_IN_USE", "Gói dịch vụ đang được sử dụng, không thể xóa"),
+
+    // === SETTING ===
+    SETTING_NOT_FOUND("SETTING_NOT_FOUND", "Không tìm thấy cấu hình"),
+
+    // === WALLET ===
+    WALLET_NOT_FOUND("WALLET_NOT_FOUND", "Không tìm thấy ví"),
+    INVALID_AMOUNT("INVALID_AMOUNT", "Số tiền không hợp lệ"),
+    INSUFFICIENT_BALANCE("INSUFFICIENT_BALANCE", "Số dư không đủ"),
+
+    // === DEPOSIT ===
+    DEPOSIT_NOT_FOUND("DEPOSIT_NOT_FOUND", "Không tìm thấy yêu cầu nạp tiền"),
+    DEPOSIT_ALREADY_PROCESSED("DEPOSIT_ALREADY_PROCESSED", "Yêu cầu nạp tiền đã được xử lý"),
+    INVALID_TRANSFER_PROOF("INVALID_TRANSFER_PROOF", "Ảnh chứng minh chuyển khoản không hợp lệ"),
+    INVALID_REJECTION_REASON("INVALID_REJECTION_REASON", "Lý do từ chối không được để trống"),
+
+    // === COMMISSION ===
+    COMMISSION_NOT_FOUND("COMMISSION_NOT_FOUND", "Không tìm thấy hoa hồng"),
+    COMMISSION_NOT_ELIGIBLE("COMMISSION_NOT_ELIGIBLE", "Hoa hồng chưa đủ điều kiện thanh toán"),
+
     // === FILE ===
     FILE_UPLOAD_FAILED("FILE_UPLOAD_FAILED", "Lỗi khi tải file lên"),
     FILE_TOO_LARGE("FILE_TOO_LARGE", "File tải lên quá lớn"),

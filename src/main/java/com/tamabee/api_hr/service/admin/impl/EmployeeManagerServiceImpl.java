@@ -44,7 +44,7 @@ public class EmployeeManagerServiceImpl implements IEmployeeManagerService {
     @Override
     @Transactional(readOnly = true)
     public Page<UserResponse> getTamabeeUsers(Pageable pageable) {
-        Page<UserEntity> users = userRepository.findByCompanyId(0L, pageable);
+        Page<UserEntity> users = userRepository.findByCompanyIdAndDeletedFalse(0L, pageable);
         return users.map(userMapper::toResponse);
     }
 
@@ -60,7 +60,7 @@ public class EmployeeManagerServiceImpl implements IEmployeeManagerService {
     @Transactional
     public UserResponse createTamabeeUser(CreateTamabeeUserRequest request) {
         // Kiểm tra email đã tồn tại
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmailAndDeletedFalse(request.getEmail())) {
             throw ConflictException.emailExists(request.getEmail());
         }
 
@@ -95,7 +95,7 @@ public class EmployeeManagerServiceImpl implements IEmployeeManagerService {
         String referralCode;
         do {
             referralCode = ReferralCodeGenerator.generate();
-        } while (userRepository.existsByProfileReferralCode(referralCode));
+        } while (userRepository.existsByProfileReferralCodeAndDeletedFalse(referralCode));
 
         // Tạo user profile
         UserProfileEntity profile = new UserProfileEntity();
@@ -159,12 +159,31 @@ public class EmployeeManagerServiceImpl implements IEmployeeManagerService {
             profile.setZipCode(request.getZipCode());
         if (request.getAddress() != null)
             profile.setAddress(request.getAddress());
+        // Bank info - Common
+        if (request.getBankAccountType() != null)
+            profile.setBankAccountType(request.getBankAccountType());
+        if (request.getJapanBankType() != null)
+            profile.setJapanBankType(request.getJapanBankType());
         if (request.getBankName() != null)
             profile.setBankName(request.getBankName());
         if (request.getBankAccount() != null)
             profile.setBankAccount(request.getBankAccount());
         if (request.getBankAccountName() != null)
             profile.setBankAccountName(request.getBankAccountName());
+        // Bank info - Japan specific
+        if (request.getBankCode() != null)
+            profile.setBankCode(request.getBankCode());
+        if (request.getBankBranchCode() != null)
+            profile.setBankBranchCode(request.getBankBranchCode());
+        if (request.getBankBranchName() != null)
+            profile.setBankBranchName(request.getBankBranchName());
+        if (request.getBankAccountCategory() != null)
+            profile.setBankAccountCategory(request.getBankAccountCategory());
+        // Bank info - Japan Post Bank (ゆうちょ銀行)
+        if (request.getBankSymbol() != null)
+            profile.setBankSymbol(request.getBankSymbol());
+        if (request.getBankNumber() != null)
+            profile.setBankNumber(request.getBankNumber());
         if (request.getEmergencyContactName() != null)
             profile.setEmergencyContactName(request.getEmergencyContactName());
         if (request.getEmergencyContactPhone() != null)

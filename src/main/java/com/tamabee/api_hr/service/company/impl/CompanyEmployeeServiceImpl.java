@@ -43,7 +43,7 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
     private static final Set<UserRole> ALLOWED_COMPANY_ROLES = Set.of(
             UserRole.ADMIN_COMPANY,
             UserRole.MANAGER_COMPANY,
-            UserRole.USER_COMPANY);
+            UserRole.EMPLOYEE_COMPANY);
 
     private final UserRepository userRepository;
     private final CompanyRepository companyRepository;
@@ -58,7 +58,7 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
         // Kiểm tra công ty tồn tại
         validateCompanyExists(companyId);
 
-        Page<UserEntity> employees = userRepository.findByCompanyId(companyId, pageable);
+        Page<UserEntity> employees = userRepository.findByCompanyIdAndDeletedFalse(companyId, pageable);
         return employees.map(userMapper::toResponse);
     }
 
@@ -77,7 +77,7 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
                 .orElseThrow(() -> NotFoundException.company(companyId));
 
         // Kiểm tra email đã tồn tại
-        if (userRepository.existsByEmail(request.getEmail())) {
+        if (userRepository.existsByEmailAndDeletedFalse(request.getEmail())) {
             throw ConflictException.emailExists(request.getEmail());
         }
 
@@ -145,7 +145,7 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
         if (request.getEmail() != null) {
             // Kiểm tra email mới không trùng với user khác
             if (!employee.getEmail().equals(request.getEmail()) &&
-                    userRepository.existsByEmail(request.getEmail())) {
+                    userRepository.existsByEmailAndDeletedFalse(request.getEmail())) {
                 throw ConflictException.emailExists(request.getEmail());
             }
             employee.setEmail(request.getEmail());
@@ -233,7 +233,7 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
         String referralCode;
         do {
             referralCode = ReferralCodeGenerator.generate();
-        } while (userRepository.existsByProfileReferralCode(referralCode));
+        } while (userRepository.existsByProfileReferralCodeAndDeletedFalse(referralCode));
         return referralCode;
     }
 
@@ -256,12 +256,31 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
             profile.setZipCode(request.getZipCode());
         if (request.getAddress() != null)
             profile.setAddress(request.getAddress());
+        // Bank info - Common
+        if (request.getBankAccountType() != null)
+            profile.setBankAccountType(request.getBankAccountType());
+        if (request.getJapanBankType() != null)
+            profile.setJapanBankType(request.getJapanBankType());
         if (request.getBankName() != null)
             profile.setBankName(request.getBankName());
         if (request.getBankAccount() != null)
             profile.setBankAccount(request.getBankAccount());
         if (request.getBankAccountName() != null)
             profile.setBankAccountName(request.getBankAccountName());
+        // Bank info - Japan specific
+        if (request.getBankCode() != null)
+            profile.setBankCode(request.getBankCode());
+        if (request.getBankBranchCode() != null)
+            profile.setBankBranchCode(request.getBankBranchCode());
+        if (request.getBankBranchName() != null)
+            profile.setBankBranchName(request.getBankBranchName());
+        if (request.getBankAccountCategory() != null)
+            profile.setBankAccountCategory(request.getBankAccountCategory());
+        // Bank info - Japan Post Bank (ゆうちょ銀行)
+        if (request.getBankSymbol() != null)
+            profile.setBankSymbol(request.getBankSymbol());
+        if (request.getBankNumber() != null)
+            profile.setBankNumber(request.getBankNumber());
         if (request.getEmergencyContactName() != null)
             profile.setEmergencyContactName(request.getEmergencyContactName());
         if (request.getEmergencyContactPhone() != null)

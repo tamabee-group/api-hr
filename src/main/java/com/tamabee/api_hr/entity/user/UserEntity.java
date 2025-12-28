@@ -43,7 +43,7 @@ public class UserEntity extends BaseEntity {
     @Column(nullable = false)
     private Integer profileCompleteness = 0;
 
-    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private UserProfileEntity profile;
 
     /**

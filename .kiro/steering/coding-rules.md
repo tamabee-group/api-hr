@@ -60,6 +60,8 @@
 - Viết comment bằng tiếng Việt
 - Ghi chú mục đích của method và các tham số quan trọng
 - Comment complex business logic, non-obvious algorithms
+- KHÔNG comment "Requirements" hoặc "Validates: Requirements" trong code
+- KHÔNG sử dụng `@Label` annotation trong property tests
 
 ## Security & Role Management
 
@@ -74,6 +76,30 @@
 | company | `/api/company/**` | `ADMIN_COMPANY`, `MANAGER_COMPANY` |
 | core    | `/api/auth/**`    | Public (no auth)                   |
 | core    | `/api/users/me`   | All authenticated users            |
+
+### Controller Level
+
+```java
+@RestController
+@RequestMapping("/api/admin/companies")
+@PreAuthorize("hasRole('ADMIN_TAMABEE')")
+public class CompanyManagerController { }
+```
+
+### Method Level (khi cần override)
+
+```java
+@GetMapping("/{id}")
+@PreAuthorize("hasRole('ADMIN_TAMABEE') or (hasRole('ADMIN_COMPANY') and @securityService.hasCompanyAccess(#id))")
+public ResponseEntity<BaseResponse<CompanyResponse>> getCompanyById(@PathVariable Long id) { }
+```
+
+### Role Descriptions
+
+- `ADMIN_TAMABEE`: Toàn quyền hệ thống Tamabee (companies, deposits, plans, users)
+- `ADMIN_COMPANY`: Quản lý công ty (employees, wallet)
+- `MANAGER_COMPANY`: Quản lý cấp trung công ty
+- `EMPLOYEE`: Nhân viên (chỉ xem thông tin cá nhân)
 
 ## Performance
 
@@ -97,3 +123,9 @@
 - Placeholders format: `{variableName}`
 - Brand color: `#00b1ce`
 - Always provide fallback to English template
+
+## Maven Commands
+
+- Sử dụng `.\mvnw` (Windows) hoặc `./mvnw` (Linux/Mac) thay vì `mvn`
+- Ví dụ: `.\mvnw compile`, `.\mvnw test`, `.\mvnw spring-boot:run`
+- KHÔNG sử dụng `mvn` trực tiếp vì có thể không được cài đặt trên máy

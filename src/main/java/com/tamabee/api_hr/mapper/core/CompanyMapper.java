@@ -36,7 +36,7 @@ public class CompanyMapper {
 
         // Tìm nhân viên tư vấn từ mã giới thiệu
         if (request.getReferralCode() != null && !request.getReferralCode().isEmpty()) {
-            userRepository.findByEmployeeCode(request.getReferralCode())
+            userRepository.findByEmployeeCodeAndDeletedFalse(request.getReferralCode())
                     .ifPresent(entity::setReferredByEmployee);
         }
 

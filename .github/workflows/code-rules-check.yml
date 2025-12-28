@@ -1,0 +1,49 @@
+name: Code Rules Check
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main, develop]
+
+jobs:
+  code-rules-check:
+    name: Check Code Rules (Backend)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout api-hr
+        uses: actions/checkout@v4
+        with:
+          path: api-hr
+
+      - name: Checkout tama-hr (for code-checker)
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ github.repository_owner }}/tama-hr
+          path: tama-hr
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+          cache-dependency-path: tama-hr/package-lock.json
+
+      - name: Install dependencies
+        working-directory: tama-hr
+        run: npm ci
+
+      - name: Run Code Rules Checker (Backend)
+        working-directory: tama-hr
+        run: npm run check:rules:backend || true
+        # Tam thoi khong fail build, chi report
+
+      - name: Upload report (on failure)
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: code-rules-report-backend
+          path: tama-hr/code-rules-report.md
+          retention-days: 7

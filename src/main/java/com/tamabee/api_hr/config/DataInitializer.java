@@ -50,7 +50,7 @@ public class DataInitializer implements CommandLineRunner {
             String referralCode;
             do {
                 referralCode = ReferralCodeGenerator.generate();
-            } while (userRepository.existsByProfileReferralCode(referralCode));
+            } while (userRepository.existsByProfileReferralCodeAndDeletedFalse(referralCode));
             profile.setReferralCode(referralCode);
             profile.setUser(admin);
             admin.setProfile(profile);

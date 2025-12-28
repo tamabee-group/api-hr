@@ -97,7 +97,7 @@ public class CompanyEmployeeController {
     private Long getCurrentUserCompanyId() {
         var authentication = SecurityContextHolder.getContext().getAuthentication();
         String email = authentication.getName();
-        UserEntity user = userRepository.findByEmail(email)
+        UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
                 .orElseThrow(() -> NotFoundException.user(email));
         return user.getCompanyId();
     }

@@ -28,7 +28,7 @@ public class EmployeeCodeGenerator {
         // Thử từ prefix 25 đến 99
         for (int prefix = START_PREFIX; prefix <= MAX_PREFIX; prefix++) {
             String employeeCode = String.format("%02d", prefix) + baseCode;
-            if (!userRepository.existsByEmployeeCode(employeeCode)) {
+            if (!userRepository.existsByEmployeeCodeAndDeletedFalse(employeeCode)) {
                 return employeeCode;
             }
         }
