@@ -37,3 +37,24 @@ INSERT INTO plan_features (plan_id, feature_vi, feature_en, feature_ja, sort_ord
 
 -- Reset sequences
 SELECT setval('plans_id_seq', (SELECT MAX(id) FROM plans));
+
+-- =====================================================
+-- PLAN FEATURE CODES - Mapping Plan với Feature Code
+-- =====================================================
+INSERT INTO plan_feature_codes (plan_id, feature_code, created_at, deleted) VALUES
+    -- Plan 1 (Basic): ATTENDANCE only
+    (1, 'ATTENDANCE', NOW(), FALSE),
+    -- Plan 2 (Standard): ATTENDANCE, PAYROLL, OVERTIME, LEAVE_MANAGEMENT
+    (2, 'ATTENDANCE', NOW(), FALSE),
+    (2, 'PAYROLL', NOW(), FALSE),
+    (2, 'OVERTIME', NOW(), FALSE),
+    (2, 'LEAVE_MANAGEMENT', NOW(), FALSE),
+    -- Plan 3 (Premium): All features
+    (3, 'ATTENDANCE', NOW(), FALSE),
+    (3, 'PAYROLL', NOW(), FALSE),
+    (3, 'OVERTIME', NOW(), FALSE),
+    (3, 'LEAVE_MANAGEMENT', NOW(), FALSE),
+    (3, 'GEO_LOCATION', NOW(), FALSE),
+    (3, 'DEVICE_REGISTRATION', NOW(), FALSE),
+    (3, 'REPORTS', NOW(), FALSE),
+    (3, 'FLEXIBLE_SCHEDULE', NOW(), FALSE);

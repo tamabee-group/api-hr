@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+</head>
+
+<body>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <p>Hello <strong>{employeeName}</strong>,</p>
+        <p>Your salary for <strong>{period}</strong> has been processed.</p>
+        <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">SALARY DETAILS</p>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 8px 0; color: #666;">Base Salary:</td>
+                    <td style="padding: 8px 0; text-align: right; font-weight: bold;">{baseSalary}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #666;">Total Overtime:</td>
+                    <td style="padding: 8px 0; text-align: right; font-weight: bold;">{totalOvertime}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #666;">Total Allowances:</td>
+                    <td style="padding: 8px 0; text-align: right; font-weight: bold;">{totalAllowances}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 8px 0; color: #666;">Total Deductions:</td>
+                    <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #dc3545;">{totalDeductions}
+                    </td>
+                </tr>
+                <tr style="border-top: 2px solid #00b1ce;">
+                    <td style="padding: 12px 0; color: #333; font-weight: bold; font-size: 16px;">Net Salary:</td>
+                    <td style="padding: 12px 0; text-align: right; font-weight: bold; color: #00b1ce; font-size: 18px;">
+                        {netSalary}</td>
+                </tr>
+            </table>
+        </div>
+        <p>📅 Expected Payment Date: <strong>{paymentDate}</strong></p>
+        <p style="color: #999; font-size: 13px;">If you have any questions about your payslip, please contact HR
+            department.</p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+        <p>Best regards,<br><strong>Tamabee HR Team</strong></p>
+        <p style="font-size: 13px; color: #666;">
+            🌐 Website: <a href="https://tamabee.vn" style="color: #00b1ce;">https://tamabee.vn</a><br>
+            📧 Email: <a href="mailto:support@tamabee.vn" style="color: #00b1ce;">support@tamabee.vn</a>
+        </p>
+    </div>
+</body>
+
+</html>

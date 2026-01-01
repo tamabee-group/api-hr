@@ -60,4 +60,14 @@ public class NotFoundException extends BaseException {
     public static NotFoundException commission(Long id) {
         return new NotFoundException("Không tìm thấy hoa hồng với id: " + id, ErrorCode.COMMISSION_NOT_FOUND);
     }
+
+    public static NotFoundException companySettings(Long companyId) {
+        return new NotFoundException("Không tìm thấy cấu hình của công ty với id: " + companyId,
+                ErrorCode.SETTINGS_NOT_FOUND);
+    }
+
+    public static NotFoundException payrollRecord(Long id) {
+        return new NotFoundException("Không tìm thấy bản ghi lương với id: " + id,
+                ErrorCode.PAYROLL_NOT_FOUND);
+    }
 }

@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Java Test Runner",
+  "description": "Tự động chạy Maven test khi save file .java trong thư mục api-hr",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "api-hr/**/*.java"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Run `.\\mvnw test` in the api-hr directory to verify the code changes"
+  }
+}

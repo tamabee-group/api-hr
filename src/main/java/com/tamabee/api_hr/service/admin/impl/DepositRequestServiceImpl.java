@@ -290,4 +290,77 @@ public class DepositRequestServiceImpl implements IDepositRequestService {
             log.error("Lỗi khi gửi email thông báo nạp tiền: {}", e.getMessage());
         }
     }
+
+    // ==================== Company Self-Service Operations ====================
+
+    @Override
+    @Transactional
+    public DepositRequestResponse cancel(Long id) {
+        // Lấy deposit request
+        DepositRequestEntity entity = depositRequestRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> NotFoundException.deposit(id));
+
+        // Kiểm tra quyền: chỉ company của mình mới được hủy
+        Long currentCompanyId = getCurrentUserCompanyId();
+        if (!entity.getCompanyId().equals(currentCompanyId)) {
+            throw new BadRequestException(ErrorCode.FORBIDDEN);
+        }
+
+        // Kiểm tra status phải là PENDING
+        if (entity.getStatus() != DepositStatus.PENDING) {
+            throw BadRequestException.depositAlreadyProcessed();
+        }
+
+        // Soft delete
+        entity.setDeleted(true);
+        depositRequestRepository.save(entity);
+
+        log.info("Hủy yêu cầu nạp tiền: id={}, companyId={}, amount={}",
+                id, entity.getCompanyId(), entity.getAmount());
+
+        return toResponseWithDetails(entity);
+    }
+
+    @Override
+    @Transactional
+    public DepositRequestResponse update(Long id, DepositRequestCreateRequest request) {
+        // Validate amount
+        if (request.getAmount() == null || request.getAmount().compareTo(BigDecimal.ZERO) <= 0) {
+            throw BadRequestException.invalidAmount();
+        }
+
+        // Validate transferProofUrl
+        if (request.getTransferProofUrl() == null || request.getTransferProofUrl().trim().isEmpty()) {
+            throw new BadRequestException(ErrorCode.INVALID_TRANSFER_PROOF);
+        }
+
+        // Lấy deposit request
+        DepositRequestEntity entity = depositRequestRepository.findByIdAndDeletedFalse(id)
+                .orElseThrow(() -> NotFoundException.deposit(id));
+
+        // Kiểm tra quyền: chỉ company của mình mới được cập nhật
+        Long currentCompanyId = getCurrentUserCompanyId();
+        if (!entity.getCompanyId().equals(currentCompanyId)) {
+            throw new BadRequestException(ErrorCode.FORBIDDEN);
+        }
+
+        // Kiểm tra status phải là REJECTED
+        if (entity.getStatus() != DepositStatus.REJECTED) {
+            throw new BadRequestException(ErrorCode.DEPOSIT_NOT_REJECTED);
+        }
+
+        // Cập nhật thông tin
+        entity.setAmount(request.getAmount());
+        entity.setTransferProofUrl(request.getTransferProofUrl());
+        entity.setStatus(DepositStatus.PENDING);
+        entity.setRejectionReason(null);
+        entity.setApprovedBy(null);
+        entity.setProcessedAt(null);
+        depositRequestRepository.save(entity);
+
+        log.info("Cập nhật yêu cầu nạp tiền bị từ chối: id={}, companyId={}, newAmount={}",
+                id, entity.getCompanyId(), request.getAmount());
+
+        return toResponseWithDetails(entity);
+    }
 }

@@ -1,0 +1,63 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+</head>
+
+<body>
+    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
+        <p>Hello <strong>{employeeName}</strong>,</p>
+        <p>Your attendance adjustment request has been <span style="color: #28a745; font-weight: bold;">APPROVED</span>.
+        </p>
+        <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
+            <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">ADJUSTMENT DETAILS</p>
+            <table style="width: 100%; border-collapse: collapse;">
+                <tr>
+                    <td style="padding: 8px 0; color: #666;">Work Date:</td>
+                    <td style="padding: 8px 0; text-align: right; font-weight: bold;">{workDate}</td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="padding: 12px 0 4px 0; color: #666; font-size: 13px; font-weight: bold;">
+                        Original Times:</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px 0 4px 16px; color: #666;">Check-in:</td>
+                    <td style="padding: 4px 0; text-align: right;">{originalCheckIn}</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px 0 4px 16px; color: #666;">Check-out:</td>
+                    <td style="padding: 4px 0; text-align: right;">{originalCheckOut}</td>
+                </tr>
+                <tr>
+                    <td colspan="2" style="padding: 12px 0 4px 0; color: #28a745; font-size: 13px; font-weight: bold;">
+                        Approved Times:</td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px 0 4px 16px; color: #666;">Check-in:</td>
+                    <td style="padding: 4px 0; text-align: right; font-weight: bold; color: #28a745;">{approvedCheckIn}
+                    </td>
+                </tr>
+                <tr>
+                    <td style="padding: 4px 0 4px 16px; color: #666;">Check-out:</td>
+                    <td style="padding: 4px 0; text-align: right; font-weight: bold; color: #28a745;">{approvedCheckOut}
+                    </td>
+                </tr>
+                {breakSection}
+                <tr>
+                    <td style="padding: 12px 0 8px 0; color: #666;">Approved By:</td>
+                    <td style="padding: 12px 0 8px 0; text-align: right; font-weight: bold;">{approverName}</td>
+                </tr>
+            </table>
+        </div>
+        <p style="color: #999; font-size: 13px;">Your attendance record has been updated with the new times.</p>
+        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
+        <p>Best regards,<br><strong>Tamabee HR Team</strong></p>
+        <p style="font-size: 13px; color: #666;">
+            🌐 Website: <a href="https://tamabee.vn" style="color: #00b1ce;">https://tamabee.vn</a><br>
+            📧 Email: <a href="mailto:support@tamabee.vn" style="color: #00b1ce;">support@tamabee.vn</a>
+        </p>
+    </div>
+</body>
+
+</html>

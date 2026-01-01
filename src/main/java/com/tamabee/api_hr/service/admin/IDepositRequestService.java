@@ -80,4 +80,28 @@ public interface IDepositRequestService {
      * @return thông tin yêu cầu đã từ chối
      */
     DepositRequestResponse reject(Long id, RejectRequest request);
+
+    // ==================== Company Self-Service Operations ====================
+
+    /**
+     * Hủy yêu cầu nạp tiền đang chờ duyệt
+     * Chỉ ADMIN_COMPANY có quyền hủy yêu cầu của company mình
+     * Chỉ có thể hủy khi status = PENDING
+     *
+     * @param id ID của yêu cầu nạp tiền
+     * @return thông tin yêu cầu đã hủy
+     */
+    DepositRequestResponse cancel(Long id);
+
+    /**
+     * Cập nhật yêu cầu nạp tiền bị từ chối
+     * Chỉ ADMIN_COMPANY có quyền cập nhật yêu cầu của company mình
+     * Chỉ có thể cập nhật khi status = REJECTED
+     * Sau khi cập nhật, status sẽ chuyển về PENDING
+     *
+     * @param id      ID của yêu cầu nạp tiền
+     * @param request thông tin cập nhật (amount, transferProofUrl)
+     * @return thông tin yêu cầu đã cập nhật
+     */
+    DepositRequestResponse update(Long id, DepositRequestCreateRequest request);
 }

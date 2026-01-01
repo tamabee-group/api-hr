@@ -1,0 +1,16 @@
+{
+  "enabled": true,
+  "name": "Maven Test on Java Save",
+  "description": "Tự động chạy Maven test khi save file Java trong api-hr để kiểm tra code có lỗi không",
+  "version": "1",
+  "when": {
+    "type": "fileEdited",
+    "patterns": [
+      "api-hr/**/*.java"
+    ]
+  },
+  "then": {
+    "type": "askAgent",
+    "prompt": "Run `cd api-hr && ./mvnw test` to check if the Java code has any errors. If tests fail, analyze the errors and suggest fixes."
+  }
+}

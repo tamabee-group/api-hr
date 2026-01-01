@@ -92,6 +92,19 @@ public class CompanyEmployeeController {
     }
 
     /**
+     * Lấy danh sách người có quyền duyệt (admin và manager)
+     * Cho phép tất cả nhân viên công ty truy cập để chọn người duyệt khi tạo yêu
+     * cầu
+     */
+    @GetMapping("/approvers")
+    @PreAuthorize(RoleConstants.HAS_ALL_COMPANY_ACCESS)
+    public ResponseEntity<BaseResponse<java.util.List<com.tamabee.api_hr.dto.response.ApproverResponse>>> getApprovers() {
+        Long companyId = getCurrentUserCompanyId();
+        var approvers = companyEmployeeService.getApprovers(companyId);
+        return ResponseEntity.ok(BaseResponse.success(approvers, "Lấy danh sách người duyệt thành công"));
+    }
+
+    /**
      * Lấy companyId của user đang đăng nhập
      */
     private Long getCurrentUserCompanyId() {

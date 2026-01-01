@@ -67,4 +67,31 @@ public class CompanyDepositRequestController {
 
         return ResponseEntity.ok(BaseResponse.success(deposits));
     }
+
+    /**
+     * Hủy yêu cầu nạp tiền đang chờ duyệt
+     * DELETE /api/company/deposits/{id}
+     * Chỉ ADMIN_COMPANY có quyền, chỉ hủy được khi status = PENDING
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize(RoleConstants.HAS_ADMIN_COMPANY)
+    public ResponseEntity<BaseResponse<DepositRequestResponse>> cancel(@PathVariable Long id) {
+        DepositRequestResponse response = depositRequestService.cancel(id);
+        return ResponseEntity.ok(BaseResponse.success(response, "Hủy yêu cầu nạp tiền thành công"));
+    }
+
+    /**
+     * Cập nhật yêu cầu nạp tiền bị từ chối
+     * PUT /api/company/deposits/{id}
+     * Chỉ ADMIN_COMPANY có quyền, chỉ cập nhật được khi status = REJECTED
+     * Sau khi cập nhật, status sẽ chuyển về PENDING
+     */
+    @PutMapping("/{id}")
+    @PreAuthorize(RoleConstants.HAS_ADMIN_COMPANY)
+    public ResponseEntity<BaseResponse<DepositRequestResponse>> update(
+            @PathVariable Long id,
+            @Valid @RequestBody DepositRequestCreateRequest request) {
+        DepositRequestResponse response = depositRequestService.update(id, request);
+        return ResponseEntity.ok(BaseResponse.success(response, "Cập nhật yêu cầu nạp tiền thành công"));
+    }
 }

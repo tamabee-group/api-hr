@@ -2,6 +2,7 @@ package com.tamabee.api_hr.service.company.impl;
 
 import com.tamabee.api_hr.dto.request.CreateCompanyEmployeeRequest;
 import com.tamabee.api_hr.dto.request.UpdateUserProfileRequest;
+import com.tamabee.api_hr.dto.response.ApproverResponse;
 import com.tamabee.api_hr.dto.response.UserResponse;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
@@ -29,8 +30,11 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import java.util.Arrays;
+import java.util.List;
 import java.util.Set;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 /**
  * Service implementation quản lý nhân viên công ty
@@ -189,6 +193,22 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
         userRepository.save(employee);
 
         return avatarUrl;
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public List<ApproverResponse> getApprovers(Long companyId) {
+        // Lấy danh sách admin và manager của công ty
+        List<UserRole> approverRoles = Arrays.asList(UserRole.ADMIN_COMPANY, UserRole.MANAGER_COMPANY);
+        List<UserEntity> approvers = userRepository.findByCompanyIdAndRoleInAndDeletedFalse(companyId, approverRoles);
+
+        return approvers.stream()
+                .map(user -> ApproverResponse.builder()
+                        .id(user.getId())
+                        .name(user.getProfile() != null ? user.getProfile().getName() : user.getEmail())
+                        .role(user.getRole().name())
+                        .build())
+                .collect(Collectors.toList());
     }
 
     // ==================== Private helper methods ====================

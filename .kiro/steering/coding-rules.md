@@ -115,6 +115,10 @@ public ResponseEntity<BaseResponse<CompanyResponse>> getCompanyById(@PathVariabl
 - Migration naming: `V{number}__{description}.sql`
 - Luôn dùng `CREATE INDEX IF NOT EXISTS`, `CREATE TYPE ... EXCEPTION WHEN duplicate_object`
 - Entity KHÔNG dùng `@ManyToOne`, `@OneToMany` - chỉ dùng Long cho foreign key fields
+- **Môi trường Dev**: Khi cần thay đổi schema, cập nhật trực tiếp vào file migration cũ (V1, V2, V3) thay vì tạo file migration mới, vì database sẽ được tạo lại từ đầu
+  - V1: Schema (tables, indexes, constraints)
+  - V2: Settings/Config data (plans, features, system settings)
+  - V3: Test data (sample companies, users, records)
 
 ## Email Service
 

@@ -7,6 +7,7 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 @Repository
@@ -29,7 +30,19 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     @EntityGraph(attributePaths = { "profile" })
     Page<UserEntity> findByCompanyIdAndDeletedFalse(Long companyId, Pageable pageable);
 
+    // Lấy tất cả nhân viên của công ty (không phân trang)
+    @EntityGraph(attributePaths = { "profile" })
+    List<UserEntity> findByCompanyIdAndDeletedFalse(Long companyId);
+
+    // Tìm user theo ID (chưa bị xóa)
+    Optional<UserEntity> findByIdAndDeletedFalse(Long id);
+
     long countByCompanyIdAndDeletedFalse(Long companyId);
+
+    // Lấy danh sách user theo companyId và roles (dùng cho lấy approvers)
+    @EntityGraph(attributePaths = { "profile" })
+    List<UserEntity> findByCompanyIdAndRoleInAndDeletedFalse(Long companyId,
+            List<com.tamabee.api_hr.enums.UserRole> roles);
 
     // Legacy methods (không filter deleted - dùng cho internal)
     Optional<UserEntity> findByEmail(String email);

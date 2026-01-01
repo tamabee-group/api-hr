@@ -2,10 +2,13 @@ package com.tamabee.api_hr.service.company;
 
 import com.tamabee.api_hr.dto.request.CreateCompanyEmployeeRequest;
 import com.tamabee.api_hr.dto.request.UpdateUserProfileRequest;
+import com.tamabee.api_hr.dto.response.ApproverResponse;
 import com.tamabee.api_hr.dto.response.UserResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
+
+import java.util.List;
 
 /**
  * Service quản lý nhân viên công ty
@@ -59,4 +62,12 @@ public interface ICompanyEmployeeService {
      * @return URL ảnh đã upload
      */
     String uploadEmployeeAvatar(Long companyId, Long employeeId, MultipartFile file);
+
+    /**
+     * Lấy danh sách người có quyền duyệt (admin và manager)
+     * 
+     * @param companyId ID công ty
+     * @return danh sách người duyệt
+     */
+    List<ApproverResponse> getApprovers(Long companyId);
 }

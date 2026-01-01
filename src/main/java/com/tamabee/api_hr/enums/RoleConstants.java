@@ -33,4 +33,10 @@ public final class RoleConstants {
 
     // Tamabee Staff - Admin + Manager có quyền xử lý deposit requests
     public static final String HAS_TAMABEE_STAFF = "hasAnyRole('ADMIN_TAMABEE', 'MANAGER_TAMABEE')";
+
+    // Employee Company - Nhân viên công ty có quyền truy cập các tính năng cơ bản
+    public static final String HAS_EMPLOYEE_COMPANY = "hasRole('EMPLOYEE_COMPANY')";
+
+    // All Company Access - Tất cả nhân viên công ty (Admin, Manager, Employee)
+    public static final String HAS_ALL_COMPANY_ACCESS = "hasAnyRole('ADMIN_COMPANY', 'MANAGER_COMPANY', 'EMPLOYEE_COMPANY')";
 }
