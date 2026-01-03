@@ -6,5 +6,6 @@ package com.tamabee.api_hr.enums;
 public enum SalaryType {
     MONTHLY, // Lương tháng
     DAILY, // Lương ngày
-    HOURLY // Lương giờ
+    HOURLY, // Lương giờ
+    SHIFT_BASED // Lương theo ca
 }

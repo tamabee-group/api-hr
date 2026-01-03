@@ -47,6 +47,10 @@ public class EmployeeSalaryEntity extends BaseEntity {
     @Column(precision = 15, scale = 2)
     private BigDecimal hourlyRate;
 
+    // Lương theo ca (cho SHIFT_BASED)
+    @Column(precision = 15, scale = 2)
+    private BigDecimal shiftRate;
+
     // Ngày bắt đầu hiệu lực
     @Column(nullable = false)
     private LocalDate effectiveFrom;

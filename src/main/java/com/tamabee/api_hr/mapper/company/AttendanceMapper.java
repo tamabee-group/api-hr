@@ -1,16 +1,21 @@
 package com.tamabee.api_hr.mapper.company;
 
+import com.tamabee.api_hr.dto.config.AttendanceConfig;
+import com.tamabee.api_hr.dto.config.BreakConfig;
+import com.tamabee.api_hr.dto.config.RoundingConfig;
 import com.tamabee.api_hr.dto.request.CheckInRequest;
-import com.tamabee.api_hr.dto.response.AttendanceRecordResponse;
-import com.tamabee.api_hr.dto.response.AttendanceSummaryResponse;
+import com.tamabee.api_hr.dto.response.*;
 import com.tamabee.api_hr.entity.attendance.AttendanceRecordEntity;
+import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
 import com.tamabee.api_hr.enums.AttendanceStatus;
 import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
+import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 /**
  * Mapper chuyển đổi giữa AttendanceRecordEntity và DTOs
@@ -45,7 +50,7 @@ public class AttendanceMapper {
     }
 
     /**
-     * Chuyển entity sang response
+     * Chuyển entity sang response (basic - không có break records)
      */
     public AttendanceRecordResponse toResponse(AttendanceRecordEntity entity) {
         if (entity == null) {
@@ -65,6 +70,7 @@ public class AttendanceMapper {
                 .overtimeMinutes(entity.getOvertimeMinutes())
                 .lateMinutes(entity.getLateMinutes())
                 .earlyLeaveMinutes(entity.getEarlyLeaveMinutes())
+                .netWorkingMinutes(calculateNetWorkingMinutes(entity))
                 .status(entity.getStatus())
                 .checkInDeviceId(entity.getCheckInDeviceId())
                 .checkOutDeviceId(entity.getCheckOutDeviceId())
@@ -77,6 +83,7 @@ public class AttendanceMapper {
                 .effectiveBreakMinutes(entity.getEffectiveBreakMinutes())
                 .breakType(entity.getBreakType())
                 .breakCompliant(entity.getBreakCompliant())
+                .breakRecords(new ArrayList<>())
                 // Audit info
                 .adjustmentReason(entity.getAdjustmentReason())
                 .adjustedBy(entity.getAdjustedBy())
@@ -95,6 +102,128 @@ public class AttendanceMapper {
             response.setEmployeeName(employeeName);
         }
         return response;
+    }
+
+    /**
+     * Chuyển entity sang response đầy đủ (bao gồm break records, shift info,
+     * applied settings)
+     */
+    public AttendanceRecordResponse toFullResponse(
+            AttendanceRecordEntity entity,
+            String employeeName,
+            List<BreakRecordEntity> breakRecords,
+            ShiftInfoResponse shiftInfo,
+            AttendanceConfig attendanceConfig,
+            BreakConfig breakConfig) {
+
+        if (entity == null) {
+            return null;
+        }
+
+        AttendanceRecordResponse response = toResponse(entity, employeeName);
+
+        // Map break records
+        if (breakRecords != null && !breakRecords.isEmpty()) {
+            List<BreakRecordResponse> breakResponses = breakRecords.stream()
+                    .map(this::toBreakRecordResponse)
+                    .collect(Collectors.toList());
+            response.setBreakRecords(breakResponses);
+        }
+
+        // Set shift info
+        response.setShiftInfo(shiftInfo);
+
+        // Build applied settings snapshot
+        if (attendanceConfig != null || breakConfig != null) {
+            response.setAppliedSettings(buildAppliedSettingsSnapshot(attendanceConfig, breakConfig));
+        }
+
+        return response;
+    }
+
+    /**
+     * Chuyển BreakRecordEntity sang BreakRecordResponse
+     */
+    public BreakRecordResponse toBreakRecordResponse(BreakRecordEntity breakRecord) {
+        if (breakRecord == null) {
+            return null;
+        }
+
+        return BreakRecordResponse.builder()
+                .id(breakRecord.getId())
+                .breakNumber(breakRecord.getBreakNumber())
+                .breakStart(breakRecord.getBreakStart())
+                .breakEnd(breakRecord.getBreakEnd())
+                .actualBreakMinutes(breakRecord.getActualBreakMinutes())
+                .effectiveBreakMinutes(breakRecord.getEffectiveBreakMinutes())
+                .notes(breakRecord.getNotes())
+                .isActive(breakRecord.getBreakEnd() == null)
+                .build();
+    }
+
+    /**
+     * Build applied settings snapshot từ configs
+     */
+    private AppliedSettingsSnapshot buildAppliedSettingsSnapshot(
+            AttendanceConfig attendanceConfig,
+            BreakConfig breakConfig) {
+
+        AppliedSettingsSnapshot.AppliedSettingsSnapshotBuilder builder = AppliedSettingsSnapshot.builder();
+
+        if (attendanceConfig != null) {
+            builder.checkInRounding(toRoundingSnapshot(attendanceConfig.getCheckInRounding()))
+                    .checkOutRounding(toRoundingSnapshot(attendanceConfig.getCheckOutRounding()))
+                    .lateGraceMinutes(attendanceConfig.getLateGraceMinutes())
+                    .earlyLeaveGraceMinutes(attendanceConfig.getEarlyLeaveGraceMinutes());
+        }
+
+        if (breakConfig != null) {
+            builder.breakConfig(toBreakConfigSnapshot(breakConfig));
+        }
+
+        return builder.build();
+    }
+
+    /**
+     * Convert RoundingConfig to RoundingConfigSnapshot
+     */
+    private RoundingConfigSnapshot toRoundingSnapshot(RoundingConfig config) {
+        if (config == null) {
+            return null;
+        }
+        return RoundingConfigSnapshot.builder()
+                .interval(config.getInterval())
+                .direction(config.getDirection())
+                .build();
+    }
+
+    /**
+     * Convert BreakConfig to BreakConfigSnapshot
+     */
+    private BreakConfigSnapshot toBreakConfigSnapshot(BreakConfig config) {
+        if (config == null) {
+            return null;
+        }
+        return BreakConfigSnapshot.builder()
+                .breakType(config.getBreakType())
+                .minimumBreakMinutes(config.getMinimumBreakMinutes())
+                .maximumBreakMinutes(config.getMaximumBreakMinutes())
+                .maxBreaksPerDay(config.getMaxBreaksPerDay())
+                .legalMinimumBreakMinutes(config.getMinimumBreakMinutes())
+                .build();
+    }
+
+    /**
+     * Calculate net working minutes
+     */
+    private Integer calculateNetWorkingMinutes(AttendanceRecordEntity entity) {
+        if (entity.getWorkingMinutes() == null) {
+            return null;
+        }
+        Integer effectiveBreak = entity.getEffectiveBreakMinutes() != null
+                ? entity.getEffectiveBreakMinutes()
+                : 0;
+        return entity.getWorkingMinutes() - effectiveBreak;
     }
 
     /**
@@ -121,6 +250,8 @@ public class AttendanceMapper {
                 case ABSENT -> absentDays++;
                 case LEAVE -> leaveDays++;
                 case HOLIDAY -> holidayDays++;
+                default -> {
+                }
             }
 
             if (record.getWorkingMinutes() != null) {

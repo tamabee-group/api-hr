@@ -49,30 +49,14 @@ public class BreakRecordMapper {
 
         return BreakRecordResponse.builder()
                 .id(entity.getId())
-                .attendanceRecordId(entity.getAttendanceRecordId())
-                .employeeId(entity.getEmployeeId())
-                .companyId(entity.getCompanyId())
-                .workDate(entity.getWorkDate())
                 .breakNumber(entity.getBreakNumber())
                 .breakStart(entity.getBreakStart())
                 .breakEnd(entity.getBreakEnd())
                 .actualBreakMinutes(entity.getActualBreakMinutes())
                 .effectiveBreakMinutes(entity.getEffectiveBreakMinutes())
                 .notes(entity.getNotes())
-                .createdAt(entity.getCreatedAt())
-                .updatedAt(entity.getUpdatedAt())
+                .isActive(entity.getBreakEnd() == null)
                 .build();
-    }
-
-    /**
-     * Chuyển entity sang response với tên nhân viên
-     */
-    public BreakRecordResponse toResponse(BreakRecordEntity entity, String employeeName) {
-        BreakRecordResponse response = toResponse(entity);
-        if (response != null) {
-            response.setEmployeeName(employeeName);
-        }
-        return response;
     }
 
     /**

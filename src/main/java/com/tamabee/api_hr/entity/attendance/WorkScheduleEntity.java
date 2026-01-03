@@ -40,6 +40,11 @@ public class WorkScheduleEntity extends BaseEntity {
     @Column(nullable = false)
     private Boolean isDefault = false;
 
+    // Trạng thái hoạt động của lịch làm việc
+    // FALSE khi công ty switch sang FIXED_HOURS mode
+    @Column(nullable = false)
+    private Boolean isActive = true;
+
     // Dữ liệu chi tiết lịch làm việc (JSONB)
     // Chứa thông tin giờ bắt đầu, kết thúc, nghỉ trưa theo từng ngày/ca
     @JdbcTypeCode(SqlTypes.JSON)

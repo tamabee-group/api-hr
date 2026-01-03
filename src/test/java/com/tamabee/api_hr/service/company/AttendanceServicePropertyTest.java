@@ -16,6 +16,8 @@ import com.tamabee.api_hr.enums.ScheduleType;
 import com.tamabee.api_hr.mapper.company.AttendanceMapper;
 import com.tamabee.api_hr.repository.AttendanceRecordRepository;
 import com.tamabee.api_hr.repository.BreakRecordRepository;
+import com.tamabee.api_hr.repository.ShiftAssignmentRepository;
+import com.tamabee.api_hr.repository.ShiftTemplateRepository;
 import com.tamabee.api_hr.repository.UserRepository;
 import com.tamabee.api_hr.service.calculator.BreakCalculator;
 import com.tamabee.api_hr.service.calculator.IBreakCalculator;
@@ -64,6 +66,8 @@ public class AttendanceServicePropertyTest {
                 AttendanceRecordRepository recordRepo = mock(AttendanceRecordRepository.class);
                 BreakRecordRepository breakRecordRepo = mock(BreakRecordRepository.class);
                 UserRepository userRepo = mock(UserRepository.class);
+                ShiftAssignmentRepository shiftAssignmentRepo = mock(ShiftAssignmentRepository.class);
+                ShiftTemplateRepository shiftTemplateRepo = mock(ShiftTemplateRepository.class);
                 ICompanySettingsService settingsService = mock(ICompanySettingsService.class);
                 IWorkScheduleService scheduleService = mock(IWorkScheduleService.class);
 
@@ -101,8 +105,9 @@ public class AttendanceServicePropertyTest {
                 when(userRepo.findById(employeeId)).thenReturn(Optional.of(user));
 
                 AttendanceServiceImpl service = new AttendanceServiceImpl(
-                                recordRepo, breakRecordRepo, userRepo, settingsService, scheduleService,
-                                timeRoundingCalculator, breakCalculator, attendanceMapper);
+                                recordRepo, breakRecordRepo, userRepo, shiftAssignmentRepo, shiftTemplateRepo,
+                                settingsService, scheduleService, timeRoundingCalculator, breakCalculator,
+                                attendanceMapper);
 
                 // Thực hiện check-in
                 CheckInRequest request = CheckInRequest.builder().build();

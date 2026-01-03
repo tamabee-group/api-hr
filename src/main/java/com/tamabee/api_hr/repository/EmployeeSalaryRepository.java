@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
+import java.util.List;
 import java.util.Optional;
 
 /**
@@ -15,29 +16,45 @@ import java.util.Optional;
 @Repository
 public interface EmployeeSalaryRepository extends JpaRepository<EmployeeSalaryEntity, Long> {
 
-    /**
-     * Tìm thông tin lương hiện tại của nhân viên (có hiệu lực tại ngày chỉ định)
-     */
-    @Query("SELECT s FROM EmployeeSalaryEntity s WHERE s.deleted = false " +
-            "AND s.employeeId = :employeeId " +
-            "AND s.effectiveFrom <= :date " +
-            "AND (s.effectiveTo IS NULL OR s.effectiveTo >= :date) " +
-            "ORDER BY s.effectiveFrom DESC")
-    Optional<EmployeeSalaryEntity> findEffectiveSalary(
-            @Param("employeeId") Long employeeId,
-            @Param("date") LocalDate date);
+        /**
+         * Tìm thông tin lương hiện tại của nhân viên (có hiệu lực tại ngày chỉ định)
+         * Trả về danh sách để xử lý ở service layer (lấy phần tử đầu tiên)
+         */
+        @Query("SELECT s FROM EmployeeSalaryEntity s WHERE s.deleted = false " +
+                        "AND s.employeeId = :employeeId " +
+                        "AND s.effectiveFrom <= :date " +
+                        "AND (s.effectiveTo IS NULL OR s.effectiveTo >= :date) " +
+                        "ORDER BY s.effectiveFrom DESC")
+        List<EmployeeSalaryEntity> findEffectiveSalaries(
+                        @Param("employeeId") Long employeeId,
+                        @Param("date") LocalDate date);
 
-    /**
-     * Tìm thông tin lương mới nhất của nhân viên
-     */
-    @Query("SELECT s FROM EmployeeSalaryEntity s WHERE s.deleted = false " +
-            "AND s.employeeId = :employeeId " +
-            "ORDER BY s.effectiveFrom DESC " +
-            "LIMIT 1")
-    Optional<EmployeeSalaryEntity> findLatestSalary(@Param("employeeId") Long employeeId);
+        /**
+         * Tìm thông tin lương mới nhất của nhân viên
+         */
+        @Query("SELECT s FROM EmployeeSalaryEntity s WHERE s.deleted = false " +
+                        "AND s.employeeId = :employeeId " +
+                        "ORDER BY s.effectiveFrom DESC")
+        List<EmployeeSalaryEntity> findLatestSalaries(@Param("employeeId") Long employeeId);
 
-    /**
-     * Kiểm tra nhân viên có thông tin lương không
-     */
-    boolean existsByEmployeeIdAndDeletedFalse(Long employeeId);
+        /**
+         * Kiểm tra nhân viên có thông tin lương không
+         */
+        boolean existsByEmployeeIdAndDeletedFalse(Long employeeId);
+
+        /**
+         * Helper method để lấy salary hiệu lực (lấy phần tử đầu tiên từ list)
+         */
+        default Optional<EmployeeSalaryEntity> findEffectiveSalary(Long employeeId, LocalDate date) {
+                List<EmployeeSalaryEntity> salaries = findEffectiveSalaries(employeeId, date);
+                return salaries.isEmpty() ? Optional.empty() : Optional.of(salaries.get(0));
+        }
+
+        /**
+         * Helper method để lấy salary mới nhất (lấy phần tử đầu tiên từ list)
+         */
+        default Optional<EmployeeSalaryEntity> findLatestSalary(Long employeeId) {
+                List<EmployeeSalaryEntity> salaries = findLatestSalaries(employeeId);
+                return salaries.isEmpty() ? Optional.empty() : Optional.of(salaries.get(0));
+        }
 }

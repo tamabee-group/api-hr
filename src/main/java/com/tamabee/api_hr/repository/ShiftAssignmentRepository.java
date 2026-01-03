@@ -1,0 +1,110 @@
+package com.tamabee.api_hr.repository;
+
+import com.tamabee.api_hr.entity.attendance.ShiftAssignmentEntity;
+import com.tamabee.api_hr.enums.ShiftAssignmentStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
+@Repository
+public interface ShiftAssignmentRepository
+                extends JpaRepository<ShiftAssignmentEntity, Long>, JpaSpecificationExecutor<ShiftAssignmentEntity> {
+
+        /**
+         * Tìm shift assignment theo ID và chưa bị xóa
+         */
+        Optional<ShiftAssignmentEntity> findByIdAndDeletedFalse(Long id);
+
+        /**
+         * Lấy danh sách shift assignments của nhân viên theo ngày làm việc
+         */
+        List<ShiftAssignmentEntity> findByEmployeeIdAndWorkDateAndDeletedFalse(Long employeeId, LocalDate workDate);
+
+        /**
+         * Lấy danh sách shift assignments của nhân viên trong khoảng thời gian
+         */
+        List<ShiftAssignmentEntity> findByEmployeeIdAndWorkDateBetweenAndDeletedFalse(
+                        Long employeeId, LocalDate startDate, LocalDate endDate);
+
+        /**
+         * Lấy danh sách shift assignments của công ty (phân trang)
+         */
+        Page<ShiftAssignmentEntity> findByCompanyIdAndDeletedFalse(Long companyId, Pageable pageable);
+
+        /**
+         * Lấy danh sách shift assignments của công ty theo ngày
+         */
+        List<ShiftAssignmentEntity> findByCompanyIdAndWorkDateAndDeletedFalse(Long companyId, LocalDate workDate);
+
+        /**
+         * Lấy danh sách shift assignments của công ty trong khoảng thời gian
+         */
+        Page<ShiftAssignmentEntity> findByCompanyIdAndWorkDateBetweenAndDeletedFalse(
+                        Long companyId, LocalDate startDate, LocalDate endDate, Pageable pageable);
+
+        /**
+         * Lấy danh sách shift assignments theo status
+         */
+        Page<ShiftAssignmentEntity> findByCompanyIdAndStatusAndDeletedFalse(
+                        Long companyId, ShiftAssignmentStatus status, Pageable pageable);
+
+        /**
+         * Kiểm tra nhân viên có shift assignment vào ngày cụ thể không
+         */
+        boolean existsByEmployeeIdAndWorkDateAndDeletedFalse(Long employeeId, LocalDate workDate);
+
+        /**
+         * Kiểm tra overlap shift assignments cho nhân viên trong ngày
+         * (dùng để validate không có 2 ca trùng nhau)
+         */
+        @Query("SELECT COUNT(sa) > 0 FROM ShiftAssignmentEntity sa " +
+                        "JOIN ShiftTemplateEntity st ON sa.shiftTemplateId = st.id " +
+                        "WHERE sa.deleted = false " +
+                        "AND sa.employeeId = :employeeId " +
+                        "AND sa.workDate = :workDate " +
+                        "AND sa.id != :excludeId " +
+                        "AND sa.status != 'CANCELLED'")
+        boolean existsOverlappingAssignment(
+                        @Param("employeeId") Long employeeId,
+                        @Param("workDate") LocalDate workDate,
+                        @Param("excludeId") Long excludeId);
+
+        /**
+         * Đếm số shift assignments của nhân viên trong khoảng thời gian
+         */
+        long countByEmployeeIdAndWorkDateBetweenAndDeletedFalse(
+                        Long employeeId, LocalDate startDate, LocalDate endDate);
+
+        /**
+         * Lấy shift assignment theo shift template
+         */
+        List<ShiftAssignmentEntity> findByShiftTemplateIdAndDeletedFalse(Long shiftTemplateId);
+
+        /**
+         * Kiểm tra shift template có đang được sử dụng không
+         */
+        boolean existsByShiftTemplateIdAndDeletedFalse(Long shiftTemplateId);
+
+        /**
+         * Tìm các ca làm việc có thể đổi (cùng công ty, cùng ngày, khác nhân viên,
+         * status SCHEDULED)
+         */
+        @Query("SELECT sa FROM ShiftAssignmentEntity sa " +
+                        "WHERE sa.deleted = false " +
+                        "AND sa.companyId = :companyId " +
+                        "AND sa.employeeId != :excludeEmployeeId " +
+                        "AND sa.workDate = :workDate " +
+                        "AND sa.status = 'SCHEDULED'")
+        List<ShiftAssignmentEntity> findAvailableForSwap(
+                        @Param("companyId") Long companyId,
+                        @Param("excludeEmployeeId") Long excludeEmployeeId,
+                        @Param("workDate") LocalDate workDate);
+}

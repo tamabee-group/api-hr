@@ -5,6 +5,8 @@ import com.tamabee.api_hr.dto.request.*;
 import com.tamabee.api_hr.dto.response.BreakConfigResponse;
 import com.tamabee.api_hr.dto.response.CompanySettingsResponse;
 import com.tamabee.api_hr.dto.response.OvertimeConfigResponse;
+import com.tamabee.api_hr.dto.response.WorkModeChangeLogResponse;
+import com.tamabee.api_hr.dto.response.WorkModeConfigResponse;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.RoleConstants;
 import com.tamabee.api_hr.exception.NotFoundException;
@@ -19,6 +21,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 /**
  * Controller quản lý cấu hình chấm công và tính lương của công ty.
@@ -43,6 +47,38 @@ public class CompanySettingsController {
         Long companyId = getCurrentUserCompanyId();
         CompanySettingsResponse settings = companySettingsService.getSettings(companyId);
         return ResponseEntity.ok(BaseResponse.success(settings, "Lấy cấu hình công ty thành công"));
+    }
+
+    /**
+     * Lấy cấu hình work mode của công ty
+     */
+    @GetMapping("/work-mode")
+    public ResponseEntity<BaseResponse<WorkModeConfigResponse>> getWorkModeConfig() {
+        Long companyId = getCurrentUserCompanyId();
+        WorkModeConfigResponse config = companySettingsService.getWorkModeConfig(companyId);
+        return ResponseEntity.ok(BaseResponse.success(config, "Lấy cấu hình work mode thành công"));
+    }
+
+    /**
+     * Cập nhật cấu hình work mode của công ty
+     */
+    @PutMapping("/work-mode")
+    public ResponseEntity<BaseResponse<WorkModeConfigResponse>> updateWorkModeConfig(
+            @Valid @RequestBody WorkModeConfigRequest request) {
+        Long companyId = getCurrentUserCompanyId();
+        String changedBy = getCurrentUserEmail();
+        WorkModeConfigResponse config = companySettingsService.updateWorkModeConfig(companyId, request, changedBy);
+        return ResponseEntity.ok(BaseResponse.success(config, "Cập nhật cấu hình work mode thành công"));
+    }
+
+    /**
+     * Lấy lịch sử thay đổi work mode của công ty
+     */
+    @GetMapping("/work-mode/logs")
+    public ResponseEntity<BaseResponse<List<WorkModeChangeLogResponse>>> getWorkModeChangeLogs() {
+        Long companyId = getCurrentUserCompanyId();
+        List<WorkModeChangeLogResponse> logs = companySettingsService.getWorkModeChangeLogs(companyId);
+        return ResponseEntity.ok(BaseResponse.success(logs, "Lấy lịch sử thay đổi work mode thành công"));
     }
 
     /**
@@ -144,5 +180,13 @@ public class CompanySettingsController {
         UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
                 .orElseThrow(() -> NotFoundException.user(email));
         return user.getCompanyId();
+    }
+
+    /**
+     * Lấy email của user đang đăng nhập
+     */
+    private String getCurrentUserEmail() {
+        var authentication = SecurityContextHolder.getContext().getAuthentication();
+        return authentication.getName();
     }
 }

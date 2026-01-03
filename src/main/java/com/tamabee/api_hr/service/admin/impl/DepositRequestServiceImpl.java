@@ -281,9 +281,15 @@ public class DepositRequestServiceImpl implements IDepositRequestService {
         try {
             CompanyEntity company = companyRepository.findById(entity.getCompanyId()).orElse(null);
             if (company != null) {
-                // TODO: Implement sendDepositApproved method in IEmailService
-                // emailService.sendDepositApproved(company.getEmail(), company.getName(),
-                // entity.getAmount(), company.getLanguage());
+                // Lấy balance hiện tại của wallet sau khi nạp tiền
+                BigDecimal currentBalance = walletService.getByCompanyId(entity.getCompanyId()).getBalance();
+
+                emailService.sendDepositApproved(
+                        company.getEmail(),
+                        company.getName(),
+                        entity.getAmount(),
+                        currentBalance,
+                        company.getLanguage());
                 log.info("Email thông báo nạp tiền thành công đã được gửi đến: {}", company.getEmail());
             }
         } catch (Exception e) {

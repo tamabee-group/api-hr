@@ -12,9 +12,9 @@ import java.math.RoundingMode;
 import java.util.List;
 
 /**
- * Calculator tính toán lương tổng hợp
- * Tích hợp: OvertimeCalculator, AllowanceCalculator, DeductionCalculator
- * Tính: base salary, gross salary, net salary
+ * Calculator tính toán lương tổng hợp.
+ * Tích hợp: OvertimeCalculator, AllowanceCalculator, DeductionCalculator.
+ * Hỗ trợ các loại lương: MONTHLY, DAILY, HOURLY, SHIFT_BASED.
  */
 @Component
 @RequiredArgsConstructor
@@ -36,7 +36,6 @@ public class PayrollCalculator implements IPayrollCalculator {
             AllowanceConfig allowanceConfig,
             DeductionConfig deductionConfig) {
 
-        // Gọi overload method với breakConfig = null
         return calculatePayroll(salaryInfo, attendance, dailyDetails,
                 payrollConfig, overtimeConfig, allowanceConfig, deductionConfig, null);
     }
@@ -59,40 +58,31 @@ public class PayrollCalculator implements IPayrollCalculator {
         // 1. Tính lương cơ bản
         BigDecimal baseSalary = calculateBaseSalary(salaryInfo, attendance, payrollConfig);
 
-        // 2. Tính lương giờ để tính overtime
+        // 2. Tính lương giờ để tính overtime và break deduction
         BigDecimal hourlyRate = calculateHourlyRate(salaryInfo, payrollConfig);
 
         // 3. Tính tăng ca
-        OvertimeResult overtimeResult = overtimeCalculator.calculateOvertime(
-                dailyDetails, overtimeConfig, hourlyRate);
+        OvertimeResult overtimeResult = calculateOvertime(dailyDetails, overtimeConfig, hourlyRate);
         BigDecimal totalOvertimePay = overtimeResult.getTotalOvertimePay();
 
         // 4. Tính phụ cấp
-        AllowanceResult allowanceResult = allowanceCalculator.calculateAllowances(
-                allowanceConfig, attendance);
+        AllowanceResult allowanceResult = calculateAllowances(allowanceConfig, attendance);
         BigDecimal totalAllowances = allowanceResult.getTotalAllowances();
 
-        // 5. Tính break deduction nếu có
+        // 5. Tính break deduction
         BigDecimal breakDeductionAmount = calculateBreakDeduction(
                 attendance != null ? attendance.getTotalBreakMinutes() : null,
                 hourlyRate, breakConfig);
 
-        // 6. Tính lương gộp = base + overtime + allowances
-        BigDecimal grossSalary = baseSalary
-                .add(totalOvertimePay)
-                .add(totalAllowances);
+        // 6. Tính lương gộp
+        BigDecimal grossSalary = calculateGrossSalary(baseSalary, totalOvertimePay, totalAllowances);
 
-        // 7. Tính khấu trừ (dựa trên gross salary)
-        DeductionResult deductionResult = deductionCalculator.calculateDeductions(
-                deductionConfig, attendance, grossSalary);
-        BigDecimal totalDeductions = deductionResult.getTotalDeductions()
-                .add(breakDeductionAmount);
+        // 7. Tính khấu trừ (bao gồm penalties)
+        DeductionResult deductionResult = calculateDeductions(deductionConfig, attendance, grossSalary);
+        BigDecimal totalDeductions = deductionResult.getTotalDeductions().add(breakDeductionAmount);
 
-        // 8. Tính lương thực nhận = gross - deductions
-        BigDecimal netSalary = grossSalary.subtract(totalDeductions);
-
-        // Làm tròn lương nếu cần
-        netSalary = roundSalary(netSalary, payrollConfig);
+        // 8. Tính lương thực nhận
+        BigDecimal netSalary = calculateNetSalary(grossSalary, totalDeductions, payrollConfig);
 
         return PayrollResult.builder()
                 .salaryType(salaryInfo.getSalaryType())
@@ -111,12 +101,42 @@ public class PayrollCalculator implements IPayrollCalculator {
                 .build();
     }
 
-    /**
-     * Tính break deduction amount
-     * UNPAID: deduction = (break minutes / 60) × hourly rate
-     * PAID: deduction = 0
-     */
-    private BigDecimal calculateBreakDeduction(
+    @Override
+    public BigDecimal calculateBaseSalary(
+            EmployeeSalaryInfo salaryInfo,
+            AttendanceSummary attendance,
+            PayrollConfig config) {
+
+        if (salaryInfo == null) {
+            return BigDecimal.ZERO;
+        }
+
+        SalaryType salaryType = salaryInfo.getSalaryType();
+        if (salaryType == null) {
+            salaryType = config != null && config.getDefaultSalaryType() != null
+                    ? config.getDefaultSalaryType()
+                    : SalaryType.MONTHLY;
+        }
+
+        return switch (salaryType) {
+            case MONTHLY -> calculateMonthlySalary(salaryInfo, attendance, config);
+            case DAILY -> calculateDailySalary(salaryInfo, attendance);
+            case HOURLY -> calculateHourlySalary(salaryInfo, attendance);
+            case SHIFT_BASED -> calculateShiftBasedSalary(salaryInfo, attendance);
+        };
+    }
+
+    @Override
+    public OvertimeResult calculateOvertime(
+            List<DailyOvertimeDetail> dailyDetails,
+            OvertimeConfig overtimeConfig,
+            BigDecimal hourlyRate) {
+
+        return overtimeCalculator.calculateOvertime(dailyDetails, overtimeConfig, hourlyRate);
+    }
+
+    @Override
+    public BigDecimal calculateBreakDeduction(
             Integer totalBreakMinutes,
             BigDecimal hourlyRate,
             BreakConfig breakConfig) {
@@ -141,42 +161,181 @@ public class PayrollCalculator implements IPayrollCalculator {
         return breakHours.multiply(hourlyRate).setScale(0, RoundingMode.HALF_UP);
     }
 
+    @Override
+    public AllowanceResult calculateAllowances(
+            AllowanceConfig allowanceConfig,
+            AttendanceSummary attendance) {
+
+        return allowanceCalculator.calculateAllowances(allowanceConfig, attendance);
+    }
+
+    @Override
+    public DeductionResult calculateDeductions(
+            DeductionConfig deductionConfig,
+            AttendanceSummary attendance,
+            BigDecimal grossSalary) {
+
+        return deductionCalculator.calculateDeductions(deductionConfig, attendance, grossSalary);
+    }
+
+    @Override
+    public BigDecimal calculateGrossSalary(
+            BigDecimal baseSalary,
+            BigDecimal overtimePay,
+            BigDecimal totalAllowances) {
+
+        BigDecimal gross = baseSalary != null ? baseSalary : BigDecimal.ZERO;
+
+        if (overtimePay != null) {
+            gross = gross.add(overtimePay);
+        }
+
+        if (totalAllowances != null) {
+            gross = gross.add(totalAllowances);
+        }
+
+        return gross;
+    }
+
+    @Override
+    public BigDecimal calculateNetSalary(
+            BigDecimal grossSalary,
+            BigDecimal totalDeductions,
+            PayrollConfig payrollConfig) {
+
+        BigDecimal net = grossSalary != null ? grossSalary : BigDecimal.ZERO;
+
+        if (totalDeductions != null) {
+            net = net.subtract(totalDeductions);
+        }
+
+        return roundSalary(net, payrollConfig);
+    }
+
+    @Override
+    public BigDecimal calculateHourlyRate(
+            EmployeeSalaryInfo salaryInfo,
+            PayrollConfig config) {
+
+        if (salaryInfo == null) {
+            return BigDecimal.ZERO;
+        }
+
+        // Ưu tiên hourlyRate nếu có
+        if (salaryInfo.getHourlyRate() != null) {
+            return salaryInfo.getHourlyRate();
+        }
+
+        int hoursPerDay = config != null && config.getStandardWorkingHoursPerDay() != null
+                ? config.getStandardWorkingHoursPerDay()
+                : 8;
+
+        // Tính từ dailyRate
+        if (salaryInfo.getDailyRate() != null) {
+            return salaryInfo.getDailyRate()
+                    .divide(BigDecimal.valueOf(hoursPerDay), 4, RoundingMode.HALF_UP);
+        }
+
+        // Tính từ monthlySalary
+        if (salaryInfo.getMonthlySalary() != null) {
+            int daysPerMonth = config != null && config.getStandardWorkingDaysPerMonth() != null
+                    ? config.getStandardWorkingDaysPerMonth()
+                    : 22;
+            int hoursPerMonth = daysPerMonth * hoursPerDay;
+
+            return salaryInfo.getMonthlySalary()
+                    .divide(BigDecimal.valueOf(hoursPerMonth), 4, RoundingMode.HALF_UP);
+        }
+
+        // Tính từ shiftRate (giả định 1 ca = 8 giờ)
+        if (salaryInfo.getShiftRate() != null) {
+            return salaryInfo.getShiftRate()
+                    .divide(BigDecimal.valueOf(hoursPerDay), 4, RoundingMode.HALF_UP);
+        }
+
+        return BigDecimal.ZERO;
+    }
+
+    @Override
+    public BigDecimal calculatePenalties(
+            DeductionConfig deductionConfig,
+            AttendanceSummary attendance) {
+
+        if (deductionConfig == null || attendance == null) {
+            return BigDecimal.ZERO;
+        }
+
+        BigDecimal totalPenalty = BigDecimal.ZERO;
+
+        // Phạt đi muộn
+        if (Boolean.TRUE.equals(deductionConfig.getEnableLatePenalty())
+                && deductionConfig.getLatePenaltyPerMinute() != null
+                && attendance.getTotalLateMinutes() != null
+                && attendance.getTotalLateMinutes() > 0) {
+
+            BigDecimal latePenalty = deductionConfig.getLatePenaltyPerMinute()
+                    .multiply(BigDecimal.valueOf(attendance.getTotalLateMinutes()))
+                    .setScale(0, RoundingMode.HALF_UP);
+            totalPenalty = totalPenalty.add(latePenalty);
+        }
+
+        // Phạt về sớm
+        if (Boolean.TRUE.equals(deductionConfig.getEnableEarlyLeavePenalty())
+                && deductionConfig.getEarlyLeavePenaltyPerMinute() != null
+                && attendance.getTotalEarlyLeaveMinutes() != null
+                && attendance.getTotalEarlyLeaveMinutes() > 0) {
+
+            BigDecimal earlyLeavePenalty = deductionConfig.getEarlyLeavePenaltyPerMinute()
+                    .multiply(BigDecimal.valueOf(attendance.getTotalEarlyLeaveMinutes()))
+                    .setScale(0, RoundingMode.HALF_UP);
+            totalPenalty = totalPenalty.add(earlyLeavePenalty);
+        }
+
+        return totalPenalty;
+    }
+
+    // === Private helper methods ===
+
     /**
-     * Tính lương cơ bản theo loại lương
+     * Lương tháng = monthlySalary × (workingDays / standardWorkingDays)
+     * Prorate theo số ngày làm việc thực tế
      */
-    private BigDecimal calculateBaseSalary(
+    private BigDecimal calculateMonthlySalary(
             EmployeeSalaryInfo salaryInfo,
             AttendanceSummary attendance,
             PayrollConfig config) {
 
-        SalaryType salaryType = salaryInfo.getSalaryType();
-        if (salaryType == null) {
-            salaryType = config != null && config.getDefaultSalaryType() != null
-                    ? config.getDefaultSalaryType()
-                    : SalaryType.MONTHLY;
+        if (salaryInfo.getMonthlySalary() == null) {
+            return BigDecimal.ZERO;
         }
 
-        return switch (salaryType) {
-            case MONTHLY -> calculateMonthlySalary(salaryInfo);
-            case DAILY -> calculateDailySalary(salaryInfo, attendance);
-            case HOURLY -> calculateHourlySalary(salaryInfo, attendance);
-        };
-    }
+        // Nếu không có attendance hoặc không cần prorate, trả về full salary
+        if (attendance == null || attendance.getWorkingDays() == null) {
+            return salaryInfo.getMonthlySalary();
+        }
 
-    /**
-     * Lương tháng = monthlySalary (cố định)
-     */
-    private BigDecimal calculateMonthlySalary(EmployeeSalaryInfo salaryInfo) {
-        return salaryInfo.getMonthlySalary() != null
-                ? salaryInfo.getMonthlySalary()
-                : BigDecimal.ZERO;
+        int standardDays = config != null && config.getStandardWorkingDaysPerMonth() != null
+                ? config.getStandardWorkingDaysPerMonth()
+                : 22;
+
+        // Prorate: monthlySalary × (actualDays / standardDays)
+        return salaryInfo.getMonthlySalary()
+                .multiply(BigDecimal.valueOf(attendance.getWorkingDays()))
+                .divide(BigDecimal.valueOf(standardDays), 0, RoundingMode.HALF_UP);
     }
 
     /**
      * Lương ngày = dailyRate × workingDays
      */
-    private BigDecimal calculateDailySalary(EmployeeSalaryInfo salaryInfo, AttendanceSummary attendance) {
-        if (salaryInfo.getDailyRate() == null || attendance == null || attendance.getWorkingDays() == null) {
+    private BigDecimal calculateDailySalary(
+            EmployeeSalaryInfo salaryInfo,
+            AttendanceSummary attendance) {
+
+        if (salaryInfo.getDailyRate() == null) {
+            return BigDecimal.ZERO;
+        }
+
+        if (attendance == null || attendance.getWorkingDays() == null) {
             return BigDecimal.ZERO;
         }
 
@@ -188,8 +347,15 @@ public class PayrollCalculator implements IPayrollCalculator {
     /**
      * Lương giờ = hourlyRate × workingHours
      */
-    private BigDecimal calculateHourlySalary(EmployeeSalaryInfo salaryInfo, AttendanceSummary attendance) {
-        if (salaryInfo.getHourlyRate() == null || attendance == null || attendance.getWorkingHours() == null) {
+    private BigDecimal calculateHourlySalary(
+            EmployeeSalaryInfo salaryInfo,
+            AttendanceSummary attendance) {
+
+        if (salaryInfo.getHourlyRate() == null) {
+            return BigDecimal.ZERO;
+        }
+
+        if (attendance == null || attendance.getWorkingHours() == null) {
             return BigDecimal.ZERO;
         }
 
@@ -199,43 +365,35 @@ public class PayrollCalculator implements IPayrollCalculator {
     }
 
     /**
-     * Tính lương giờ từ thông tin lương
+     * Lương theo ca = shiftRate × numberOfShifts
      */
-    private BigDecimal calculateHourlyRate(EmployeeSalaryInfo salaryInfo, PayrollConfig config) {
-        if (salaryInfo.getHourlyRate() != null) {
-            return salaryInfo.getHourlyRate();
+    private BigDecimal calculateShiftBasedSalary(
+            EmployeeSalaryInfo salaryInfo,
+            AttendanceSummary attendance) {
+
+        if (salaryInfo.getShiftRate() == null) {
+            return BigDecimal.ZERO;
         }
 
-        if (salaryInfo.getDailyRate() != null && config != null) {
-            int hoursPerDay = config.getStandardWorkingHoursPerDay() != null
-                    ? config.getStandardWorkingHoursPerDay()
-                    : 8;
-            return salaryInfo.getDailyRate()
-                    .divide(BigDecimal.valueOf(hoursPerDay), 4, RoundingMode.HALF_UP);
+        if (attendance == null || attendance.getNumberOfShifts() == null) {
+            return BigDecimal.ZERO;
         }
 
-        if (salaryInfo.getMonthlySalary() != null && config != null) {
-            int daysPerMonth = config.getStandardWorkingDaysPerMonth() != null
-                    ? config.getStandardWorkingDaysPerMonth()
-                    : 22;
-            int hoursPerDay = config.getStandardWorkingHoursPerDay() != null
-                    ? config.getStandardWorkingHoursPerDay()
-                    : 8;
-            int hoursPerMonth = daysPerMonth * hoursPerDay;
-
-            return salaryInfo.getMonthlySalary()
-                    .divide(BigDecimal.valueOf(hoursPerMonth), 4, RoundingMode.HALF_UP);
-        }
-
-        return BigDecimal.ZERO;
+        return salaryInfo.getShiftRate()
+                .multiply(BigDecimal.valueOf(attendance.getNumberOfShifts()))
+                .setScale(0, RoundingMode.HALF_UP);
     }
 
     /**
      * Làm tròn lương theo cấu hình
      */
     private BigDecimal roundSalary(BigDecimal salary, PayrollConfig config) {
-        if (salary == null || config == null || config.getSalaryRounding() == null) {
-            return salary != null ? salary.setScale(0, RoundingMode.HALF_UP) : BigDecimal.ZERO;
+        if (salary == null) {
+            return BigDecimal.ZERO;
+        }
+
+        if (config == null || config.getSalaryRounding() == null) {
+            return salary.setScale(0, RoundingMode.HALF_UP);
         }
 
         return switch (config.getSalaryRounding()) {

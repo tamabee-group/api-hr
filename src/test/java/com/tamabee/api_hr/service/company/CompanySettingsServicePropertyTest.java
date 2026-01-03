@@ -6,11 +6,15 @@ import com.tamabee.api_hr.dto.config.*;
 import com.tamabee.api_hr.entity.company.CompanySettingEntity;
 import com.tamabee.api_hr.exception.ConflictException;
 import com.tamabee.api_hr.repository.CompanySettingsRepository;
+import com.tamabee.api_hr.repository.WorkModeChangeLogRepository;
+import com.tamabee.api_hr.repository.WorkScheduleRepository;
 import com.tamabee.api_hr.service.calculator.LegalBreakRequirements;
 import com.tamabee.api_hr.service.calculator.LegalOvertimeRequirements;
+import com.tamabee.api_hr.service.company.cache.CompanySettingsCache;
 import com.tamabee.api_hr.service.company.impl.CompanySettingsServiceImpl;
 import net.jqwik.api.*;
 import org.mockito.ArgumentCaptor;
+import org.springframework.beans.factory.ObjectProvider;
 
 import java.math.BigDecimal;
 import java.time.LocalTime;
@@ -47,12 +51,19 @@ public class CompanySettingsServicePropertyTest {
     void initializeDefaultSettingsCreatesNonNullDefaults(@ForAll("companyIds") Long companyId) {
         // Arrange
         CompanySettingsRepository mockRepository = mock(CompanySettingsRepository.class);
+        WorkModeChangeLogRepository mockLogRepo = mock(WorkModeChangeLogRepository.class);
+        WorkScheduleRepository mockScheduleRepo = mock(WorkScheduleRepository.class);
+        @SuppressWarnings("unchecked")
+        ObjectProvider<CompanySettingsCache> mockCacheProvider = mock(ObjectProvider.class);
+        when(mockCacheProvider.getIfAvailable()).thenReturn(null);
+
         when(mockRepository.existsByCompanyIdAndDeletedFalse(companyId)).thenReturn(false);
         when(mockRepository.save(any(CompanySettingEntity.class)))
                 .thenAnswer(invocation -> invocation.getArgument(0));
 
         CompanySettingsServiceImpl service = new CompanySettingsServiceImpl(
-                mockRepository, objectMapper, legalBreakRequirements, legalOvertimeRequirements);
+                mockRepository, mockLogRepo, mockScheduleRepo, objectMapper,
+                legalBreakRequirements, legalOvertimeRequirements, mockCacheProvider);
 
         // Act
         service.initializeDefaultSettings(companyId);
@@ -88,10 +99,17 @@ public class CompanySettingsServicePropertyTest {
     void initializeDefaultSettingsThrowsWhenAlreadyExists(@ForAll("companyIds") Long companyId) {
         // Arrange
         CompanySettingsRepository mockRepository = mock(CompanySettingsRepository.class);
+        WorkModeChangeLogRepository mockLogRepo = mock(WorkModeChangeLogRepository.class);
+        WorkScheduleRepository mockScheduleRepo = mock(WorkScheduleRepository.class);
+        @SuppressWarnings("unchecked")
+        ObjectProvider<CompanySettingsCache> mockCacheProvider = mock(ObjectProvider.class);
+        when(mockCacheProvider.getIfAvailable()).thenReturn(null);
+
         when(mockRepository.existsByCompanyIdAndDeletedFalse(companyId)).thenReturn(true);
 
         CompanySettingsServiceImpl service = new CompanySettingsServiceImpl(
-                mockRepository, objectMapper, legalBreakRequirements, legalOvertimeRequirements);
+                mockRepository, mockLogRepo, mockScheduleRepo, objectMapper,
+                legalBreakRequirements, legalOvertimeRequirements, mockCacheProvider);
 
         // Act & Assert
         assertThrows(ConflictException.class, () -> service.initializeDefaultSettings(companyId),

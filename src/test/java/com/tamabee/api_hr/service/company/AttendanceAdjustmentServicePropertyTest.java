@@ -449,15 +449,22 @@ public class AttendanceAdjustmentServicePropertyTest {
                 // Verify: attendanceService.adjustAttendance được gọi
                 verify(attendanceService).adjustAttendance(eq(attendanceRecordId), eq(managerId), any());
 
-                // Verify: breakRecordId được truyền đúng trong request
+                // Verify: breakAdjustments được truyền đúng trong request
                 assertNotNull(capturedRequest[0], "AdjustAttendanceRequest should be captured");
-                assertEquals(targetBreakRecordId, capturedRequest[0].getBreakRecordId(),
-                                "BreakRecordId should be passed to attendance service to update only specific break");
+                assertNotNull(capturedRequest[0].getBreakAdjustments(), "BreakAdjustments should not be null");
+                assertFalse(capturedRequest[0].getBreakAdjustments().isEmpty(), "BreakAdjustments should not be empty");
+
+                // Tìm break adjustment với targetBreakRecordId
+                var breakAdjustment = capturedRequest[0].getBreakAdjustments().stream()
+                                .filter(ba -> targetBreakRecordId.equals(ba.getBreakRecordId()))
+                                .findFirst()
+                                .orElse(null);
+                assertNotNull(breakAdjustment, "BreakAdjustment with targetBreakRecordId should exist");
 
                 // Verify: break times được truyền đúng
-                assertEquals(requestedBreakStart, capturedRequest[0].getBreakStartTime(),
+                assertEquals(requestedBreakStart, breakAdjustment.getBreakStartTime(),
                                 "Requested break start time should be passed to attendance service");
-                assertEquals(requestedBreakEnd, capturedRequest[0].getBreakEndTime(),
+                assertEquals(requestedBreakEnd, breakAdjustment.getBreakEndTime(),
                                 "Requested break end time should be passed to attendance service");
         }
 

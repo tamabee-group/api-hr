@@ -19,6 +19,7 @@ public class CompanySettingsResponse {
 
     private Long id;
     private Long companyId;
+    private WorkModeConfig workModeConfig;
     private AttendanceConfig attendanceConfig;
     private PayrollConfig payrollConfig;
     private OvertimeConfig overtimeConfig;

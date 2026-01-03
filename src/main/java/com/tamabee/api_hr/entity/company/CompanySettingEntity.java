@@ -1,11 +1,14 @@
 package com.tamabee.api_hr.entity.company;
 
 import com.tamabee.api_hr.entity.BaseEntity;
+import com.tamabee.api_hr.enums.WorkMode;
 import jakarta.persistence.*;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
+
+import java.time.LocalTime;
 
 /**
  * Entity lưu trữ cấu hình chấm công và tính lương của từng công ty.
@@ -17,13 +20,28 @@ import org.hibernate.type.SqlTypes;
 @Entity
 @Table(name = "company_settings", indexes = {
         @Index(name = "idx_company_settings_company_id", columnList = "companyId", unique = true),
-        @Index(name = "idx_company_settings_deleted", columnList = "deleted")
+        @Index(name = "idx_company_settings_deleted", columnList = "deleted"),
+        @Index(name = "idx_company_settings_work_mode", columnList = "workMode")
 })
 public class CompanySettingEntity extends BaseEntity {
 
     // ID công ty (foreign key đến companies table)
     @Column(nullable = false, unique = true)
     private Long companyId;
+
+    // Chế độ làm việc của công ty
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    private WorkMode workMode = WorkMode.FLEXIBLE_SHIFT;
+
+    // Giờ bắt đầu làm việc mặc định (dùng cho FIXED_HOURS mode)
+    private LocalTime defaultWorkStartTime;
+
+    // Giờ kết thúc làm việc mặc định (dùng cho FIXED_HOURS mode)
+    private LocalTime defaultWorkEndTime;
+
+    // Thời gian nghỉ giải lao mặc định (phút) (dùng cho FIXED_HOURS mode)
+    private Integer defaultBreakMinutes;
 
     // Cấu hình chấm công (giờ làm việc, làm tròn, grace period, device/location)
     @JdbcTypeCode(SqlTypes.JSON)

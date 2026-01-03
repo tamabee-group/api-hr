@@ -460,15 +460,17 @@ public class AttendanceAdjustmentServiceImpl implements IAttendanceAdjustmentSer
                         adjustRequest.setCheckOutTime(adjustment.getRequestedCheckOut());
                 }
 
-                // Truyền breakRecordId để chỉ cập nhật break record cụ thể
-                if (adjustment.getBreakRecordId() != null) {
-                        adjustRequest.setBreakRecordId(adjustment.getBreakRecordId());
-                }
-                if (adjustment.getRequestedBreakStart() != null) {
-                        adjustRequest.setBreakStartTime(adjustment.getRequestedBreakStart());
-                }
-                if (adjustment.getRequestedBreakEnd() != null) {
-                        adjustRequest.setBreakEndTime(adjustment.getRequestedBreakEnd());
+                // Tạo break adjustment nếu có breakRecordId
+                if (adjustment.getBreakRecordId() != null &&
+                                (adjustment.getRequestedBreakStart() != null
+                                                || adjustment.getRequestedBreakEnd() != null)) {
+                        AdjustAttendanceRequest.BreakAdjustment breakAdj = AdjustAttendanceRequest.BreakAdjustment
+                                        .builder()
+                                        .breakRecordId(adjustment.getBreakRecordId())
+                                        .breakStartTime(adjustment.getRequestedBreakStart())
+                                        .breakEndTime(adjustment.getRequestedBreakEnd())
+                                        .build();
+                        adjustRequest.setBreakAdjustments(java.util.List.of(breakAdj));
                 }
 
                 adjustRequest.setReason(

@@ -3,6 +3,10 @@ package com.tamabee.api_hr.service.company;
 import com.tamabee.api_hr.dto.config.*;
 import com.tamabee.api_hr.dto.request.*;
 import com.tamabee.api_hr.dto.response.CompanySettingsResponse;
+import com.tamabee.api_hr.dto.response.WorkModeChangeLogResponse;
+import com.tamabee.api_hr.dto.response.WorkModeConfigResponse;
+
+import java.util.List;
 
 /**
  * Service quản lý cấu hình chấm công và tính lương của công ty.
@@ -17,6 +21,32 @@ public interface ICompanySettingsService {
      * @return settings của công ty
      */
     CompanySettingsResponse getSettings(Long companyId);
+
+    /**
+     * Lấy cấu hình work mode của công ty
+     *
+     * @param companyId ID công ty
+     * @return cấu hình work mode
+     */
+    WorkModeConfigResponse getWorkModeConfig(Long companyId);
+
+    /**
+     * Cập nhật cấu hình work mode của công ty
+     *
+     * @param companyId ID công ty
+     * @param request   cấu hình mới
+     * @param changedBy người thực hiện thay đổi
+     * @return cấu hình đã cập nhật
+     */
+    WorkModeConfigResponse updateWorkModeConfig(Long companyId, WorkModeConfigRequest request, String changedBy);
+
+    /**
+     * Lấy lịch sử thay đổi work mode của công ty
+     *
+     * @param companyId ID công ty
+     * @return danh sách audit log
+     */
+    List<WorkModeChangeLogResponse> getWorkModeChangeLogs(Long companyId);
 
     /**
      * Cập nhật cấu hình chấm công

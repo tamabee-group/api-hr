@@ -7,11 +7,16 @@ import com.tamabee.api_hr.dto.request.AdjustAttendanceRequest;
 import com.tamabee.api_hr.dto.request.AttendanceQueryRequest;
 import com.tamabee.api_hr.dto.request.CheckInRequest;
 import com.tamabee.api_hr.dto.request.CheckOutRequest;
+import com.tamabee.api_hr.dto.request.StartBreakRequest;
 import com.tamabee.api_hr.dto.response.AttendanceRecordResponse;
 import com.tamabee.api_hr.dto.response.AttendanceSummaryResponse;
+import com.tamabee.api_hr.dto.response.ShiftInfoResponse;
 import com.tamabee.api_hr.dto.response.WorkScheduleResponse;
 import com.tamabee.api_hr.entity.attendance.AttendanceRecordEntity;
 import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
+import com.tamabee.api_hr.entity.attendance.ShiftAssignmentEntity;
+import com.tamabee.api_hr.entity.attendance.ShiftTemplateEntity;
+import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.AttendanceStatus;
 import com.tamabee.api_hr.enums.ErrorCode;
 import com.tamabee.api_hr.enums.ScheduleType;
@@ -21,6 +26,8 @@ import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.mapper.company.AttendanceMapper;
 import com.tamabee.api_hr.repository.AttendanceRecordRepository;
 import com.tamabee.api_hr.repository.BreakRecordRepository;
+import com.tamabee.api_hr.repository.ShiftAssignmentRepository;
+import com.tamabee.api_hr.repository.ShiftTemplateRepository;
 import com.tamabee.api_hr.repository.UserRepository;
 import com.tamabee.api_hr.service.calculator.IBreakCalculator;
 import com.tamabee.api_hr.service.calculator.ITimeRoundingCalculator;
@@ -30,7 +37,9 @@ import com.tamabee.api_hr.service.company.IWorkScheduleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -40,10 +49,12 @@ import java.time.LocalTime;
 import java.time.YearMonth;
 import java.time.temporal.ChronoUnit;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * Service implementation quản lý chấm công.
  * Áp dụng làm tròn giờ, tính toán giờ làm việc, phát hiện đi muộn/về sớm.
+ * Bao gồm cả quản lý break records.
  */
 @Slf4j
 @Service
@@ -53,6 +64,8 @@ public class AttendanceServiceImpl implements IAttendanceService {
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final BreakRecordRepository breakRecordRepository;
     private final UserRepository userRepository;
+    private final ShiftAssignmentRepository shiftAssignmentRepository;
+    private final ShiftTemplateRepository shiftTemplateRepository;
     private final ICompanySettingsService companySettingsService;
     private final IWorkScheduleService workScheduleService;
     private final ITimeRoundingCalculator timeRoundingCalculator;
@@ -201,10 +214,14 @@ public class AttendanceServiceImpl implements IAttendanceService {
             entity.setOriginalCheckOut(request.getCheckOutTime());
         }
 
-        // Cập nhật break time nếu có
-        if (request.getBreakStartTime() != null || request.getBreakEndTime() != null) {
-            updateBreakRecord(entity, request.getBreakRecordId(), request.getBreakStartTime(),
-                    request.getBreakEndTime());
+        // Cập nhật nhiều break records nếu có
+        if (request.getBreakAdjustments() != null && !request.getBreakAdjustments().isEmpty()) {
+            for (AdjustAttendanceRequest.BreakAdjustment breakAdj : request.getBreakAdjustments()) {
+                if (breakAdj.getBreakRecordId() != null) {
+                    updateBreakRecord(entity, breakAdj.getBreakRecordId(),
+                            breakAdj.getBreakStartTime(), breakAdj.getBreakEndTime());
+                }
+            }
         }
 
         // Lấy cấu hình và tính toán lại
@@ -336,23 +353,45 @@ public class AttendanceServiceImpl implements IAttendanceService {
     @Transactional(readOnly = true)
     public AttendanceRecordResponse getAttendanceRecordById(Long recordId) {
         AttendanceRecordEntity entity = findRecordById(recordId);
-        return attendanceMapper.toResponse(entity, getEmployeeName(entity.getEmployeeId()));
+        return buildFullResponse(entity);
     }
 
     @Override
     @Transactional(readOnly = true)
     public AttendanceRecordResponse getAttendanceByEmployeeAndDate(Long employeeId, LocalDate date) {
         return attendanceRecordRepository.findByEmployeeIdAndWorkDateAndDeletedFalse(employeeId, date)
-                .map(entity -> attendanceMapper.toResponse(entity, getEmployeeName(employeeId)))
+                .map(this::buildFullResponse)
                 .orElse(null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public AttendanceRecordResponse getTodayAttendance(Long employeeId) {
+        log.info("Getting today attendance for employee: {}", employeeId);
+        LocalDate today = LocalDate.now();
+        return getAttendanceByEmployeeAndDate(employeeId, today);
     }
 
     @Override
     @Transactional(readOnly = true)
     public Page<AttendanceRecordResponse> getAttendanceRecords(
             Long companyId, AttendanceQueryRequest request, Pageable pageable) {
+        // Mặc định lấy tháng hiện tại nếu không có date filter
+        LocalDate startDate = request.getStartDate();
+        LocalDate endDate = request.getEndDate();
+
+        if (startDate == null && endDate == null) {
+            YearMonth currentMonth = YearMonth.now();
+            startDate = currentMonth.atDay(1);
+            endDate = currentMonth.atEndOfMonth();
+        } else if (startDate == null) {
+            startDate = endDate.withDayOfMonth(1);
+        } else if (endDate == null) {
+            endDate = YearMonth.from(startDate).atEndOfMonth();
+        }
+
         return attendanceRecordRepository.findByCompanyIdAndWorkDateBetween(
-                companyId, request.getStartDate(), request.getEndDate(), pageable)
+                companyId, startDate, endDate, pageable)
                 .map(entity -> attendanceMapper.toResponse(entity, getEmployeeName(entity.getEmployeeId())));
     }
 
@@ -363,6 +402,22 @@ public class AttendanceServiceImpl implements IAttendanceService {
         return attendanceRecordRepository.findByEmployeeIdAndWorkDateBetweenPaged(
                 employeeId, request.getStartDate(), request.getEndDate(), pageable)
                 .map(entity -> attendanceMapper.toResponse(entity, getEmployeeName(employeeId)));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<AttendanceRecordResponse> getEmployeeAttendanceByMonth(Long employeeId, int year, int month) {
+        YearMonth yearMonth = YearMonth.of(year, month);
+        LocalDate startDate = yearMonth.atDay(1);
+        LocalDate endDate = yearMonth.atEndOfMonth();
+
+        AttendanceQueryRequest request = AttendanceQueryRequest.builder()
+                .startDate(startDate)
+                .endDate(endDate)
+                .build();
+
+        Pageable pageable = PageRequest.of(0, 31, Sort.by(Sort.Direction.ASC, "workDate"));
+        return getEmployeeAttendanceRecords(employeeId, request, pageable);
     }
 
     @Override
@@ -382,9 +437,15 @@ public class AttendanceServiceImpl implements IAttendanceService {
 
     @Override
     public boolean validateDevice(Long companyId, String deviceId) {
-        // TODO: Implement device validation logic
-        // Hiện tại chấp nhận tất cả device
-        return deviceId != null && !deviceId.isBlank();
+        // Validate device ID không rỗng
+        // Trong tương lai có thể mở rộng để kiểm tra device đã đăng ký trong bảng
+        // registered_devices
+        if (deviceId == null || deviceId.isBlank()) {
+            return false;
+        }
+
+        // Device ID hợp lệ nếu có độ dài tối thiểu (UUID hoặc device fingerprint)
+        return deviceId.length() >= 8;
     }
 
     @Override
@@ -393,9 +454,16 @@ public class AttendanceServiceImpl implements IAttendanceService {
             return false;
         }
 
-        // TODO: Implement geo-fence validation logic
-        // Cần có bảng lưu vị trí công ty và bán kính cho phép
-        // Hiện tại chấp nhận tất cả vị trí hợp lệ
+        // Validate tọa độ hợp lệ
+        if (latitude < -90 || latitude > 90 || longitude < -180 || longitude > 180) {
+            return false;
+        }
+
+        // Geo-fence validation: Kiểm tra vị trí nằm trong bán kính cho phép của công ty
+        // Hiện tại chấp nhận tất cả vị trí hợp lệ vì chưa có latitude/longitude trong
+        // CompanyEntity
+        // Khi mở rộng: lấy company location từ DB và tính khoảng cách bằng Haversine
+        // formula
         return true;
     }
 
@@ -633,5 +701,223 @@ public class AttendanceServiceImpl implements IAttendanceService {
         }
 
         return 8 * 60; // Default 8 hours
+    }
+
+    // ==================== Break Management ====================
+
+    @Override
+    @Transactional
+    public AttendanceRecordResponse startBreak(Long employeeId, StartBreakRequest request) {
+        log.info("Start break for employee: {}", employeeId);
+
+        LocalDate today = LocalDate.now();
+        LocalDateTime now = LocalDateTime.now();
+
+        // Kiểm tra user tồn tại
+        UserEntity user = userRepository.findByIdAndDeletedFalse(employeeId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Employee not found with id: " + employeeId,
+                        ErrorCode.USER_NOT_FOUND));
+
+        // Lấy attendance record hôm nay
+        AttendanceRecordEntity attendance = attendanceRecordRepository
+                .findByEmployeeIdAndWorkDateAndDeletedFalse(employeeId, today)
+                .orElseThrow(() -> new NotFoundException(
+                        "Employee has not checked in today",
+                        ErrorCode.NOT_CHECKED_IN));
+
+        // Kiểm tra đã check-out chưa (không cho phép break sau khi check-out)
+        if (attendance.getOriginalCheckOut() != null) {
+            throw new BadRequestException(
+                    "Cannot start break after check-out",
+                    ErrorCode.ALREADY_CHECKED_OUT);
+        }
+
+        // Lấy break config
+        BreakConfig breakConfig = companySettingsService.getBreakConfig(user.getCompanyId());
+
+        // Kiểm tra break có được bật không
+        if (breakConfig == null || !Boolean.TRUE.equals(breakConfig.getBreakEnabled())) {
+            throw new BadRequestException(
+                    "Break is not enabled for this company",
+                    ErrorCode.INVALID_BREAK_CONFIG);
+        }
+
+        // Kiểm tra có break đang active không
+        Optional<BreakRecordEntity> activeBreak = breakRecordRepository
+                .findActiveBreakByEmployeeIdAndWorkDate(employeeId, today);
+
+        if (activeBreak.isPresent()) {
+            throw new ConflictException(
+                    "There is already an active break",
+                    ErrorCode.BREAK_ALREADY_ACTIVE);
+        }
+
+        // Kiểm tra số lần break trong ngày
+        long breakCount = breakRecordRepository.countByAttendanceRecordIdAndDeletedFalse(attendance.getId());
+
+        Integer maxBreaks = breakConfig.getMaxBreaksPerDay() != null
+                ? breakConfig.getMaxBreaksPerDay()
+                : 3;
+
+        if (breakCount >= maxBreaks) {
+            throw new BadRequestException(
+                    String.format("Maximum breaks per day (%d) reached", maxBreaks),
+                    ErrorCode.MAX_BREAKS_REACHED);
+        }
+
+        // Lấy break number tiếp theo
+        Integer maxBreakNumber = breakRecordRepository.findMaxBreakNumberByAttendanceRecordId(attendance.getId());
+        int nextBreakNumber = (maxBreakNumber != null ? maxBreakNumber : 0) + 1;
+
+        // Tạo break record mới
+        BreakRecordEntity breakRecord = new BreakRecordEntity();
+        breakRecord.setAttendanceRecordId(attendance.getId());
+        breakRecord.setEmployeeId(employeeId);
+        breakRecord.setCompanyId(user.getCompanyId());
+        breakRecord.setWorkDate(today);
+        breakRecord.setBreakNumber(nextBreakNumber);
+        breakRecord.setBreakStart(now);
+        breakRecord.setNotes(request != null ? request.getNotes() : null);
+
+        breakRecordRepository.save(breakRecord);
+
+        log.info("Break started for employee: {} at {}, break number: {}", employeeId, now, nextBreakNumber);
+
+        // Return full response
+        return buildFullResponse(attendance);
+    }
+
+    @Override
+    @Transactional
+    public AttendanceRecordResponse endBreak(Long employeeId, Long breakRecordId) {
+        log.info("End break for employee: {}, breakRecordId: {}", employeeId, breakRecordId);
+
+        LocalDateTime now = LocalDateTime.now();
+
+        // Kiểm tra user tồn tại
+        UserEntity user = userRepository.findByIdAndDeletedFalse(employeeId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Employee not found with id: " + employeeId,
+                        ErrorCode.USER_NOT_FOUND));
+
+        // Lấy break record
+        BreakRecordEntity breakRecord = breakRecordRepository.findByIdAndDeletedFalse(breakRecordId)
+                .orElseThrow(() -> new NotFoundException(
+                        "Break record not found with id: " + breakRecordId,
+                        ErrorCode.BREAK_RECORD_NOT_FOUND));
+
+        // Kiểm tra break record thuộc về employee này không
+        if (!breakRecord.getEmployeeId().equals(employeeId)) {
+            throw new BadRequestException(
+                    "Break record does not belong to this employee",
+                    ErrorCode.INVALID_BREAK_RECORD);
+        }
+
+        // Kiểm tra break đã kết thúc chưa
+        if (breakRecord.getBreakEnd() != null) {
+            throw new ConflictException(
+                    "Break has already ended",
+                    ErrorCode.BREAK_ALREADY_ACTIVE);
+        }
+
+        // Lấy break config
+        BreakConfig breakConfig = companySettingsService.getBreakConfig(user.getCompanyId());
+
+        // Update break record
+        breakRecord.setBreakEnd(now);
+
+        // Calculate actual break minutes
+        long actualMinutes = ChronoUnit.MINUTES.between(breakRecord.getBreakStart(), now);
+        breakRecord.setActualBreakMinutes((int) actualMinutes);
+
+        // Calculate effective break minutes (apply min/max settings)
+        int effectiveMinutes = (int) actualMinutes;
+
+        if (breakConfig != null) {
+            Integer minBreak = breakConfig.getMinimumBreakMinutes();
+            Integer maxBreak = breakConfig.getMaximumBreakMinutes();
+
+            if (minBreak != null && effectiveMinutes < minBreak) {
+                effectiveMinutes = minBreak;
+            }
+
+            if (maxBreak != null && effectiveMinutes > maxBreak) {
+                effectiveMinutes = maxBreak;
+            }
+        }
+
+        breakRecord.setEffectiveBreakMinutes(effectiveMinutes);
+
+        breakRecordRepository.save(breakRecord);
+
+        log.info("Break ended for employee: {} at {}, actual: {} min, effective: {} min",
+                employeeId, now, actualMinutes, effectiveMinutes);
+
+        // Lấy attendance record để return full response
+        AttendanceRecordEntity attendance = attendanceRecordRepository
+                .findByIdAndDeletedFalse(breakRecord.getAttendanceRecordId())
+                .orElseThrow(() -> new NotFoundException(
+                        "Attendance record not found",
+                        ErrorCode.ATTENDANCE_RECORD_NOT_FOUND));
+
+        // Cập nhật tổng break minutes trong attendance
+        updateTotalBreakMinutes(attendance);
+        attendanceRecordRepository.save(attendance);
+
+        return buildFullResponse(attendance);
+    }
+
+    // ==================== Full Response Builder ====================
+
+    /**
+     * Build full response với break records, shift info và applied settings
+     */
+    private AttendanceRecordResponse buildFullResponse(AttendanceRecordEntity entity) {
+        String employeeName = getEmployeeName(entity.getEmployeeId());
+
+        // Lấy break records
+        List<BreakRecordEntity> breakRecords = breakRecordRepository
+                .findByAttendanceRecordIdAndDeletedFalse(entity.getId());
+
+        // Lấy shift info
+        ShiftInfoResponse shiftInfo = getShiftInfo(entity.getEmployeeId(), entity.getWorkDate());
+
+        // Lấy configs
+        AttendanceConfig attendanceConfig = companySettingsService.getAttendanceConfig(entity.getCompanyId());
+        BreakConfig breakConfig = companySettingsService.getBreakConfig(entity.getCompanyId());
+
+        return attendanceMapper.toFullResponse(entity, employeeName, breakRecords, shiftInfo,
+                attendanceConfig, breakConfig);
+    }
+
+    /**
+     * Get shift info for employee on specific date
+     */
+    private ShiftInfoResponse getShiftInfo(Long employeeId, LocalDate date) {
+        List<ShiftAssignmentEntity> assignments = shiftAssignmentRepository
+                .findByEmployeeIdAndWorkDateAndDeletedFalse(employeeId, date);
+
+        if (assignments.isEmpty()) {
+            return null;
+        }
+
+        ShiftAssignmentEntity assignment = assignments.get(0);
+        Optional<ShiftTemplateEntity> templateOpt = shiftTemplateRepository
+                .findByIdAndDeletedFalse(assignment.getShiftTemplateId());
+
+        if (templateOpt.isEmpty()) {
+            return null;
+        }
+
+        ShiftTemplateEntity template = templateOpt.get();
+
+        return ShiftInfoResponse.builder()
+                .shiftTemplateId(template.getId())
+                .shiftName(template.getName())
+                .scheduledStart(template.getStartTime())
+                .scheduledEnd(template.getEndTime())
+                .multiplier(template.getMultiplier())
+                .build();
     }
 }

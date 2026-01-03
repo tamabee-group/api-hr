@@ -6,6 +6,7 @@ import com.tamabee.api_hr.dto.response.*;
 import com.tamabee.api_hr.dto.result.*;
 import com.tamabee.api_hr.entity.attendance.AttendanceRecordEntity;
 import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
+import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.payroll.PayrollRecordEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.*;
@@ -19,6 +20,7 @@ import com.tamabee.api_hr.service.calculator.IPayrollCalculator;
 import com.tamabee.api_hr.service.company.ICompanySettingsService;
 import com.tamabee.api_hr.service.company.IPayrollService;
 import com.tamabee.api_hr.service.core.INotificationEmailService;
+import com.tamabee.api_hr.service.core.PayslipPdfGenerator;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -49,6 +51,8 @@ public class PayrollServiceImpl implements IPayrollService {
     private final BreakRecordRepository breakRecordRepository;
     private final EmployeeSalaryRepository employeeSalaryRepository;
     private final UserRepository userRepository;
+    private final HolidayRepository holidayRepository;
+    private final CompanyRepository companyRepository;
     private final ICompanySettingsService companySettingsService;
     private final IPayrollCalculator payrollCalculator;
     private final IBreakCalculator breakCalculator;
@@ -56,6 +60,7 @@ public class PayrollServiceImpl implements IPayrollService {
     private final PayrollMapper payrollMapper;
     private final ObjectMapper objectMapper;
     private final INotificationEmailService notificationEmailService;
+    private final PayslipPdfGenerator payslipPdfGenerator;
 
     // ==================== Preview & Finalize ====================
 
@@ -365,16 +370,37 @@ public class PayrollServiceImpl implements IPayrollService {
     @Transactional(readOnly = true)
     public byte[] exportPayrollPdf(Long companyId, YearMonth period) {
         log.info("Export PDF lương công ty {} kỳ {}", companyId, period);
-        // TODO: Implement PDF export using a PDF library
-        throw new UnsupportedOperationException("PDF export chưa được implement");
+
+        // PDF export cần thư viện như iText hoặc Apache PDFBox
+        // Hiện tại trả về thông báo chưa hỗ trợ
+        throw new BadRequestException("PDF export chưa được hỗ trợ. Vui lòng sử dụng CSV export.",
+                ErrorCode.FEATURE_NOT_SUPPORTED);
     }
 
     @Override
     @Transactional(readOnly = true)
     public byte[] generatePayslip(Long payrollRecordId) {
         log.info("Generate payslip cho bản ghi {}", payrollRecordId);
-        // TODO: Implement payslip PDF generation
-        throw new UnsupportedOperationException("Payslip generation chưa được implement");
+
+        // Lấy bản ghi lương
+        PayrollRecordEntity record = payrollRecordRepository.findByIdAndDeletedFalse(payrollRecordId)
+                .orElseThrow(() -> NotFoundException.payrollRecord(payrollRecordId));
+
+        // Lấy thông tin nhân viên
+        UserEntity employee = userRepository.findByIdAndDeletedFalse(record.getEmployeeId())
+                .orElseThrow(() -> NotFoundException.user(record.getEmployeeId()));
+
+        // Lấy thông tin công ty
+        CompanyEntity company = companyRepository.findById(record.getCompanyId())
+                .filter(c -> !c.getDeleted())
+                .orElse(null);
+
+        // Convert to response
+        String employeeName = employee.getProfile() != null ? employee.getProfile().getName() : "";
+        PayrollRecordResponse response = payrollMapper.toResponse(record, employeeName, employee.getEmployeeCode());
+
+        // Generate PDF
+        return payslipPdfGenerator.generate(response, employee, company);
     }
 
     // ==================== Private Helper Methods ====================
@@ -605,7 +631,7 @@ public class PayrollServiceImpl implements IPayrollService {
                         .date(date)
                         .regularMinutes(regularMinutes)
                         .nightMinutes(nightMinutes)
-                        .isHoliday(false) // TODO: Check holiday
+                        .isHoliday(isHoliday(record.getCompanyId(), date))
                         .isWeekend(isWeekend)
                         .build());
             }
@@ -998,5 +1024,12 @@ public class PayrollServiceImpl implements IPayrollService {
      */
     private int nullToZeroInt(Integer value) {
         return value != null ? value : 0;
+    }
+
+    /**
+     * Kiểm tra ngày có phải ngày nghỉ lễ không (công ty hoặc quốc gia)
+     */
+    private boolean isHoliday(Long companyId, LocalDate date) {
+        return holidayRepository.isHoliday(companyId, date);
     }
 }

@@ -19,6 +19,8 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
 import java.time.YearMonth;
 import java.time.format.DateTimeFormatter;
 
@@ -81,15 +83,35 @@ public class EmployeePayrollController {
 
         byte[] pdfData = payrollService.generatePayslip(recordId);
 
-        String filename = String.format("payslip_%s_%d-%02d.pdf",
+        // Tên file theo ngôn ngữ - encode UTF-8 cho header
+        String payslipLabel = getPayslipLabel(currentUser.getLanguage());
+        String filename = String.format("%s_%s_%d-%02d.pdf",
+                payslipLabel,
                 currentUser.getEmployeeCode(),
                 record.getYear(),
                 record.getMonth());
 
+        // Encode filename cho Content-Disposition (RFC 5987)
+        String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8).replace("+", "%20");
+
         return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename*=UTF-8''" + encodedFilename)
                 .contentType(MediaType.APPLICATION_PDF)
                 .body(pdfData);
+    }
+
+    /**
+     * Lấy label "payslip" theo ngôn ngữ
+     */
+    private String getPayslipLabel(String language) {
+        if (language == null) {
+            return "payslip";
+        }
+        return switch (language.toLowerCase()) {
+            case "vi" -> "phieu_luong";
+            case "ja" -> "給与明細";
+            default -> "payslip";
+        };
     }
 
     /**

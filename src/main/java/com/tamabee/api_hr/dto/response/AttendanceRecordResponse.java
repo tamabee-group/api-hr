@@ -9,9 +9,12 @@ import lombok.NoArgsConstructor;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.util.List;
 
 /**
- * Response cho bản ghi chấm công
+ * Response cho bản ghi chấm công.
+ * Bao gồm cả thông tin chấm công, break records, shift info và applied
+ * settings.
  */
 @Data
 @Builder
@@ -38,6 +41,7 @@ public class AttendanceRecordResponse {
     private Integer overtimeMinutes;
     private Integer lateMinutes;
     private Integer earlyLeaveMinutes;
+    private Integer netWorkingMinutes;
 
     // Trạng thái
     private AttendanceStatus status;
@@ -57,6 +61,15 @@ public class AttendanceRecordResponse {
     private Integer effectiveBreakMinutes;
     private BreakType breakType;
     private Boolean breakCompliant;
+
+    // Break records (danh sách các lần giải lao)
+    private List<BreakRecordResponse> breakRecords;
+
+    // Thông tin ca làm việc (nếu có)
+    private ShiftInfoResponse shiftInfo;
+
+    // Các cấu hình đã áp dụng tại thời điểm chấm công
+    private AppliedSettingsSnapshot appliedSettings;
 
     // Audit info
     private String adjustmentReason;

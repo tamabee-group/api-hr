@@ -5,11 +5,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 /**
- * Response chứa thông tin bản ghi giờ giải lao
+ * DTO response cho break record.
+ * Chứa thông tin chi tiết về một lần giải lao.
  */
 @Data
 @Builder
@@ -17,19 +17,10 @@ import java.time.LocalDateTime;
 @AllArgsConstructor
 public class BreakRecordResponse {
 
+    // ID của break record
     private Long id;
 
-    private Long attendanceRecordId;
-
-    private Long employeeId;
-
-    private String employeeName;
-
-    private Long companyId;
-
-    private LocalDate workDate;
-
-    // Số thứ tự break trong ngày (1, 2, 3, ...)
+    // Số thứ tự break trong ngày (1, 2, 3...)
     private Integer breakNumber;
 
     // Thời gian bắt đầu giải lao
@@ -47,7 +38,6 @@ public class BreakRecordResponse {
     // Ghi chú
     private String notes;
 
-    // Audit info
-    private LocalDateTime createdAt;
-    private LocalDateTime updatedAt;
+    // Break đang diễn ra (chưa kết thúc)
+    private Boolean isActive;
 }

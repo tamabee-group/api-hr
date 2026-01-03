@@ -22,6 +22,10 @@ public class AttendanceSummary {
     @Builder.Default
     private Integer workingHours = 0;
 
+    // Số ca làm việc (cho SHIFT_BASED)
+    @Builder.Default
+    private Integer numberOfShifts = 0;
+
     // Số ngày vắng mặt
     @Builder.Default
     private Integer absenceDays = 0;

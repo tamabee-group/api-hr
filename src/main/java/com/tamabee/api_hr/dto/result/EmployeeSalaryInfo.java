@@ -28,4 +28,7 @@ public class EmployeeSalaryInfo {
 
     // Lương giờ (cho HOURLY)
     private BigDecimal hourlyRate;
+
+    // Lương theo ca (cho SHIFT_BASED)
+    private BigDecimal shiftRate;
 }

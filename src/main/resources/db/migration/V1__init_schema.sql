@@ -740,3 +740,301 @@ CREATE INDEX idx_audit_deleted ON audit_logs(deleted);
 CREATE INDEX idx_audit_company_entity ON audit_logs(company_id, entity_type);
 CREATE INDEX idx_audit_entity_type_id ON audit_logs(entity_type, entity_id);
 CREATE INDEX idx_audit_company_timestamp ON audit_logs(company_id, timestamp DESC);
+
+-- =====================================================
+-- 23. FLEXIBLE WORKFORCE MANAGEMENT
+-- Features: Shift Management, Individual Allowances/Deductions,
+--           Payroll Period Workflow, Employment Contracts
+-- =====================================================
+
+-- =====================================================
+-- 23.1. ENUMS - Các enum types cho Flexible Workforce
+-- =====================================================
+
+-- Trạng thái phân ca
+DO $$ BEGIN
+    CREATE TYPE shift_assignment_status AS ENUM ('SCHEDULED', 'COMPLETED', 'SWAPPED', 'CANCELLED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+-- Trạng thái yêu cầu đổi ca
+DO $$ BEGIN
+    CREATE TYPE swap_request_status AS ENUM ('PENDING', 'APPROVED', 'REJECTED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+-- Trạng thái kỳ lương
+DO $$ BEGIN
+    CREATE TYPE payroll_period_status AS ENUM ('DRAFT', 'REVIEWING', 'APPROVED', 'PAID');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+-- Trạng thái chi tiết lương
+DO $$ BEGIN
+    CREATE TYPE payroll_item_status AS ENUM ('CALCULATED', 'ADJUSTED', 'CONFIRMED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+-- Loại hợp đồng
+DO $$ BEGIN
+    CREATE TYPE contract_type AS ENUM ('FULL_TIME', 'PART_TIME', 'SEASONAL', 'CONTRACT');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+-- Trạng thái hợp đồng
+DO $$ BEGIN
+    CREATE TYPE contract_status AS ENUM ('ACTIVE', 'EXPIRED', 'TERMINATED');
+EXCEPTION
+    WHEN duplicate_object THEN null;
+END $$;
+
+-- =====================================================
+-- 23.2. SHIFT TEMPLATES - Mẫu ca làm việc
+-- =====================================================
+CREATE TABLE IF NOT EXISTS shift_templates (
+    id BIGSERIAL PRIMARY KEY,
+    company_id BIGINT NOT NULL,
+    name VARCHAR(100) NOT NULL,
+    start_time TIME NOT NULL,
+    end_time TIME NOT NULL,
+    break_minutes INTEGER,
+    multiplier DECIMAL(5,2),
+    description VARCHAR(500),
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_shift_template_company_id ON shift_templates(company_id);
+CREATE INDEX IF NOT EXISTS idx_shift_template_deleted ON shift_templates(deleted);
+CREATE INDEX IF NOT EXISTS idx_shift_template_active ON shift_templates(company_id, is_active);
+
+-- =====================================================
+-- 23.3. SHIFT ASSIGNMENTS - Phân ca cho nhân viên
+-- =====================================================
+CREATE TABLE IF NOT EXISTS shift_assignments (
+    id BIGSERIAL PRIMARY KEY,
+    employee_id BIGINT NOT NULL,
+    company_id BIGINT NOT NULL,
+    shift_template_id BIGINT NOT NULL,
+    work_date DATE NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'SCHEDULED',
+    swapped_with_employee_id BIGINT,
+    swapped_from_assignment_id BIGINT,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_shift_assign_employee_id ON shift_assignments(employee_id);
+CREATE INDEX IF NOT EXISTS idx_shift_assign_company_id ON shift_assignments(company_id);
+CREATE INDEX IF NOT EXISTS idx_shift_assign_work_date ON shift_assignments(work_date);
+CREATE INDEX IF NOT EXISTS idx_shift_assign_deleted ON shift_assignments(deleted);
+CREATE INDEX IF NOT EXISTS idx_shift_assign_employee_date ON shift_assignments(employee_id, work_date);
+CREATE INDEX IF NOT EXISTS idx_shift_assign_company_date ON shift_assignments(company_id, work_date);
+
+-- =====================================================
+-- 23.4. SHIFT SWAP REQUESTS - Yêu cầu đổi ca
+-- =====================================================
+CREATE TABLE IF NOT EXISTS shift_swap_requests (
+    id BIGSERIAL PRIMARY KEY,
+    company_id BIGINT NOT NULL,
+    requester_id BIGINT NOT NULL,
+    target_employee_id BIGINT NOT NULL,
+    requester_assignment_id BIGINT NOT NULL,
+    target_assignment_id BIGINT NOT NULL,
+    reason VARCHAR(500),
+    status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
+    approved_by BIGINT,
+    approved_at TIMESTAMP,
+    rejection_reason VARCHAR(500),
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_swap_request_requester_id ON shift_swap_requests(requester_id);
+CREATE INDEX IF NOT EXISTS idx_swap_request_target_id ON shift_swap_requests(target_employee_id);
+CREATE INDEX IF NOT EXISTS idx_swap_request_company_id ON shift_swap_requests(company_id);
+CREATE INDEX IF NOT EXISTS idx_swap_request_status ON shift_swap_requests(status);
+CREATE INDEX IF NOT EXISTS idx_swap_request_deleted ON shift_swap_requests(deleted);
+CREATE INDEX IF NOT EXISTS idx_swap_request_company_status ON shift_swap_requests(company_id, status);
+
+-- =====================================================
+-- 23.5. EMPLOYEE ALLOWANCES - Phụ cấp cá nhân
+-- =====================================================
+CREATE TABLE IF NOT EXISTS employee_allowances (
+    id BIGSERIAL PRIMARY KEY,
+    employee_id BIGINT NOT NULL,
+    company_id BIGINT NOT NULL,
+    allowance_code VARCHAR(50) NOT NULL,
+    allowance_name VARCHAR(200) NOT NULL,
+    allowance_type VARCHAR(50) NOT NULL,
+    amount DECIMAL(15,2) NOT NULL,
+    taxable BOOLEAN NOT NULL DEFAULT TRUE,
+    effective_from DATE NOT NULL,
+    effective_to DATE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_emp_allowance_employee_id ON employee_allowances(employee_id);
+CREATE INDEX IF NOT EXISTS idx_emp_allowance_company_id ON employee_allowances(company_id);
+CREATE INDEX IF NOT EXISTS idx_emp_allowance_deleted ON employee_allowances(deleted);
+CREATE INDEX IF NOT EXISTS idx_emp_allowance_active ON employee_allowances(employee_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_emp_allowance_effective ON employee_allowances(employee_id, effective_from, effective_to);
+
+-- =====================================================
+-- 23.6. EMPLOYEE DEDUCTIONS - Khấu trừ cá nhân
+-- =====================================================
+CREATE TABLE IF NOT EXISTS employee_deductions (
+    id BIGSERIAL PRIMARY KEY,
+    employee_id BIGINT NOT NULL,
+    company_id BIGINT NOT NULL,
+    deduction_code VARCHAR(50) NOT NULL,
+    deduction_name VARCHAR(200) NOT NULL,
+    deduction_type VARCHAR(50) NOT NULL,
+    amount DECIMAL(15,2),
+    percentage DECIMAL(5,2),
+    effective_from DATE NOT NULL,
+    effective_to DATE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_emp_deduction_employee_id ON employee_deductions(employee_id);
+CREATE INDEX IF NOT EXISTS idx_emp_deduction_company_id ON employee_deductions(company_id);
+CREATE INDEX IF NOT EXISTS idx_emp_deduction_deleted ON employee_deductions(deleted);
+CREATE INDEX IF NOT EXISTS idx_emp_deduction_active ON employee_deductions(employee_id, is_active);
+CREATE INDEX IF NOT EXISTS idx_emp_deduction_effective ON employee_deductions(employee_id, effective_from, effective_to);
+
+-- =====================================================
+-- 23.7. PAYROLL PERIODS - Kỳ lương
+-- =====================================================
+CREATE TABLE IF NOT EXISTS payroll_periods (
+    id BIGSERIAL PRIMARY KEY,
+    company_id BIGINT NOT NULL,
+    period_start DATE NOT NULL,
+    period_end DATE NOT NULL,
+    year INTEGER NOT NULL,
+    month INTEGER NOT NULL,
+    status VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
+    created_by BIGINT NOT NULL,
+    approved_by BIGINT,
+    approved_at TIMESTAMP,
+    paid_at TIMESTAMP,
+    payment_reference VARCHAR(100),
+    total_gross_salary DECIMAL(15,2),
+    total_net_salary DECIMAL(15,2),
+    total_employees INTEGER,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_payroll_period_company_id ON payroll_periods(company_id);
+CREATE INDEX IF NOT EXISTS idx_payroll_period_deleted ON payroll_periods(deleted);
+CREATE INDEX IF NOT EXISTS idx_payroll_period_status ON payroll_periods(status);
+CREATE INDEX IF NOT EXISTS idx_payroll_period_year_month ON payroll_periods(company_id, year, month);
+CREATE INDEX IF NOT EXISTS idx_payroll_period_company_status ON payroll_periods(company_id, status);
+
+-- =====================================================
+-- 23.8. PAYROLL ITEMS - Chi tiết lương nhân viên
+-- =====================================================
+CREATE TABLE IF NOT EXISTS payroll_items (
+    id BIGSERIAL PRIMARY KEY,
+    payroll_period_id BIGINT NOT NULL,
+    employee_id BIGINT NOT NULL,
+    company_id BIGINT NOT NULL,
+    salary_type VARCHAR(20) NOT NULL,
+    base_salary DECIMAL(15,2),
+    calculated_base_salary DECIMAL(15,2),
+    working_days INTEGER,
+    working_hours INTEGER,
+    working_minutes INTEGER,
+    regular_overtime_minutes INTEGER,
+    night_overtime_minutes INTEGER,
+    holiday_overtime_minutes INTEGER,
+    weekend_overtime_minutes INTEGER,
+    total_overtime_pay DECIMAL(15,2),
+    total_break_minutes INTEGER,
+    break_type VARCHAR(20),
+    break_deduction_amount DECIMAL(15,2),
+    allowance_details JSONB,
+    total_allowances DECIMAL(15,2),
+    deduction_details JSONB,
+    total_deductions DECIMAL(15,2),
+    gross_salary DECIMAL(15,2),
+    net_salary DECIMAL(15,2),
+    adjustment_amount DECIMAL(15,2),
+    adjustment_reason VARCHAR(500),
+    adjusted_by BIGINT,
+    adjusted_at TIMESTAMP,
+    status VARCHAR(50) NOT NULL DEFAULT 'CALCULATED',
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_payroll_item_period_id ON payroll_items(payroll_period_id);
+CREATE INDEX IF NOT EXISTS idx_payroll_item_employee_id ON payroll_items(employee_id);
+CREATE INDEX IF NOT EXISTS idx_payroll_item_company_id ON payroll_items(company_id);
+CREATE INDEX IF NOT EXISTS idx_payroll_item_deleted ON payroll_items(deleted);
+CREATE INDEX IF NOT EXISTS idx_payroll_item_period_employee ON payroll_items(payroll_period_id, employee_id);
+
+-- =====================================================
+-- 23.9. EMPLOYMENT CONTRACTS - Hợp đồng lao động
+-- =====================================================
+CREATE TABLE IF NOT EXISTS employment_contracts (
+    id BIGSERIAL PRIMARY KEY,
+    employee_id BIGINT NOT NULL,
+    company_id BIGINT NOT NULL,
+    contract_type VARCHAR(50) NOT NULL,
+    contract_number VARCHAR(100),
+    start_date DATE NOT NULL,
+    end_date DATE,
+    salary_config_id BIGINT,
+    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
+    termination_reason VARCHAR(500),
+    terminated_at DATE,
+    notes VARCHAR(1000),
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_contract_employee_id ON employment_contracts(employee_id);
+CREATE INDEX IF NOT EXISTS idx_contract_company_id ON employment_contracts(company_id);
+CREATE INDEX IF NOT EXISTS idx_contract_deleted ON employment_contracts(deleted);
+CREATE INDEX IF NOT EXISTS idx_contract_status ON employment_contracts(status);
+CREATE INDEX IF NOT EXISTS idx_contract_end_date ON employment_contracts(end_date);
+CREATE INDEX IF NOT EXISTS idx_contract_employee_status ON employment_contracts(employee_id, status);
+CREATE INDEX IF NOT EXISTS idx_contract_company_status ON employment_contracts(company_id, status);
+
+-- =====================================================
+-- 23.10. UPDATE EMPLOYEE_SALARIES - Thêm shift_rate
+-- =====================================================
+ALTER TABLE employee_salaries 
+ADD COLUMN IF NOT EXISTS shift_rate DECIMAL(15,2);
+
+-- =====================================================
+-- COMMENTS - Mô tả các bảng Flexible Workforce
+-- =====================================================
+COMMENT ON TABLE shift_templates IS 'Mẫu ca làm việc của công ty';
+COMMENT ON TABLE shift_assignments IS 'Phân ca làm việc cho nhân viên';
+COMMENT ON TABLE shift_swap_requests IS 'Yêu cầu đổi ca giữa các nhân viên';
+COMMENT ON TABLE employee_allowances IS 'Phụ cấp cá nhân của nhân viên';
+COMMENT ON TABLE employee_deductions IS 'Khấu trừ cá nhân của nhân viên';
+COMMENT ON TABLE payroll_periods IS 'Kỳ lương với workflow DRAFT → REVIEWING → APPROVED → PAID';
+COMMENT ON TABLE payroll_items IS 'Chi tiết lương của từng nhân viên trong kỳ lương';
+COMMENT ON TABLE employment_contracts IS 'Hợp đồng lao động của nhân viên';
