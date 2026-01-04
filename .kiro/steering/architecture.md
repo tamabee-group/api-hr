@@ -1,90 +1,64 @@
-# Architecture Rules
+# Backend Architecture (Java/Spring Boot)
 
 ## Project Structure
 
 ```
 src/main/java/com/tamabee/api_hr/
 ├── controller/
-│   ├── admin/          # Tamabee internal management
-│   ├── company/        # Company self-management
-│   └── core/           # Auth, shared endpoints
+│   ├── admin/          # Tamabee admin APIs (/api/admin/**)
+│   ├── company/        # Company APIs (/api/company/**)
+│   └── core/           # Auth, public APIs (/api/auth/**, /api/users/**)
 ├── service/
 │   ├── admin/          # Admin business logic
 │   ├── company/        # Company business logic
-│   └── core/           # Shared services (Auth, Email)
+│   └── core/           # Shared services (Auth, Email, File)
 ├── mapper/
-│   ├── admin/          # Admin-specific mappers
-│   ├── company/        # Company-specific mappers
-│   └── core/           # Core entity mappers
-├── entity/             # JPA entities
-├── repository/         # Data access layer
-├── dto/
-│   ├── request/        # Request DTOs
-│   └── response/       # Response DTOs
-├── enums/              # Enumerations
+│   ├── admin/          # Admin mappers
+│   ├── company/        # Company mappers
+│   └── core/           # Core mappers
+├── entity/
+│   ├── attendance/     # Shift, Schedule, AttendanceRecord
+│   ├── audit/          # AuditLog, WorkModeChangeLog
+│   ├── company/        # Company, CompanyProfile, CompanySetting
+│   ├── contract/       # EmploymentContract
+│   ├── core/           # EmailVerification, MailHistory
+│   ├── leave/          # Holiday, LeaveBalance, LeaveRequest
+│   ├── payroll/        # Salary, Allowance, Deduction, PayrollRecord
+│   ├── user/           # User, UserProfile
+│   └── wallet/         # Wallet, Transaction, Deposit, Plan, Commission
+├── repository/         # JPA repositories
+├── dto/request/        # Request DTOs
+├── dto/response/       # Response DTOs
+├── enums/              # All enums
 ├── exception/          # Custom exceptions
 ├── config/             # Configuration classes
+├── filter/             # Request filters
+├── scheduler/          # Scheduled tasks
 └── util/               # Utility classes
 ```
 
-## Package Responsibilities
+## Layer Flow
 
-### Admin Package
+```
+Controller → Service (Interface + Impl) → Mapper → Repository → Entity
+```
 
-- Tamabee internal management
-- Manage all companies, deposits, plans, wallets
-- Access: `ADMIN_TAMABEE`, `MANAGER_TAMABEE`
-- No companyId filtering
+## Package Access Control
 
-### Company Package
-
-- Company self-management
-- Manage employees, view wallet, create deposit requests
-- Access: `ADMIN_COMPANY`, `MANAGER_COMPANY`
-- Always filter by companyId from JWT token
-
-### Core Package
-
-- Shared components: entities, repositories, security, utils
-- Auth service, Email service
-- Used by both admin and company packages
-
-## Layer Responsibilities
-
-### Controller Layer
-
-- Handle HTTP requests/responses only
-- Validate input using `@Valid`
-- Return `ResponseEntity<BaseResponse<T>>`
-- Apply `@PreAuthorize` for role-based access
-
-### Service Layer
-
-- Interface + Implementation pattern
-- Business logic and transactions
-- Use Mapper for DTO ↔ Entity conversion
-- Throw custom exceptions
-
-### Mapper Layer
-
-- `@Component` annotation required
-- Methods: `toEntity()`, `toResponse()`, `updateEntity()`
-- Always check null at beginning
-- NO business logic - only data transformation
-
-### Repository Layer
-
-- Extend `JpaRepository`
-- Use Spring Data JPA conventions
-- `deleted = false` check FIRST in queries
+| Package | API Path          | Roles                              |
+| ------- | ----------------- | ---------------------------------- |
+| admin   | `/api/admin/**`   | `ADMIN_TAMABEE`, `MANAGER_TAMABEE` |
+| company | `/api/company/**` | `ADMIN_COMPANY`, `MANAGER_COMPANY` |
+| core    | `/api/auth/**`    | Public                             |
+| core    | `/api/users/me`   | All authenticated                  |
 
 ## User Roles
 
-| Role               | Description                        | CompanyId  |
-| ------------------ | ---------------------------------- | ---------- |
-| `ADMIN_TAMABEE`    | Full system access                 | 0          |
-| `MANAGER_TAMABEE`  | Manage companies, approve deposits | 0          |
-| `EMPLOYEE_TAMABEE` | Create deposit requests only       | 0          |
-| `ADMIN_COMPANY`    | Full company access                | Company ID |
-| `MANAGER_COMPANY`  | Manage employees                   | Company ID |
-| `EMPLOYEE_COMPANY` | Basic access                       | Company ID |
+| Role               | CompanyId | Description               |
+| ------------------ | --------- | ------------------------- |
+| `ADMIN_TAMABEE`    | 0         | Full system access        |
+| `MANAGER_TAMABEE`  | 0         | Manage companies/deposits |
+| `EMPLOYEE_TAMABEE` | 0         | Limited Tamabee access    |
+| `ADMIN_COMPANY`    | ID        | Full company access       |
+| `MANAGER_COMPANY`  | ID        | Manage employees          |
+| `EMPLOYEE_COMPANY` | ID        | Basic employee access     |

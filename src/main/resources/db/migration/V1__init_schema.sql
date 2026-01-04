@@ -285,6 +285,11 @@ CREATE TABLE company_settings (
     allowance_config JSONB,
     deduction_config JSONB,
     break_config JSONB,
+    -- Work mode settings
+    work_mode VARCHAR(20) NOT NULL DEFAULT 'FLEXIBLE_SHIFT',
+    default_work_start_time TIME,
+    default_work_end_time TIME,
+    default_break_minutes INTEGER,
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(50),
@@ -294,6 +299,12 @@ CREATE TABLE company_settings (
 
 CREATE UNIQUE INDEX idx_company_settings_company_id ON company_settings(company_id);
 CREATE INDEX idx_company_settings_deleted ON company_settings(deleted);
+CREATE INDEX idx_company_settings_work_mode ON company_settings(work_mode);
+
+COMMENT ON COLUMN company_settings.work_mode IS 'Chế độ làm việc: FIXED_HOURS (giờ cố định) hoặc FLEXIBLE_SHIFT (linh hoạt/theo ca)';
+COMMENT ON COLUMN company_settings.default_work_start_time IS 'Giờ bắt đầu làm việc mặc định (dùng cho FIXED_HOURS mode)';
+COMMENT ON COLUMN company_settings.default_work_end_time IS 'Giờ kết thúc làm việc mặc định (dùng cho FIXED_HOURS mode)';
+COMMENT ON COLUMN company_settings.default_break_minutes IS 'Thời gian nghỉ giải lao mặc định (phút) (dùng cho FIXED_HOURS mode)';
 
 -- =====================================================
 -- 12. WORK_SCHEDULES - Lịch làm việc
@@ -304,6 +315,7 @@ CREATE TABLE work_schedules (
     name VARCHAR(255) NOT NULL,
     type VARCHAR(50) NOT NULL,
     is_default BOOLEAN NOT NULL DEFAULT FALSE,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     schedule_data JSONB,
     description VARCHAR(500),
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
@@ -317,6 +329,9 @@ CREATE INDEX idx_work_schedules_deleted ON work_schedules(deleted);
 CREATE INDEX idx_work_schedules_company_id ON work_schedules(company_id);
 CREATE INDEX idx_work_schedules_type ON work_schedules(type);
 CREATE INDEX idx_work_schedules_is_default ON work_schedules(is_default);
+CREATE INDEX idx_work_schedules_is_active ON work_schedules(company_id, is_active);
+
+COMMENT ON COLUMN work_schedules.is_active IS 'Trạng thái hoạt động của lịch làm việc (FALSE khi switch sang FIXED_HOURS)';
 
 -- =====================================================
 -- 13. WORK_SCHEDULE_ASSIGNMENTS - Gán lịch làm việc cho nhân viên
@@ -509,6 +524,7 @@ CREATE TABLE employee_salaries (
     monthly_salary DECIMAL(15, 2),
     daily_rate DECIMAL(15, 2),
     hourly_rate DECIMAL(15, 2),
+    shift_rate DECIMAL(15, 2),
     -- Thời gian hiệu lực
     effective_from DATE NOT NULL,
     effective_to DATE,
@@ -1022,12 +1038,6 @@ CREATE INDEX IF NOT EXISTS idx_contract_employee_status ON employment_contracts(
 CREATE INDEX IF NOT EXISTS idx_contract_company_status ON employment_contracts(company_id, status);
 
 -- =====================================================
--- 23.10. UPDATE EMPLOYEE_SALARIES - Thêm shift_rate
--- =====================================================
-ALTER TABLE employee_salaries 
-ADD COLUMN IF NOT EXISTS shift_rate DECIMAL(15,2);
-
--- =====================================================
 -- COMMENTS - Mô tả các bảng Flexible Workforce
 -- =====================================================
 COMMENT ON TABLE shift_templates IS 'Mẫu ca làm việc của công ty';
@@ -1038,3 +1048,25 @@ COMMENT ON TABLE employee_deductions IS 'Khấu trừ cá nhân của nhân viê
 COMMENT ON TABLE payroll_periods IS 'Kỳ lương với workflow DRAFT → REVIEWING → APPROVED → PAID';
 COMMENT ON TABLE payroll_items IS 'Chi tiết lương của từng nhân viên trong kỳ lương';
 COMMENT ON TABLE employment_contracts IS 'Hợp đồng lao động của nhân viên';
+
+-- =====================================================
+-- 24. WORK MODE CHANGE LOGS - Audit log thay đổi work mode
+-- =====================================================
+CREATE TABLE IF NOT EXISTS work_mode_change_logs (
+    id BIGSERIAL PRIMARY KEY,
+    company_id BIGINT NOT NULL,
+    previous_mode VARCHAR(20) NOT NULL,
+    new_mode VARCHAR(20) NOT NULL,
+    changed_by VARCHAR(255) NOT NULL,
+    changed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    reason VARCHAR(500),
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX IF NOT EXISTS idx_work_mode_change_logs_company_id ON work_mode_change_logs(company_id);
+CREATE INDEX IF NOT EXISTS idx_work_mode_change_logs_deleted ON work_mode_change_logs(deleted);
+CREATE INDEX IF NOT EXISTS idx_work_mode_change_logs_changed_at ON work_mode_change_logs(changed_at DESC);
+
+COMMENT ON TABLE work_mode_change_logs IS 'Audit log cho các thay đổi work mode của công ty';

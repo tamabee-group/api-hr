@@ -25,6 +25,7 @@ spring:
     baseline-on-migrate: true
     clean-disabled: false
     locations: classpath:db/migration
+    target: 2 # Chỉ chạy V1, V2 (bỏ qua V3 test data)
 
   mail:
     host: smtp.gmail.com

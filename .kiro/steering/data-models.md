@@ -1,72 +1,80 @@
-# Data Models Reference
+# Data Models
 
-## Core Entities
+## Entity Domains
 
-### UserEntity
+### User & Company
 
-- `employeeCode`: 6-character unique code
-- `email`: unique
-- `role`: UserRole enum
-- `companyId`: 0 for Tamabee users
-- `referralCode`: for earning commissions
+- `UserEntity`: employeeCode (6-char), email, role, companyId (0 = Tamabee)
+- `UserProfileEntity`: personal info, avatar
+- `CompanyEntity`: planId, referredByEmployeeCode
+- `CompanyProfileEntity`: address, contact info
+- `CompanySettingEntity`: attendance, payroll settings
 
-### CompanyEntity
+### Wallet & Billing
 
-- `planId`: subscription plan
-- `referredByEmployeeCode`: referral tracking
-- One-to-one with WalletEntity
+- `WalletEntity`: balance, lastBillingDate, nextBillingDate
+- `WalletTransactionEntity`: type (DEPOSIT/BILLING/REFUND/COMMISSION), amount, balanceBefore/After
+- `DepositRequestEntity`: status, transferProofUrl, approvedBy
+- `EmployeeCommissionEntity`: referral commissions
+- `PlanEntity`, `PlanFeatureEntity`: subscription plans
 
-### WalletEntity
+### Attendance
 
-- `balance`: BigDecimal
-- `lastBillingDate`, `nextBillingDate`
-- One-to-many with WalletTransactionEntity
+- `ShiftTemplateEntity`: shift definitions
+- `ShiftAssignmentEntity`: employee shift assignments
+- `WorkScheduleEntity`: work schedules
+- `AttendanceRecordEntity`: clock in/out records
+- `BreakRecordEntity`: break times
+- `AttendanceAdjustmentRequestEntity`: correction requests
 
-### WalletTransactionEntity
+### Leave
 
-- `transactionType`: DEPOSIT, BILLING, REFUND, COMMISSION
-- `amount`, `balanceBefore`, `balanceAfter`
+- `LeaveRequestEntity`: leave applications
+- `LeaveBalanceEntity`: remaining leave days
+- `HolidayEntity`: company holidays
 
-### DepositRequestEntity
+### Payroll
 
-- `status`: PENDING, APPROVED, REJECTED
-- `transferProofUrl`: image URL
-- `approvedBy`, `rejectionReason`
+- `EmployeeSalaryEntity`: base salary config
+- `EmployeeAllowanceEntity`: allowances
+- `EmployeeDeductionEntity`: deductions
+- `PayrollPeriodEntity`: payroll periods
+- `PayrollRecordEntity`: calculated payroll
+- `PayrollItemEntity`: payroll line items
 
-### TemporaryPasswordEntity
+### Contract
 
-- For email verification during registration
-- `expiredAt`, `used` fields
-- Delete after successful account creation
+- `EmploymentContractEntity`: employment contracts
 
-## Enums
+### Audit
 
-```java
-// UserRole
-ADMIN_TAMABEE, MANAGER_TAMABEE, EMPLOYEE_TAMABEE,
-ADMIN_COMPANY, MANAGER_COMPANY, EMPLOYEE_COMPANY
-
-// UserStatus
-ACTIVE, INACTIVE, PENDING
-
-// TransactionType
-DEPOSIT, BILLING, REFUND, COMMISSION
-
-// DepositStatus
-PENDING, APPROVED, REJECTED
-```
+- `AuditLogEntity`: system audit logs
+- `WorkModeChangeLogEntity`: work mode changes
 
 ## BaseEntity Fields
 
-All entities extend BaseEntity:
+All entities extend `BaseEntity`:
 
 - `createdAt`, `createdBy`
 - `updatedAt`, `updatedBy`
 - `deleted` (soft delete)
 
+## Key Enums
+
+```java
+UserRole: ADMIN_TAMABEE, MANAGER_TAMABEE, EMPLOYEE_TAMABEE,
+          ADMIN_COMPANY, MANAGER_COMPANY, EMPLOYEE_COMPANY
+UserStatus: ACTIVE, INACTIVE, PENDING
+DepositStatus: PENDING, APPROVED, REJECTED
+TransactionType: DEPOSIT, BILLING, REFUND, COMMISSION
+AttendanceStatus: PRESENT, ABSENT, LATE, EARLY_LEAVE
+LeaveStatus: PENDING, APPROVED, REJECTED, CANCELLED
+PayrollStatus: DRAFT, CONFIRMED, PAID
+ContractType: FULL_TIME, PART_TIME, CONTRACT
+```
+
 ## Index Strategy
 
-- Index all foreign keys
+- Index ALL foreign keys
 - Index `deleted` field (CRITICAL)
-- Index frequently queried columns
 - Composite indexes for common query patterns
