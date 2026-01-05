@@ -72,7 +72,7 @@ public class SettingServiceImpl implements ISettingService {
     @Override
     @Transactional(readOnly = true)
     public List<SettingResponse> getAll() {
-        List<TamabeeSettingEntity> entities = settingRepository.findByDeletedFalse();
+        List<TamabeeSettingEntity> entities = settingRepository.findByDeletedFalseOrderByIdAsc();
         return entities.stream()
                 .map(settingMapper::toResponse)
                 .collect(Collectors.toList());

@@ -24,6 +24,11 @@ public interface TamabeeSettingRepository extends JpaRepository<TamabeeSettingEn
     List<TamabeeSettingEntity> findByDeletedFalse();
 
     /**
+     * Lấy tất cả settings chưa bị xóa, sắp xếp theo createdAt
+     */
+    List<TamabeeSettingEntity> findByDeletedFalseOrderByIdAsc();
+
+    /**
      * Kiểm tra setting key có tồn tại và chưa bị xóa
      */
     boolean existsBySettingKeyAndDeletedFalse(String settingKey);

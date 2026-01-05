@@ -130,12 +130,11 @@ public class CompanySettingsController {
      * Cập nhật cấu hình giờ giải lao
      */
     @PutMapping("/break")
-    public ResponseEntity<BaseResponse<BreakConfigResponse>> updateBreakConfig(
+    public ResponseEntity<BaseResponse<Void>> updateBreakConfig(
             @Valid @RequestBody BreakConfigRequest request) {
         Long companyId = getCurrentUserCompanyId();
-        BreakConfig config = companySettingsService.updateBreakConfig(companyId, request);
-        BreakConfigResponse response = breakConfigMapper.toResponse(config);
-        return ResponseEntity.ok(BaseResponse.success(response, "Cập nhật cấu hình giờ giải lao thành công"));
+        companySettingsService.updateBreakConfig(companyId, request);
+        return ResponseEntity.ok(BaseResponse.success(null, "Cập nhật cấu hình giờ giải lao thành công"));
     }
 
     /**

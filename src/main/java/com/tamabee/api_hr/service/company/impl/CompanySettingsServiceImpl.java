@@ -71,14 +71,14 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public CompanySettingsResponse getSettings(Long companyId) {
         CompanySettingEntity entity = findByCompanyId(companyId);
         return toResponse(entity);
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public WorkModeConfigResponse getWorkModeConfig(Long companyId) {
         CompanySettingEntity entity = findByCompanyId(companyId);
         return toWorkModeConfigResponse(entity);
@@ -273,7 +273,7 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public AttendanceConfig getAttendanceConfig(Long companyId) {
         CompanySettingEntity entity = findByCompanyId(companyId);
         AttendanceConfig config = deserializeConfig(entity.getAttendanceConfig(), AttendanceConfig.class);
@@ -281,7 +281,7 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public PayrollConfig getPayrollConfig(Long companyId) {
         CompanySettingEntity entity = findByCompanyId(companyId);
         PayrollConfig config = deserializeConfig(entity.getPayrollConfig(), PayrollConfig.class);
@@ -289,7 +289,7 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public OvertimeConfig getOvertimeConfig(Long companyId) {
         CompanySettingEntity entity = findByCompanyId(companyId);
         OvertimeConfig config = deserializeConfig(entity.getOvertimeConfig(), OvertimeConfig.class);
@@ -297,7 +297,7 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public AllowanceConfig getAllowanceConfig(Long companyId) {
         CompanySettingEntity entity = findByCompanyId(companyId);
         AllowanceConfig config = deserializeConfig(entity.getAllowanceConfig(), AllowanceConfig.class);
@@ -305,7 +305,7 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public DeductionConfig getDeductionConfig(Long companyId) {
         CompanySettingEntity entity = findByCompanyId(companyId);
         DeductionConfig config = deserializeConfig(entity.getDeductionConfig(), DeductionConfig.class);
@@ -313,7 +313,7 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
     }
 
     @Override
-    @Transactional(readOnly = true)
+    @Transactional
     public BreakConfig getBreakConfig(Long companyId) {
         CompanySettingEntity entity = findByCompanyId(companyId);
         BreakConfig config = deserializeConfig(entity.getBreakConfig(), BreakConfig.class);
@@ -441,6 +441,7 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
                 .companyId(entity.getCompanyId())
                 .workModeConfig(workModeConfig)
                 .attendanceConfig(deserializeConfig(entity.getAttendanceConfig(), AttendanceConfig.class))
+                .breakConfig(deserializeConfig(entity.getBreakConfig(), BreakConfig.class))
                 .payrollConfig(deserializeConfig(entity.getPayrollConfig(), PayrollConfig.class))
                 .overtimeConfig(deserializeConfig(entity.getOvertimeConfig(), OvertimeConfig.class))
                 .allowanceConfig(deserializeConfig(entity.getAllowanceConfig(), AllowanceConfig.class))

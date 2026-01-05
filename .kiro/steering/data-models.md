@@ -57,7 +57,40 @@ All entities extend `BaseEntity`:
 
 - `createdAt`, `createdBy`
 - `updatedAt`, `updatedBy`
-- `deleted` (soft delete)
+
+## Soft Delete Strategy
+
+**BaseEntity KHÔNG có `deleted`** - chỉ entities cần soft delete mới tự thêm field này.
+
+### Entities CÓ soft delete (ít data, cần khôi phục)
+
+```
+User, UserProfile, Company, CompanyProfile, CompanySetting
+Plan, PlanFeature, PlanFeatureCode
+ShiftTemplate, WorkSchedule, Holiday
+EmployeeSalary, EmployeeAllowance, EmployeeDeduction
+EmploymentContract, DepositRequest, Wallet, TamabeeSetting
+```
+
+### Entities KHÔNG có soft delete (data lớn, xóa thẳng)
+
+```
+AttendanceRecord, BreakRecord, PayrollRecord, PayrollItem, PayrollPeriod
+WalletTransaction, AuditLog, WorkModeChangeLog, MailHistory
+LeaveRequest, LeaveBalance, AttendanceAdjustmentRequest, ShiftSwapRequest
+ShiftAssignment, WorkScheduleAssignment, ScheduleSelection
+EmployeeCommission, EmailVerification
+```
+
+### Repository Pattern
+
+```java
+// CÓ soft delete - luôn filter deleted = false
+Optional<UserEntity> findByIdAndDeletedFalse(Long id);
+
+// KHÔNG soft delete - query bình thường
+List<AttendanceRecordEntity> findByUserId(Long userId);
+```
 
 ## Key Enums
 
@@ -76,5 +109,5 @@ ContractType: FULL_TIME, PART_TIME, CONTRACT
 ## Index Strategy
 
 - Index ALL foreign keys
-- Index `deleted` field (CRITICAL)
+- Index `deleted` field CHỈ cho entities có soft delete
 - Composite indexes for common query patterns
