@@ -18,6 +18,10 @@ import lombok.EqualsAndHashCode;
 })
 public class TamabeeSettingEntity extends BaseEntity {
 
+    // Soft delete flag
+    @Column(nullable = false)
+    private Boolean deleted = false;
+
     @Column(name = "setting_key", nullable = false, unique = true, length = 100)
     private String settingKey;
 

@@ -345,13 +345,13 @@ public class WalletServiceImpl implements IWalletService {
             return walletTransactionRepository.findByWalletIdAndTypeAndDateRange(
                     walletId, filter.getTransactionType(), filter.getFromDate(), filter.getToDate(), pageable);
         } else if (hasType) {
-            return walletTransactionRepository.findByWalletIdAndTransactionTypeAndDeletedFalseOrderByCreatedAtDesc(
+            return walletTransactionRepository.findByWalletIdAndTransactionTypeOrderByCreatedAtDesc(
                     walletId, filter.getTransactionType(), pageable);
         } else if (hasDateRange) {
             return walletTransactionRepository.findByWalletIdAndDateRange(
                     walletId, filter.getFromDate(), filter.getToDate(), pageable);
         } else {
-            return walletTransactionRepository.findByWalletIdAndDeletedFalseOrderByCreatedAtDesc(walletId, pageable);
+            return walletTransactionRepository.findByWalletIdOrderByCreatedAtDesc(walletId, pageable);
         }
     }
 

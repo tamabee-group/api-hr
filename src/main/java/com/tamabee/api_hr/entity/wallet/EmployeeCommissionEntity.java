@@ -21,10 +21,7 @@ import java.time.LocalDateTime;
 @Table(name = "employee_commissions", indexes = {
         @Index(name = "idx_employee_commissions_employee_code", columnList = "employeeCode"),
         @Index(name = "idx_employee_commissions_company_id", columnList = "companyId"),
-        @Index(name = "idx_employee_commissions_status", columnList = "status"),
-        @Index(name = "idx_employee_commissions_deleted", columnList = "deleted"),
-        @Index(name = "idx_employee_commissions_employee_code_deleted", columnList = "employeeCode, deleted"),
-        @Index(name = "idx_employee_commissions_status_deleted", columnList = "status, deleted")
+        @Index(name = "idx_employee_commissions_status", columnList = "status")
 })
 public class EmployeeCommissionEntity extends BaseEntity {
 

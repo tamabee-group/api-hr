@@ -129,7 +129,7 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
     @Transactional(readOnly = true)
     public List<WorkModeChangeLogResponse> getWorkModeChangeLogs(Long companyId) {
         List<WorkModeChangeLogEntity> logs = workModeChangeLogRepository
-                .findByCompanyIdAndDeletedFalseOrderByChangedAtDesc(companyId);
+                .findByCompanyIdOrderByChangedAtDesc(companyId);
         return logs.stream()
                 .map(this::toWorkModeChangeLogResponse)
                 .collect(Collectors.toList());
@@ -423,7 +423,7 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
     private CompanySettingsResponse toResponse(CompanySettingEntity entity) {
         // Lấy thông tin work mode change log gần nhất
         List<WorkModeChangeLogEntity> logs = workModeChangeLogRepository
-                .findByCompanyIdAndDeletedFalseOrderByChangedAtDesc(entity.getCompanyId());
+                .findByCompanyIdOrderByChangedAtDesc(entity.getCompanyId());
         LocalDateTime lastModeChangeAt = logs.isEmpty() ? null : logs.get(0).getChangedAt();
         String lastModeChangeBy = logs.isEmpty() ? null : logs.get(0).getChangedBy();
 
@@ -457,7 +457,7 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
     private WorkModeConfigResponse toWorkModeConfigResponse(CompanySettingEntity entity) {
         // Lấy thông tin work mode change log gần nhất
         List<WorkModeChangeLogEntity> logs = workModeChangeLogRepository
-                .findByCompanyIdAndDeletedFalseOrderByChangedAtDesc(entity.getCompanyId());
+                .findByCompanyIdOrderByChangedAtDesc(entity.getCompanyId());
         LocalDateTime lastModeChangeAt = logs.isEmpty() ? null : logs.get(0).getChangedAt();
         String lastModeChangeBy = logs.isEmpty() ? null : logs.get(0).getChangedBy();
 

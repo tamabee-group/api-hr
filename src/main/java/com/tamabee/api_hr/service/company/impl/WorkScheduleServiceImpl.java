@@ -112,7 +112,7 @@ public class WorkScheduleServiceImpl implements IWorkScheduleService {
 
         // Kiểm tra có assignment nào đang sử dụng không
         List<WorkScheduleAssignmentEntity> assignments = assignmentRepository
-                .findAllByScheduleIdAndDeletedFalse(scheduleId);
+                .findAllByScheduleId(scheduleId);
         if (!assignments.isEmpty()) {
             throw new ConflictException("Lịch làm việc đang được sử dụng, không thể xóa", ErrorCode.SCHEDULE_IN_USE);
         }
@@ -238,12 +238,12 @@ public class WorkScheduleServiceImpl implements IWorkScheduleService {
     @Override
     @Transactional
     public void removeAssignment(Long assignmentId) {
-        WorkScheduleAssignmentEntity assignment = assignmentRepository.findByIdAndDeletedFalse(assignmentId)
+        WorkScheduleAssignmentEntity assignment = assignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy assignment",
                         ErrorCode.SCHEDULE_ASSIGNMENT_NOT_FOUND));
 
-        assignment.setDeleted(true);
-        assignmentRepository.save(assignment);
+        // WorkScheduleAssignment không có soft delete - xóa thẳng
+        assignmentRepository.delete(assignment);
         log.info("Đã xóa assignment: {}", assignmentId);
     }
 
@@ -252,7 +252,7 @@ public class WorkScheduleServiceImpl implements IWorkScheduleService {
     public Page<WorkScheduleAssignmentResponse> getAssignmentsBySchedule(Long scheduleId, Pageable pageable) {
         WorkScheduleEntity schedule = findScheduleById(scheduleId);
 
-        return assignmentRepository.findByScheduleIdAndDeletedFalse(scheduleId, pageable)
+        return assignmentRepository.findByScheduleId(scheduleId, pageable)
                 .map(assignment -> {
                     String employeeName = getEmployeeName(assignment.getEmployeeId());
                     return workScheduleMapper.toAssignmentResponse(assignment, employeeName, schedule.getName());

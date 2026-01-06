@@ -74,4 +74,11 @@ public class BadRequestException extends BaseException {
     public static BadRequestException commissionNotEligible() {
         return new BadRequestException("Hoa hồng chưa đủ điều kiện thanh toán", ErrorCode.COMMISSION_NOT_ELIGIBLE);
     }
+
+    /**
+     * Factory method cho lỗi tùy chỉnh với errorCode và message
+     */
+    public static BadRequestException custom(String errorCode, String message) {
+        return new BadRequestException(message, errorCode);
+    }
 }

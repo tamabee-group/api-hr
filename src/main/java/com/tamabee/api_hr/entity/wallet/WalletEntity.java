@@ -17,9 +17,14 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "wallets", indexes = {
         @Index(name = "idx_company_id", columnList = "companyId", unique = true),
-        @Index(name = "idx_wallets_free_trial_end_date", columnList = "freeTrialEndDate")
+        @Index(name = "idx_wallets_free_trial_end_date", columnList = "freeTrialEndDate"),
+        @Index(name = "idx_wallets_deleted", columnList = "deleted")
 })
 public class WalletEntity extends BaseEntity {
+
+    // Soft delete flag
+    @Column(nullable = false)
+    private Boolean deleted = false;
 
     @Column(nullable = false, unique = true)
     private Long companyId;

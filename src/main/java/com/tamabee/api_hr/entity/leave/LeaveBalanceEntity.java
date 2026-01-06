@@ -14,7 +14,6 @@ import lombok.EqualsAndHashCode;
 @Entity
 @Table(name = "leave_balances", indexes = {
         @Index(name = "idx_leave_balances_employee_id", columnList = "employeeId"),
-        @Index(name = "idx_leave_balances_deleted", columnList = "deleted"),
         @Index(name = "idx_leave_balances_employee_year", columnList = "employeeId, year"),
         @Index(name = "idx_leave_balances_employee_year_type", columnList = "employeeId, year, leaveType", unique = true)
 })

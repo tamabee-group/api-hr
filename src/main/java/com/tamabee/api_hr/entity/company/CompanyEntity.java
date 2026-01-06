@@ -18,6 +18,10 @@ import lombok.EqualsAndHashCode;
 })
 public class CompanyEntity extends BaseEntity {
 
+    // Soft delete flag
+    @Column(nullable = false)
+    private Boolean deleted = false;
+
     @Column(nullable = false)
     private String name;
 
@@ -65,4 +69,12 @@ public class CompanyEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private CompanyStatus status = CompanyStatus.ACTIVE;
+
+    // Thời điểm deactivate (dùng để tính 90 ngày retention)
+    @Column(name = "deactivated_at")
+    private java.time.LocalDateTime deactivatedAt;
+
+    // Tenant domain cho multi-tenant (ví dụ: "acme" trong acme.tamabee.com)
+    @Column(name = "tenant_domain", unique = true, nullable = false)
+    private String tenantDomain;
 }

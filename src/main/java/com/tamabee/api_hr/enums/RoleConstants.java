@@ -22,8 +22,8 @@ public final class RoleConstants {
 
     // PreAuthorize expressions
     public static final String HAS_ADMIN_TAMABEE = "hasRole('ADMIN_TAMABEE')";
-    public static final String HAS_ADMIN_COMPANY = "hasRole('ADMIN_COMPANY')";
-    public static final String HAS_COMPANY_ACCESS = "hasAnyRole('ADMIN_COMPANY', 'MANAGER_COMPANY')";
+    public static final String HAS_ADMIN_COMPANY = "hasAnyRole('ADMIN_COMPANY', 'ADMIN_TAMABEE')";
+    public static final String HAS_COMPANY_ACCESS = "hasAnyRole('ADMIN_COMPANY', 'MANAGER_COMPANY', 'ADMIN_TAMABEE', 'MANAGER_TAMABEE')";
     public static final String HAS_TAMABEE_ACCESS = "hasAnyRole('ADMIN_TAMABEE', 'MANAGER_TAMABEE')";
     public static final String HAS_EMPLOYEE_TAMABEE = "hasRole('EMPLOYEE_TAMABEE')";
     public static final String HAS_ALL_TAMABEE_ACCESS = "hasAnyRole('ADMIN_TAMABEE', 'MANAGER_TAMABEE', 'EMPLOYEE_TAMABEE')";
@@ -37,6 +37,19 @@ public final class RoleConstants {
     // Employee Company - Nhân viên công ty có quyền truy cập các tính năng cơ bản
     public static final String HAS_EMPLOYEE_COMPANY = "hasRole('EMPLOYEE_COMPANY')";
 
-    // All Company Access - Tất cả nhân viên công ty (Admin, Manager, Employee)
-    public static final String HAS_ALL_COMPANY_ACCESS = "hasAnyRole('ADMIN_COMPANY', 'MANAGER_COMPANY', 'EMPLOYEE_COMPANY')";
+    // All Company Access - Tất cả nhân viên (Admin, Manager, Employee) của cả
+    // Tamabee và Company
+    public static final String HAS_ALL_COMPANY_ACCESS = "hasAnyRole('ADMIN_COMPANY', 'MANAGER_COMPANY', 'EMPLOYEE_COMPANY', 'ADMIN_TAMABEE', 'MANAGER_TAMABEE', 'EMPLOYEE_TAMABEE')";
+
+    // ========== Multi-Tenant Access (Tamabee + Company) ==========
+    // Cho phép Tamabee admins access cả platform management và HR features
+
+    // Admin access cho cả Tamabee và Company (HR admin features)
+    public static final String HAS_ADMIN_ACCESS = "hasAnyRole('ADMIN_TAMABEE', 'ADMIN_COMPANY')";
+
+    // Manager access cho cả Tamabee và Company (HR management features)
+    public static final String HAS_MANAGER_ACCESS = "hasAnyRole('ADMIN_TAMABEE', 'MANAGER_TAMABEE', 'ADMIN_COMPANY', 'MANAGER_COMPANY')";
+
+    // All HR access - Tất cả users có thể sử dụng HR features
+    public static final String HAS_HR_ACCESS = "hasAnyRole('ADMIN_TAMABEE', 'MANAGER_TAMABEE', 'EMPLOYEE_TAMABEE', 'ADMIN_COMPANY', 'MANAGER_COMPANY', 'EMPLOYEE_COMPANY')";
 }

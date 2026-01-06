@@ -32,7 +32,6 @@ public class EmployeeCommissionMapper {
         entity.setCompanyId(companyId);
         entity.setAmount(amount);
         entity.setStatus(CommissionStatus.PENDING);
-        entity.setDeleted(false);
 
         return entity;
     }

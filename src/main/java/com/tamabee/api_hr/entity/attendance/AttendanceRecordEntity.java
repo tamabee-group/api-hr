@@ -21,7 +21,6 @@ import java.time.LocalDateTime;
         @Index(name = "idx_attendance_employee_id", columnList = "employeeId"),
         @Index(name = "idx_attendance_company_id", columnList = "companyId"),
         @Index(name = "idx_attendance_work_date", columnList = "workDate"),
-        @Index(name = "idx_attendance_deleted", columnList = "deleted"),
         @Index(name = "idx_attendance_employee_date", columnList = "employeeId, workDate"),
         @Index(name = "idx_attendance_company_date", columnList = "companyId, workDate")
 })

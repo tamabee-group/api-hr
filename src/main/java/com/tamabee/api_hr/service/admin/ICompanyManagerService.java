@@ -30,4 +30,16 @@ public interface ICompanyManagerService {
      * Upload logo công ty
      */
     String uploadLogo(Long id, MultipartFile file);
+
+    /**
+     * Deactivate công ty - set status = INACTIVE và remove DataSource khỏi pool.
+     * Database vẫn được giữ lại 90 ngày cho compliance.
+     */
+    CompanyResponse deactivateCompany(Long id);
+
+    /**
+     * Reactivate công ty - set status = ACTIVE và restore DataSource vào pool.
+     * Chỉ có thể reactivate trong vòng 90 ngày sau khi deactivate.
+     */
+    CompanyResponse reactivateCompany(Long id);
 }

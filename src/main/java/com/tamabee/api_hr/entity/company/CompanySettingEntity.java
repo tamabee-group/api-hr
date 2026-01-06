@@ -25,6 +25,10 @@ import java.time.LocalTime;
 })
 public class CompanySettingEntity extends BaseEntity {
 
+    // Soft delete flag
+    @Column(nullable = false)
+    private Boolean deleted = false;
+
     // ID công ty (foreign key đến companies table)
     @Column(nullable = false, unique = true)
     private Long companyId;

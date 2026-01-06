@@ -319,7 +319,7 @@ public class PayrollServiceImpl implements IPayrollService {
     @Transactional(readOnly = true)
     public PayrollRecordResponse getEmployeePayroll(Long employeeId, YearMonth period) {
         return payrollRecordRepository
-                .findByEmployeeIdAndYearAndMonthAndDeletedFalse(employeeId, period.getYear(), period.getMonthValue())
+                .findByEmployeeIdAndYearAndMonth(employeeId, period.getYear(), period.getMonthValue())
                 .map(this::toResponse)
                 .orElse(null);
     }
@@ -383,7 +383,7 @@ public class PayrollServiceImpl implements IPayrollService {
         log.info("Generate payslip cho bản ghi {}", payrollRecordId);
 
         // Lấy bản ghi lương
-        PayrollRecordEntity record = payrollRecordRepository.findByIdAndDeletedFalse(payrollRecordId)
+        PayrollRecordEntity record = payrollRecordRepository.findById(payrollRecordId)
                 .orElseThrow(() -> NotFoundException.payrollRecord(payrollRecordId));
 
         // Lấy thông tin nhân viên
@@ -547,7 +547,7 @@ public class PayrollServiceImpl implements IPayrollService {
 
                 // Tính tổng break minutes từ tất cả break sessions (multiple breaks support)
                 List<BreakRecordEntity> breakRecords = breakRecordRepository
-                        .findByAttendanceRecordIdAndDeletedFalse(record.getId());
+                        .findByAttendanceRecordId(record.getId());
 
                 if (!breakRecords.isEmpty()) {
                     // Sử dụng breakCalculator để tính tổng từ tất cả break sessions
@@ -614,7 +614,7 @@ public class PayrollServiceImpl implements IPayrollService {
                         && record.getRoundedCheckOut() != null && employeeId != null) {
                     // Lấy break records cho ngày này
                     List<BreakRecordEntity> breakRecords = breakRecordRepository
-                            .findByEmployeeIdAndWorkDateAndDeletedFalse(employeeId, date);
+                            .findByEmployeeIdAndWorkDate(employeeId, date);
 
                     nightMinutes = overtimeCalculator.calculateNightMinutes(
                             record.getRoundedCheckIn(),
@@ -974,7 +974,7 @@ public class PayrollServiceImpl implements IPayrollService {
      * Tìm bản ghi lương theo ID
      */
     private PayrollRecordEntity findRecordById(Long recordId) {
-        return payrollRecordRepository.findByIdAndDeletedFalse(recordId)
+        return payrollRecordRepository.findById(recordId)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy bản ghi lương", ErrorCode.PAYROLL_NOT_FOUND));
     }
 

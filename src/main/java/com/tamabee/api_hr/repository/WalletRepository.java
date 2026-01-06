@@ -18,20 +18,24 @@ import java.util.Optional;
 @Repository
 public interface WalletRepository extends JpaRepository<WalletEntity, Long> {
 
-        Optional<WalletEntity> findByCompanyId(Long companyId);
+        Optional<WalletEntity> findByCompanyIdAndDeletedFalse(Long companyId);
 
-        boolean existsByCompanyId(Long companyId);
+        default Optional<WalletEntity> findByCompanyId(Long companyId) {
+                return findByCompanyIdAndDeletedFalse(companyId);
+        }
+
+        boolean existsByCompanyIdAndDeletedFalse(Long companyId);
 
         /**
          * Lấy danh sách tất cả wallets (phân trang)
          */
-        @Query("SELECT w FROM WalletEntity w ORDER BY w.createdAt DESC")
+        @Query("SELECT w FROM WalletEntity w WHERE w.deleted = false ORDER BY w.createdAt DESC")
         Page<WalletEntity> findAllWallets(Pageable pageable);
 
         /**
          * Lấy danh sách wallets với filter theo balance (phân trang)
          */
-        @Query("SELECT w FROM WalletEntity w WHERE w.balance >= :minBalance AND w.balance <= :maxBalance ORDER BY w.createdAt DESC")
+        @Query("SELECT w FROM WalletEntity w WHERE w.deleted = false AND w.balance >= :minBalance AND w.balance <= :maxBalance ORDER BY w.createdAt DESC")
         Page<WalletEntity> findByBalanceBetween(
                         @Param("minBalance") BigDecimal minBalance,
                         @Param("maxBalance") BigDecimal maxBalance,
@@ -40,13 +44,13 @@ public interface WalletRepository extends JpaRepository<WalletEntity, Long> {
         /**
          * Đếm tổng số wallets
          */
-        @Query("SELECT COUNT(w) FROM WalletEntity w")
+        @Query("SELECT COUNT(w) FROM WalletEntity w WHERE w.deleted = false")
         long countAllWallets();
 
         /**
          * Tính tổng số dư tất cả wallets
          */
-        @Query("SELECT COALESCE(SUM(w.balance), 0) FROM WalletEntity w")
+        @Query("SELECT COALESCE(SUM(w.balance), 0) FROM WalletEntity w WHERE w.deleted = false")
         BigDecimal sumAllBalances();
 
         /**
@@ -55,13 +59,13 @@ public interface WalletRepository extends JpaRepository<WalletEntity, Long> {
          */
         @Query("SELECT COUNT(w) FROM WalletEntity w JOIN CompanyEntity c ON w.companyId = c.id " +
                         "JOIN PlanEntity p ON c.planId = p.id " +
-                        "WHERE c.deleted = false AND p.deleted = false AND w.balance < p.monthlyPrice")
+                        "WHERE w.deleted = false AND c.deleted = false AND p.deleted = false AND w.balance < p.monthlyPrice")
         long countCompaniesWithLowBalance();
 
         /**
          * Đếm số company đang trong thời gian miễn phí
          */
-        @Query("SELECT COUNT(w) FROM WalletEntity w WHERE w.freeTrialEndDate IS NOT NULL AND w.freeTrialEndDate > :now")
+        @Query("SELECT COUNT(w) FROM WalletEntity w WHERE w.deleted = false AND w.freeTrialEndDate IS NOT NULL AND w.freeTrialEndDate > :now")
         long countCompaniesInFreeTrial(@Param("now") LocalDateTime now);
 
         /**
@@ -69,7 +73,7 @@ public interface WalletRepository extends JpaRepository<WalletEntity, Long> {
          * Điều kiện: nextBillingDate <= now VÀ (freeTrialEndDate IS NULL HOẶC
          * freeTrialEndDate <= now)
          */
-        @Query("SELECT w FROM WalletEntity w WHERE w.nextBillingDate <= :now " +
+        @Query("SELECT w FROM WalletEntity w WHERE w.deleted = false AND w.nextBillingDate <= :now " +
                         "AND (w.freeTrialEndDate IS NULL OR w.freeTrialEndDate <= :now)")
         java.util.List<WalletEntity> findWalletsDueForBilling(@Param("now") LocalDateTime now);
 }

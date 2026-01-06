@@ -17,38 +17,33 @@ import java.util.Optional;
 public interface BreakRecordRepository extends JpaRepository<BreakRecordEntity, Long> {
 
         /**
-         * Tìm bản ghi giải lao theo ID (chưa bị xóa)
-         */
-        Optional<BreakRecordEntity> findByIdAndDeletedFalse(Long id);
-
-        /**
          * Lấy danh sách bản ghi giải lao theo bản ghi chấm công
          */
-        @Query("SELECT b FROM BreakRecordEntity b WHERE b.deleted = false " +
-                        "AND b.attendanceRecordId = :attendanceRecordId " +
+        @Query("SELECT b FROM BreakRecordEntity b " +
+                        "WHERE b.attendanceRecordId = :attendanceRecordId " +
                         "ORDER BY b.breakStart ASC")
-        List<BreakRecordEntity> findByAttendanceRecordIdAndDeletedFalse(
+        List<BreakRecordEntity> findByAttendanceRecordId(
                         @Param("attendanceRecordId") Long attendanceRecordId);
 
         /**
          * Lấy danh sách bản ghi giải lao của nhân viên theo ngày làm việc
          */
-        @Query("SELECT b FROM BreakRecordEntity b WHERE b.deleted = false " +
-                        "AND b.employeeId = :employeeId " +
+        @Query("SELECT b FROM BreakRecordEntity b " +
+                        "WHERE b.employeeId = :employeeId " +
                         "AND b.workDate = :workDate " +
                         "ORDER BY b.breakStart ASC")
-        List<BreakRecordEntity> findByEmployeeIdAndWorkDateAndDeletedFalse(
+        List<BreakRecordEntity> findByEmployeeIdAndWorkDate(
                         @Param("employeeId") Long employeeId,
                         @Param("workDate") LocalDate workDate);
 
         /**
          * Lấy danh sách bản ghi giải lao của công ty trong khoảng thời gian
          */
-        @Query("SELECT b FROM BreakRecordEntity b WHERE b.deleted = false " +
-                        "AND b.companyId = :companyId " +
+        @Query("SELECT b FROM BreakRecordEntity b " +
+                        "WHERE b.companyId = :companyId " +
                         "AND b.workDate BETWEEN :startDate AND :endDate " +
                         "ORDER BY b.workDate DESC, b.employeeId ASC, b.breakStart ASC")
-        List<BreakRecordEntity> findByCompanyIdAndWorkDateBetweenAndDeletedFalse(
+        List<BreakRecordEntity> findByCompanyIdAndWorkDateBetween(
                         @Param("companyId") Long companyId,
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate);
@@ -56,8 +51,8 @@ public interface BreakRecordRepository extends JpaRepository<BreakRecordEntity, 
         /**
          * Tìm break đang active (breakEnd is null) của nhân viên theo ngày làm việc
          */
-        @Query("SELECT b FROM BreakRecordEntity b WHERE b.deleted = false " +
-                        "AND b.employeeId = :employeeId " +
+        @Query("SELECT b FROM BreakRecordEntity b " +
+                        "WHERE b.employeeId = :employeeId " +
                         "AND b.workDate = :workDate " +
                         "AND b.breakEnd IS NULL")
         Optional<BreakRecordEntity> findActiveBreakByEmployeeIdAndWorkDate(
@@ -67,22 +62,21 @@ public interface BreakRecordRepository extends JpaRepository<BreakRecordEntity, 
         /**
          * Đếm số breaks của một attendance record
          */
-        long countByAttendanceRecordIdAndDeletedFalse(Long attendanceRecordId);
+        long countByAttendanceRecordId(Long attendanceRecordId);
 
         /**
          * Lấy breakNumber lớn nhất của một attendance record
          */
         @Query("SELECT COALESCE(MAX(b.breakNumber), 0) FROM BreakRecordEntity b " +
-                        "WHERE b.deleted = false " +
-                        "AND b.attendanceRecordId = :attendanceRecordId")
+                        "WHERE b.attendanceRecordId = :attendanceRecordId")
         Integer findMaxBreakNumberByAttendanceRecordId(
                         @Param("attendanceRecordId") Long attendanceRecordId);
 
         /**
          * Lấy danh sách completed breaks (có breakEnd) của một attendance record
          */
-        @Query("SELECT b FROM BreakRecordEntity b WHERE b.deleted = false " +
-                        "AND b.attendanceRecordId = :attendanceRecordId " +
+        @Query("SELECT b FROM BreakRecordEntity b " +
+                        "WHERE b.attendanceRecordId = :attendanceRecordId " +
                         "AND b.breakEnd IS NOT NULL " +
                         "ORDER BY b.breakStart ASC")
         List<BreakRecordEntity> findCompletedBreaksByAttendanceRecordId(

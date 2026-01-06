@@ -11,47 +11,42 @@ import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import java.util.List;
 import java.util.Optional;
 
 /**
- * Repository cho quản lý hoa hồng giới thiệu của nhân viên Tamabee
+ * Repository cho quản lý hoa hồng giới thiệu của nhân viên Tamabee.
+ * Entity này KHÔNG có soft delete - xóa thẳng.
  */
 @Repository
 public interface EmployeeCommissionRepository extends JpaRepository<EmployeeCommissionEntity, Long> {
 
         /**
-         * Tìm commission theo id và chưa bị xóa
+         * Lấy tất cả commissions (phân trang)
          */
-        Optional<EmployeeCommissionEntity> findByIdAndDeletedFalse(Long id);
-
-        /**
-         * Lấy tất cả commissions chưa bị xóa (phân trang)
-         */
-        Page<EmployeeCommissionEntity> findByDeletedFalseOrderByCreatedAtDesc(Pageable pageable);
+        Page<EmployeeCommissionEntity> findAllByOrderByCreatedAtDesc(Pageable pageable);
 
         /**
          * Lấy commissions theo employeeCode (phân trang)
          */
-        Page<EmployeeCommissionEntity> findByDeletedFalseAndEmployeeCodeOrderByCreatedAtDesc(
-                        String employeeCode, Pageable pageable);
+        Page<EmployeeCommissionEntity> findByEmployeeCodeOrderByCreatedAtDesc(String employeeCode, Pageable pageable);
 
         /**
          * Lấy commissions theo status (phân trang)
          */
-        Page<EmployeeCommissionEntity> findByDeletedFalseAndStatusOrderByCreatedAtDesc(
-                        CommissionStatus status, Pageable pageable);
+        Page<EmployeeCommissionEntity> findByStatusOrderByCreatedAtDesc(CommissionStatus status, Pageable pageable);
 
         /**
          * Lấy commissions theo employeeCode và status (phân trang)
          */
-        Page<EmployeeCommissionEntity> findByDeletedFalseAndEmployeeCodeAndStatusOrderByCreatedAtDesc(
+        Page<EmployeeCommissionEntity> findByEmployeeCodeAndStatusOrderByCreatedAtDesc(
                         String employeeCode, CommissionStatus status, Pageable pageable);
 
         /**
          * Lấy commissions theo khoảng thời gian (phân trang)
          */
-        @Query("SELECT c FROM EmployeeCommissionEntity c WHERE c.deleted = false " +
-                        "AND c.createdAt >= :startDate AND c.createdAt <= :endDate ORDER BY c.createdAt DESC")
+        @Query("SELECT c FROM EmployeeCommissionEntity c " +
+                        "WHERE c.createdAt >= :startDate AND c.createdAt <= :endDate ORDER BY c.createdAt DESC")
         Page<EmployeeCommissionEntity> findByDateRange(
                         @Param("startDate") LocalDateTime startDate,
                         @Param("endDate") LocalDateTime endDate,
@@ -60,7 +55,7 @@ public interface EmployeeCommissionRepository extends JpaRepository<EmployeeComm
         /**
          * Lấy commissions theo employeeCode và khoảng thời gian (phân trang)
          */
-        @Query("SELECT c FROM EmployeeCommissionEntity c WHERE c.deleted = false AND c.employeeCode = :employeeCode " +
+        @Query("SELECT c FROM EmployeeCommissionEntity c WHERE c.employeeCode = :employeeCode " +
                         "AND c.createdAt >= :startDate AND c.createdAt <= :endDate ORDER BY c.createdAt DESC")
         Page<EmployeeCommissionEntity> findByEmployeeCodeAndDateRange(
                         @Param("employeeCode") String employeeCode,
@@ -71,7 +66,7 @@ public interface EmployeeCommissionRepository extends JpaRepository<EmployeeComm
         /**
          * Lấy commissions theo status và khoảng thời gian (phân trang)
          */
-        @Query("SELECT c FROM EmployeeCommissionEntity c WHERE c.deleted = false AND c.status = :status " +
+        @Query("SELECT c FROM EmployeeCommissionEntity c WHERE c.status = :status " +
                         "AND c.createdAt >= :startDate AND c.createdAt <= :endDate ORDER BY c.createdAt DESC")
         Page<EmployeeCommissionEntity> findByStatusAndDateRange(
                         @Param("status") CommissionStatus status,
@@ -82,7 +77,7 @@ public interface EmployeeCommissionRepository extends JpaRepository<EmployeeComm
         /**
          * Lấy commissions theo employeeCode, status và khoảng thời gian (phân trang)
          */
-        @Query("SELECT c FROM EmployeeCommissionEntity c WHERE c.deleted = false AND c.employeeCode = :employeeCode " +
+        @Query("SELECT c FROM EmployeeCommissionEntity c WHERE c.employeeCode = :employeeCode " +
                         "AND c.status = :status AND c.createdAt >= :startDate AND c.createdAt <= :endDate " +
                         "ORDER BY c.createdAt DESC")
         Page<EmployeeCommissionEntity> findByEmployeeCodeAndStatusAndDateRange(
@@ -95,20 +90,20 @@ public interface EmployeeCommissionRepository extends JpaRepository<EmployeeComm
         /**
          * Kiểm tra company đã có commission chưa (để đảm bảo chỉ tính hoa hồng lần đầu)
          */
-        boolean existsByCompanyIdAndDeletedFalse(Long companyId);
+        boolean existsByCompanyId(Long companyId);
 
         /**
          * Tính tổng hoa hồng theo employeeCode
          */
         @Query("SELECT COALESCE(SUM(c.amount), 0) FROM EmployeeCommissionEntity c " +
-                        "WHERE c.deleted = false AND c.employeeCode = :employeeCode")
+                        "WHERE c.employeeCode = :employeeCode")
         BigDecimal sumAmountByEmployeeCode(@Param("employeeCode") String employeeCode);
 
         /**
          * Tính tổng hoa hồng theo employeeCode và status
          */
         @Query("SELECT COALESCE(SUM(c.amount), 0) FROM EmployeeCommissionEntity c " +
-                        "WHERE c.deleted = false AND c.employeeCode = :employeeCode AND c.status = :status")
+                        "WHERE c.employeeCode = :employeeCode AND c.status = :status")
         BigDecimal sumAmountByEmployeeCodeAndStatus(
                         @Param("employeeCode") String employeeCode,
                         @Param("status") CommissionStatus status);
@@ -117,7 +112,7 @@ public interface EmployeeCommissionRepository extends JpaRepository<EmployeeComm
          * Tính tổng hoa hồng theo employeeCode và tháng
          */
         @Query("SELECT COALESCE(SUM(c.amount), 0) FROM EmployeeCommissionEntity c " +
-                        "WHERE c.deleted = false AND c.employeeCode = :employeeCode " +
+                        "WHERE c.employeeCode = :employeeCode " +
                         "AND c.createdAt >= :startOfMonth AND c.createdAt < :endOfMonth")
         BigDecimal sumAmountByEmployeeCodeAndMonth(
                         @Param("employeeCode") String employeeCode,
@@ -127,38 +122,37 @@ public interface EmployeeCommissionRepository extends JpaRepository<EmployeeComm
         /**
          * Đếm số commission theo employeeCode
          */
-        long countByEmployeeCodeAndDeletedFalse(String employeeCode);
+        long countByEmployeeCode(String employeeCode);
 
         /**
          * Đếm số commission theo employeeCode và status
          */
-        long countByEmployeeCodeAndStatusAndDeletedFalse(String employeeCode, CommissionStatus status);
+        long countByEmployeeCodeAndStatus(String employeeCode, CommissionStatus status);
 
         // ==================== Overall Summary Methods ====================
 
         /**
          * Tính tổng hoa hồng toàn bộ hệ thống
          */
-        @Query("SELECT COALESCE(SUM(c.amount), 0) FROM EmployeeCommissionEntity c WHERE c.deleted = false")
+        @Query("SELECT COALESCE(SUM(c.amount), 0) FROM EmployeeCommissionEntity c")
         BigDecimal sumTotalAmount();
 
         /**
          * Tính tổng hoa hồng theo status
          */
-        @Query("SELECT COALESCE(SUM(c.amount), 0) FROM EmployeeCommissionEntity c " +
-                        "WHERE c.deleted = false AND c.status = :status")
+        @Query("SELECT COALESCE(SUM(c.amount), 0) FROM EmployeeCommissionEntity c WHERE c.status = :status")
         BigDecimal sumAmountByStatus(@Param("status") CommissionStatus status);
 
         /**
          * Đếm số commission theo status
          */
-        long countByStatusAndDeletedFalse(CommissionStatus status);
+        long countByStatus(CommissionStatus status);
 
         /**
          * Tính tổng hoa hồng theo khoảng thời gian và status
          */
         @Query("SELECT COALESCE(SUM(c.amount), 0) FROM EmployeeCommissionEntity c " +
-                        "WHERE c.deleted = false AND c.status = :status " +
+                        "WHERE c.status = :status " +
                         "AND c.createdAt >= :startOfMonth AND c.createdAt < :endOfMonth")
         BigDecimal sumAmountByMonthRangeAndStatus(
                         @Param("startOfMonth") LocalDateTime startOfMonth,
@@ -169,8 +163,7 @@ public interface EmployeeCommissionRepository extends JpaRepository<EmployeeComm
          * Đếm số commission theo khoảng thời gian
          */
         @Query("SELECT COUNT(c) FROM EmployeeCommissionEntity c " +
-                        "WHERE c.deleted = false " +
-                        "AND c.createdAt >= :startOfMonth AND c.createdAt < :endOfMonth")
+                        "WHERE c.createdAt >= :startOfMonth AND c.createdAt < :endOfMonth")
         long countByMonthRange(
                         @Param("startOfMonth") LocalDateTime startOfMonth,
                         @Param("endOfMonth") LocalDateTime endOfMonth);
@@ -180,28 +173,28 @@ public interface EmployeeCommissionRepository extends JpaRepository<EmployeeComm
          * PostgreSQL
          */
         @Query(value = "SELECT DISTINCT DATE_TRUNC('month', created_at) as month FROM employee_commissions " +
-                        "WHERE deleted = false ORDER BY month DESC", nativeQuery = true)
-        java.util.List<java.sql.Timestamp> findDistinctMonthsNative();
+                        "ORDER BY month DESC", nativeQuery = true)
+        List<java.sql.Timestamp> findDistinctMonthsNative();
 
         /**
          * Lấy danh sách các employeeCode có commission (distinct)
          */
-        @Query("SELECT DISTINCT c.employeeCode FROM EmployeeCommissionEntity c WHERE c.deleted = false ORDER BY c.employeeCode")
-        java.util.List<String> findDistinctEmployeeCodes();
+        @Query("SELECT DISTINCT c.employeeCode FROM EmployeeCommissionEntity c ORDER BY c.employeeCode")
+        List<String> findDistinctEmployeeCodes();
 
         // ==================== Eligibility Methods ====================
 
         /**
          * Lấy tất cả commissions PENDING của một company (để recalculate eligibility)
          */
-        @Query("SELECT c FROM EmployeeCommissionEntity c WHERE c.deleted = false " +
-                        "AND c.companyId = :companyId AND c.status = 'PENDING'")
-        java.util.List<EmployeeCommissionEntity> findPendingByCompanyId(@Param("companyId") Long companyId);
+        @Query("SELECT c FROM EmployeeCommissionEntity c " +
+                        "WHERE c.companyId = :companyId AND c.status = 'PENDING'")
+        List<EmployeeCommissionEntity> findPendingByCompanyId(@Param("companyId") Long companyId);
 
         /**
          * Lấy tất cả commissions với eligibility status (phân trang)
          */
-        @Query("SELECT c FROM EmployeeCommissionEntity c WHERE c.deleted = false ORDER BY c.createdAt DESC")
+        @Query("SELECT c FROM EmployeeCommissionEntity c ORDER BY c.createdAt DESC")
         Page<EmployeeCommissionEntity> findAllWithEligibility(Pageable pageable);
 
         // ==================== Employee Referral Methods ====================
@@ -209,5 +202,5 @@ public interface EmployeeCommissionRepository extends JpaRepository<EmployeeComm
         /**
          * Lấy commission theo companyId (để hiển thị trong referred company response)
          */
-        Optional<EmployeeCommissionEntity> findByCompanyIdAndDeletedFalse(Long companyId);
+        Optional<EmployeeCommissionEntity> findByCompanyId(Long companyId);
 }

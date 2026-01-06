@@ -25,7 +25,6 @@ import java.time.LocalDateTime;
 @Table(name = "payroll_records", indexes = {
         @Index(name = "idx_payroll_employee_id", columnList = "employeeId"),
         @Index(name = "idx_payroll_company_id", columnList = "companyId"),
-        @Index(name = "idx_payroll_deleted", columnList = "deleted"),
         @Index(name = "idx_payroll_period", columnList = "companyId, year, month"),
         @Index(name = "idx_payroll_employee_period", columnList = "employeeId, year, month"),
         @Index(name = "idx_payroll_status", columnList = "status")

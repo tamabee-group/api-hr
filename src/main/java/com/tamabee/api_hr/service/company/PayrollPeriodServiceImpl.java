@@ -57,7 +57,8 @@ public class PayrollPeriodServiceImpl implements IPayrollPeriodService {
     @Transactional
     public PayrollPeriodResponse createPayrollPeriod(Long companyId, PayrollPeriodRequest request, Long createdBy) {
         // Kiểm tra kỳ lương đã tồn tại chưa
-        if (periodRepository.existsByCompanyIdAndYearAndMonthAndDeletedFalse(
+        // PayrollPeriod không có soft delete
+        if (periodRepository.existsByCompanyIdAndYearAndMonth(
                 companyId, request.getYear(), request.getMonth())) {
             throw new ConflictException("Kỳ lương đã tồn tại cho tháng " + request.getMonth() + "/" + request.getYear(),
                     ErrorCode.PAYROLL_PERIOD_EXISTS);
@@ -86,11 +87,9 @@ public class PayrollPeriodServiceImpl implements IPayrollPeriodService {
         }
 
         // Xóa các payroll items cũ (nếu có) để tính lại
-        List<PayrollItemEntity> existingItems = itemRepository.findByPayrollPeriodIdAndDeletedFalse(periodId);
-        for (PayrollItemEntity item : existingItems) {
-            item.setDeleted(true);
-        }
-        itemRepository.saveAll(existingItems);
+        // PayrollItem không có soft delete - xóa thẳng
+        List<PayrollItemEntity> existingItems = itemRepository.findByPayrollPeriodId(periodId);
+        itemRepository.deleteAll(existingItems);
 
         // Lấy danh sách nhân viên active của công ty
         List<UserEntity> employees = userRepository.findByCompanyIdAndDeletedFalse(period.getCompanyId());
@@ -156,7 +155,8 @@ public class PayrollPeriodServiceImpl implements IPayrollPeriodService {
         PayrollPeriodEntity period = getPeriodOrThrow(periodId);
 
         // Lấy danh sách payroll items
-        List<PayrollItemEntity> items = itemRepository.findByPayrollPeriodIdAndDeletedFalse(periodId);
+        // PayrollItem không có soft delete
+        List<PayrollItemEntity> items = itemRepository.findByPayrollPeriodId(periodId);
 
         // Lấy danh sách user IDs cần thiết
         Set<Long> userIds = new HashSet<>();
@@ -184,7 +184,8 @@ public class PayrollPeriodServiceImpl implements IPayrollPeriodService {
     @Override
     @Transactional(readOnly = true)
     public Page<PayrollPeriodResponse> getPayrollPeriods(Long companyId, Pageable pageable) {
-        Page<PayrollPeriodEntity> periods = periodRepository.findByCompanyIdAndDeletedFalse(companyId, pageable);
+        // PayrollPeriod không có soft delete
+        Page<PayrollPeriodEntity> periods = periodRepository.findByCompanyId(companyId, pageable);
 
         // Lấy danh sách user IDs
         Set<Long> userIds = new HashSet<>();
@@ -204,7 +205,8 @@ public class PayrollPeriodServiceImpl implements IPayrollPeriodService {
     @Transactional
     public PayrollItemResponse adjustPayrollItem(Long itemId, PayrollAdjustmentRequest request, Long adjustedBy) {
         // Lấy payroll item
-        PayrollItemEntity item = itemRepository.findByIdAndDeletedFalse(itemId)
+        // PayrollItem không có soft delete
+        PayrollItemEntity item = itemRepository.findById(itemId)
                 .orElseThrow(
                         () -> new NotFoundException("Không tìm thấy chi tiết lương", ErrorCode.PAYROLL_ITEM_NOT_FOUND));
 
@@ -257,7 +259,8 @@ public class PayrollPeriodServiceImpl implements IPayrollPeriodService {
         }
 
         // Kiểm tra đã có payroll items chưa
-        long itemCount = itemRepository.countByPayrollPeriodIdAndDeletedFalse(periodId);
+        // PayrollItem không có soft delete
+        long itemCount = itemRepository.countByPayrollPeriodId(periodId);
         if (itemCount == 0) {
             throw new BadRequestException("Cần tính lương trước khi submit", ErrorCode.PAYROLL_CALCULATION_FAILED);
         }
@@ -286,7 +289,8 @@ public class PayrollPeriodServiceImpl implements IPayrollPeriodService {
         period = periodRepository.save(period);
 
         // Cập nhật status của tất cả items thành CONFIRMED
-        List<PayrollItemEntity> items = itemRepository.findByPayrollPeriodIdAndDeletedFalse(periodId);
+        // PayrollItem không có soft delete
+        List<PayrollItemEntity> items = itemRepository.findByPayrollPeriodId(periodId);
         for (PayrollItemEntity item : items) {
             item.setStatus(PayrollItemStatus.CONFIRMED);
         }
@@ -332,9 +336,10 @@ public class PayrollPeriodServiceImpl implements IPayrollPeriodService {
 
     /**
      * Lấy PayrollPeriodEntity hoặc throw NotFoundException
+     * PayrollPeriod không có soft delete
      */
     private PayrollPeriodEntity getPeriodOrThrow(Long periodId) {
-        return periodRepository.findByIdAndDeletedFalse(periodId)
+        return periodRepository.findById(periodId)
                 .orElseThrow(
                         () -> new NotFoundException("Không tìm thấy kỳ lương", ErrorCode.PAYROLL_PERIOD_NOT_FOUND));
     }
@@ -561,7 +566,8 @@ public class PayrollPeriodServiceImpl implements IPayrollPeriodService {
     private void updatePeriodTotals(Long periodId) {
         BigDecimal totalGross = itemRepository.sumGrossSalaryByPeriodId(periodId);
         BigDecimal totalNet = itemRepository.sumNetSalaryByPeriodId(periodId);
-        long itemCount = itemRepository.countByPayrollPeriodIdAndDeletedFalse(periodId);
+        // PayrollItem không có soft delete
+        long itemCount = itemRepository.countByPayrollPeriodId(periodId);
 
         PayrollPeriodEntity period = getPeriodOrThrow(periodId);
         period.setTotalGrossSalary(totalGross);

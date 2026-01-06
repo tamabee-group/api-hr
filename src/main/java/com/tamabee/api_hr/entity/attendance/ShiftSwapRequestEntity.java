@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
         @Index(name = "idx_swap_request_target_id", columnList = "targetEmployeeId"),
         @Index(name = "idx_swap_request_company_id", columnList = "companyId"),
         @Index(name = "idx_swap_request_status", columnList = "status"),
-        @Index(name = "idx_swap_request_deleted", columnList = "deleted"),
         @Index(name = "idx_swap_request_company_status", columnList = "companyId, status")
 })
 public class ShiftSwapRequestEntity extends BaseEntity {

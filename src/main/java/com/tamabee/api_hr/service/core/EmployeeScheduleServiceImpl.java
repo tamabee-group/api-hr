@@ -46,7 +46,7 @@ public class EmployeeScheduleServiceImpl implements IEmployeeScheduleService {
 
         for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
             List<ShiftAssignmentEntity> assignments = shiftAssignmentRepository
-                    .findByEmployeeIdAndWorkDateAndDeletedFalse(employeeId, date);
+                    .findByEmployeeIdAndWorkDate(employeeId, date);
 
             for (ShiftAssignmentEntity assignment : assignments) {
                 ShiftTemplateEntity template = shiftTemplateRepository
@@ -97,9 +97,9 @@ public class EmployeeScheduleServiceImpl implements IEmployeeScheduleService {
                 : null;
 
         ShiftAssignmentEntity requesterAssignment = shiftAssignmentRepository
-                .findByIdAndDeletedFalse(entity.getRequesterAssignmentId()).orElse(null);
+                .findById(entity.getRequesterAssignmentId()).orElse(null);
         ShiftAssignmentEntity targetAssignment = shiftAssignmentRepository
-                .findByIdAndDeletedFalse(entity.getTargetAssignmentId()).orElse(null);
+                .findById(entity.getTargetAssignmentId()).orElse(null);
 
         ShiftAssignmentResponse requesterAssignmentResponse = null;
         ShiftAssignmentResponse targetAssignmentResponse = null;
@@ -125,7 +125,7 @@ public class EmployeeScheduleServiceImpl implements IEmployeeScheduleService {
     public List<ShiftAssignmentResponse> getAvailableShiftsForSwap(Long employeeId, Long myShiftId) {
         // Lấy thông tin ca của mình
         ShiftAssignmentEntity myShift = shiftAssignmentRepository
-                .findByIdAndDeletedFalse(myShiftId)
+                .findById(myShiftId)
                 .orElse(null);
 
         if (myShift == null) {
@@ -164,7 +164,7 @@ public class EmployeeScheduleServiceImpl implements IEmployeeScheduleService {
 
         // Lấy ca của người yêu cầu
         ShiftAssignmentEntity requesterAssignment = shiftAssignmentRepository
-                .findByIdAndDeletedFalse(request.getRequesterShiftId())
+                .findById(request.getRequesterShiftId())
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy ca làm việc của bạn",
                         ErrorCode.SHIFT_ASSIGNMENT_NOT_FOUND));
 
@@ -175,7 +175,7 @@ public class EmployeeScheduleServiceImpl implements IEmployeeScheduleService {
 
         // Lấy ca của người được yêu cầu đổi
         ShiftAssignmentEntity targetAssignment = shiftAssignmentRepository
-                .findByIdAndDeletedFalse(request.getTargetShiftId())
+                .findById(request.getTargetShiftId())
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy ca làm việc muốn đổi",
                         ErrorCode.SHIFT_ASSIGNMENT_NOT_FOUND));
 

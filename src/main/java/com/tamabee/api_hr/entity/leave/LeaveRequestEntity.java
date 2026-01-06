@@ -21,7 +21,6 @@ import java.time.LocalDateTime;
 @Table(name = "leave_requests", indexes = {
         @Index(name = "idx_leave_requests_employee_id", columnList = "employeeId"),
         @Index(name = "idx_leave_requests_company_id", columnList = "companyId"),
-        @Index(name = "idx_leave_requests_deleted", columnList = "deleted"),
         @Index(name = "idx_leave_requests_status", columnList = "status"),
         @Index(name = "idx_leave_requests_pending", columnList = "companyId, status"),
         @Index(name = "idx_leave_requests_dates", columnList = "employeeId, startDate, endDate")

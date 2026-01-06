@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
         @Index(name = "idx_break_records_employee_id", columnList = "employeeId"),
         @Index(name = "idx_break_records_company_id", columnList = "companyId"),
         @Index(name = "idx_break_records_work_date", columnList = "workDate"),
-        @Index(name = "idx_break_records_deleted", columnList = "deleted"),
         @Index(name = "idx_break_records_employee_date", columnList = "employeeId, workDate"),
         @Index(name = "idx_break_records_break_number", columnList = "attendanceRecordId, breakNumber")
 })

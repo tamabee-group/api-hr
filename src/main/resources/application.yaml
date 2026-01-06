@@ -21,11 +21,11 @@ spring:
             non_contextual_creation: true
 
   flyway:
-    enabled: true
+    enabled: false # Disable auto-run, FlywayMultiTenantConfig sẽ quản lý
     baseline-on-migrate: true
     clean-disabled: false
-    locations: classpath:db/migration
     target: 2 # Chỉ chạy V1, V2 (bỏ qua V3 test data)
+    # Multi-tenant: Master DB dùng db/master, Tenant DB dùng db/tenant
 
   mail:
     host: smtp.gmail.com

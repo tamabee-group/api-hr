@@ -77,4 +77,23 @@ public class CompanyManagerController {
         String logoUrl = companyManagerService.uploadLogo(id, file);
         return ResponseEntity.ok(BaseResponse.success(logoUrl, "Tải logo thành công"));
     }
+
+    /**
+     * Deactivate công ty - set status = INACTIVE và remove DataSource khỏi pool.
+     * Database vẫn được giữ lại 90 ngày cho compliance.
+     */
+    @PostMapping("/{id}/deactivate")
+    public ResponseEntity<BaseResponse<CompanyResponse>> deactivateCompany(@PathVariable Long id) {
+        CompanyResponse company = companyManagerService.deactivateCompany(id);
+        return ResponseEntity.ok(BaseResponse.success(company, "Đã deactivate công ty thành công"));
+    }
+
+    /**
+     * Reactivate công ty - set status = ACTIVE và restore DataSource vào pool.
+     */
+    @PostMapping("/{id}/reactivate")
+    public ResponseEntity<BaseResponse<CompanyResponse>> reactivateCompany(@PathVariable Long id) {
+        CompanyResponse company = companyManagerService.reactivateCompany(id);
+        return ResponseEntity.ok(BaseResponse.success(company, "Đã reactivate công ty thành công"));
+    }
 }

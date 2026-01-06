@@ -24,7 +24,6 @@ import java.time.LocalDateTime;
         @Index(name = "idx_payroll_item_period_id", columnList = "payrollPeriodId"),
         @Index(name = "idx_payroll_item_employee_id", columnList = "employeeId"),
         @Index(name = "idx_payroll_item_company_id", columnList = "companyId"),
-        @Index(name = "idx_payroll_item_deleted", columnList = "deleted"),
         @Index(name = "idx_payroll_item_period_employee", columnList = "payrollPeriodId, employeeId")
 })
 public class PayrollItemEntity extends BaseEntity {

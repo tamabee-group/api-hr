@@ -19,6 +19,10 @@ import lombok.EqualsAndHashCode;
 })
 public class PlanFeatureEntity extends BaseEntity {
 
+    // Soft delete flag
+    @Column(nullable = false)
+    private Boolean deleted = false;
+
     @Column(name = "plan_id", nullable = false)
     private Long planId;
 

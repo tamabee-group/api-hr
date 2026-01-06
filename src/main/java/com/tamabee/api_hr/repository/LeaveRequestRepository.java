@@ -21,15 +21,10 @@ import java.util.Optional;
 public interface LeaveRequestRepository extends JpaRepository<LeaveRequestEntity, Long> {
 
         /**
-         * Tìm yêu cầu nghỉ phép theo ID (chưa bị xóa)
-         */
-        Optional<LeaveRequestEntity> findByIdAndDeletedFalse(Long id);
-
-        /**
          * Lấy danh sách yêu cầu đang chờ duyệt của công ty (phân trang)
          */
-        @Query("SELECT l FROM LeaveRequestEntity l WHERE l.deleted = false " +
-                        "AND l.companyId = :companyId " +
+        @Query("SELECT l FROM LeaveRequestEntity l " +
+                        "WHERE l.companyId = :companyId " +
                         "AND l.status = 'PENDING' " +
                         "ORDER BY l.createdAt DESC")
         Page<LeaveRequestEntity> findPendingByCompanyId(
@@ -39,8 +34,8 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequestEntity
         /**
          * Lấy danh sách yêu cầu của nhân viên (phân trang)
          */
-        @Query("SELECT l FROM LeaveRequestEntity l WHERE l.deleted = false " +
-                        "AND l.employeeId = :employeeId " +
+        @Query("SELECT l FROM LeaveRequestEntity l " +
+                        "WHERE l.employeeId = :employeeId " +
                         "ORDER BY l.createdAt DESC")
         Page<LeaveRequestEntity> findByEmployeeId(
                         @Param("employeeId") Long employeeId,
@@ -49,8 +44,8 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequestEntity
         /**
          * Lấy danh sách yêu cầu theo trạng thái của công ty (phân trang)
          */
-        @Query("SELECT l FROM LeaveRequestEntity l WHERE l.deleted = false " +
-                        "AND l.companyId = :companyId " +
+        @Query("SELECT l FROM LeaveRequestEntity l " +
+                        "WHERE l.companyId = :companyId " +
                         "AND l.status = :status " +
                         "ORDER BY l.createdAt DESC")
         Page<LeaveRequestEntity> findByCompanyIdAndStatus(
@@ -61,8 +56,8 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequestEntity
         /**
          * Lấy tất cả yêu cầu của công ty (phân trang)
          */
-        @Query("SELECT l FROM LeaveRequestEntity l WHERE l.deleted = false " +
-                        "AND l.companyId = :companyId " +
+        @Query("SELECT l FROM LeaveRequestEntity l " +
+                        "WHERE l.companyId = :companyId " +
                         "ORDER BY l.createdAt DESC")
         Page<LeaveRequestEntity> findByCompanyId(
                         @Param("companyId") Long companyId,
@@ -71,8 +66,8 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequestEntity
         /**
          * Lấy danh sách nghỉ phép đã duyệt của nhân viên trong khoảng thời gian
          */
-        @Query("SELECT l FROM LeaveRequestEntity l WHERE l.deleted = false " +
-                        "AND l.employeeId = :employeeId " +
+        @Query("SELECT l FROM LeaveRequestEntity l " +
+                        "WHERE l.employeeId = :employeeId " +
                         "AND l.status = 'APPROVED' " +
                         "AND l.startDate <= :endDate " +
                         "AND l.endDate >= :startDate " +
@@ -85,8 +80,8 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequestEntity
         /**
          * Kiểm tra nhân viên có nghỉ phép trong ngày không
          */
-        @Query("SELECT COUNT(l) > 0 FROM LeaveRequestEntity l WHERE l.deleted = false " +
-                        "AND l.employeeId = :employeeId " +
+        @Query("SELECT COUNT(l) > 0 FROM LeaveRequestEntity l " +
+                        "WHERE l.employeeId = :employeeId " +
                         "AND l.status = 'APPROVED' " +
                         "AND l.startDate <= :date " +
                         "AND l.endDate >= :date")
@@ -95,16 +90,16 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequestEntity
         /**
          * Đếm số yêu cầu đang chờ duyệt của công ty
          */
-        @Query("SELECT COUNT(l) FROM LeaveRequestEntity l WHERE l.deleted = false " +
-                        "AND l.companyId = :companyId " +
+        @Query("SELECT COUNT(l) FROM LeaveRequestEntity l " +
+                        "WHERE l.companyId = :companyId " +
                         "AND l.status = 'PENDING'")
         long countPendingByCompanyId(@Param("companyId") Long companyId);
 
         /**
          * Tính tổng số ngày nghỉ đã duyệt của nhân viên theo loại trong năm
          */
-        @Query("SELECT COALESCE(SUM(l.totalDays), 0) FROM LeaveRequestEntity l WHERE l.deleted = false " +
-                        "AND l.employeeId = :employeeId " +
+        @Query("SELECT COALESCE(SUM(l.totalDays), 0) FROM LeaveRequestEntity l " +
+                        "WHERE l.employeeId = :employeeId " +
                         "AND l.leaveType = :leaveType " +
                         "AND l.status = 'APPROVED' " +
                         "AND YEAR(l.startDate) = :year")
@@ -116,8 +111,8 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequestEntity
         /**
          * Kiểm tra có yêu cầu nghỉ phép trùng lặp không
          */
-        @Query("SELECT COUNT(l) > 0 FROM LeaveRequestEntity l WHERE l.deleted = false " +
-                        "AND l.employeeId = :employeeId " +
+        @Query("SELECT COUNT(l) > 0 FROM LeaveRequestEntity l " +
+                        "WHERE l.employeeId = :employeeId " +
                         "AND l.status IN ('PENDING', 'APPROVED') " +
                         "AND l.startDate <= :endDate " +
                         "AND l.endDate >= :startDate")

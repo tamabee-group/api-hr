@@ -62,25 +62,25 @@ public class EmployeeReferralServiceImpl implements IEmployeeReferralService {
                 int totalReferrals = companyRepository.countByReferredByEmployeeId(employee.getId());
 
                 // Tổng số commission
-                long totalCommissions = commissionRepository.countByEmployeeCodeAndDeletedFalse(employeeCode);
+                long totalCommissions = commissionRepository.countByEmployeeCode(employeeCode);
 
                 // Tổng số tiền
                 BigDecimal totalAmount = commissionRepository.sumAmountByEmployeeCode(employeeCode);
 
                 // Số commission PENDING
-                long pendingCommissions = commissionRepository.countByEmployeeCodeAndStatusAndDeletedFalse(
+                long pendingCommissions = commissionRepository.countByEmployeeCodeAndStatus(
                                 employeeCode, CommissionStatus.PENDING);
                 BigDecimal pendingAmount = commissionRepository.sumAmountByEmployeeCodeAndStatus(
                                 employeeCode, CommissionStatus.PENDING);
 
                 // Số commission ELIGIBLE
-                long eligibleCommissions = commissionRepository.countByEmployeeCodeAndStatusAndDeletedFalse(
+                long eligibleCommissions = commissionRepository.countByEmployeeCodeAndStatus(
                                 employeeCode, CommissionStatus.ELIGIBLE);
                 BigDecimal eligibleAmount = commissionRepository.sumAmountByEmployeeCodeAndStatus(
                                 employeeCode, CommissionStatus.ELIGIBLE);
 
                 // Số commission PAID
-                long paidCommissions = commissionRepository.countByEmployeeCodeAndStatusAndDeletedFalse(
+                long paidCommissions = commissionRepository.countByEmployeeCodeAndStatus(
                                 employeeCode, CommissionStatus.PAID);
                 BigDecimal paidAmount = commissionRepository.sumAmountByEmployeeCodeAndStatus(
                                 employeeCode, CommissionStatus.PAID);
@@ -127,7 +127,7 @@ public class EmployeeReferralServiceImpl implements IEmployeeReferralService {
 
                 // Lấy commission info
                 EmployeeCommissionEntity commission = commissionRepository
-                                .findByCompanyIdAndDeletedFalse(company.getId())
+                                .findByCompanyId(company.getId())
                                 .orElse(null);
 
                 Long commissionId = null;

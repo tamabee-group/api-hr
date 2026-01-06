@@ -23,6 +23,10 @@ import org.hibernate.type.SqlTypes;
 })
 public class WorkScheduleEntity extends BaseEntity {
 
+    // Soft delete flag
+    @Column(nullable = false)
+    private Boolean deleted = false;
+
     // ID công ty
     @Column(nullable = false)
     private Long companyId;

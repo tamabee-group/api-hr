@@ -44,6 +44,13 @@ public enum ErrorCode {
         COMPANY_NAME_EXISTS("COMPANY_NAME_EXISTS", "Tên công ty đã tồn tại"),
         INVALID_REFERRAL_CODE("INVALID_REFERRAL_CODE", "Mã giới thiệu không hợp lệ"),
 
+        // === TENANT DOMAIN ===
+        INVALID_TENANT_DOMAIN("INVALID_TENANT_DOMAIN",
+                        "Địa chỉ tên miền không hợp lệ. Chỉ chấp nhận chữ thường, số và dấu gạch ngang, độ dài 3-30 ký tự"),
+        TENANT_DOMAIN_EXISTS("TENANT_DOMAIN_EXISTS", "Địa chỉ tên miền đã được sử dụng"),
+        TENANT_DOMAIN_RESERVED("TENANT_DOMAIN_RESERVED", "Địa chỉ tên miền này đã được đặt trước"),
+        TENANT_PROVISIONING_FAILED("TENANT_PROVISIONING_FAILED", "Không thể tạo cơ sở dữ liệu cho công ty"),
+
         // === PLAN ===
         PLAN_NOT_FOUND("PLAN_NOT_FOUND", "Không tìm thấy gói dịch vụ"),
         PLAN_IN_USE("PLAN_IN_USE", "Gói dịch vụ đang được sử dụng, không thể xóa"),

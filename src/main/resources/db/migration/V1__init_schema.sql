@@ -78,21 +78,25 @@ CREATE TABLE companies (
     locale VARCHAR(50) NOT NULL,
     language VARCHAR(10) NOT NULL,
     logo VARCHAR(500),
+    tenant_domain VARCHAR(50) UNIQUE NOT NULL,
     plan_id BIGINT,
     referred_by_employee_id BIGINT,
     owner_id BIGINT,
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
+    deactivated_at TIMESTAMP,
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
 );
 
 CREATE UNIQUE INDEX idx_companies_email ON companies(email);
+CREATE UNIQUE INDEX idx_companies_tenant_domain ON companies(tenant_domain);
 CREATE INDEX idx_companies_plan_id ON companies(plan_id);
 CREATE INDEX idx_companies_referred_by ON companies(referred_by_employee_id);
 CREATE INDEX idx_companies_owner_id ON companies(owner_id);
 CREATE INDEX idx_companies_status ON companies(status);
 CREATE INDEX idx_companies_deleted ON companies(deleted);
+CREATE INDEX idx_companies_deactivated_at ON companies(deactivated_at);
 
 -- =====================================================
 -- 4. WALLETS - Ví tiền công ty (JPY)

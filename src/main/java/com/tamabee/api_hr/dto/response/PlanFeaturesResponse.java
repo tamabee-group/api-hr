@@ -6,10 +6,11 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.util.Set;
+import java.util.List;
 
 /**
- * Response DTO cho danh sách feature codes của một plan
+ * Response DTO cho danh sách feature codes của một plan.
+ * Dùng cho API GET /api/plans/{planId}/features và GET /api/plans/all-features
  */
 @Data
 @Builder
@@ -19,5 +20,18 @@ public class PlanFeaturesResponse {
 
     private Long planId;
     private String planName;
-    private Set<FeatureCode> features;
+    private List<FeatureItem> features;
+
+    /**
+     * DTO cho từng feature item
+     */
+    @Data
+    @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
+    public static class FeatureItem {
+        private FeatureCode code;
+        private String name;
+        private boolean enabled;
+    }
 }

@@ -19,92 +19,87 @@ import java.util.Optional;
 @Repository
 public interface AttendanceRecordRepository extends JpaRepository<AttendanceRecordEntity, Long> {
 
-    /**
-     * Tìm bản ghi chấm công theo ID (chưa bị xóa)
-     */
-    Optional<AttendanceRecordEntity> findByIdAndDeletedFalse(Long id);
+        /**
+         * Tìm bản ghi chấm công của nhân viên theo ngày
+         */
+        Optional<AttendanceRecordEntity> findByEmployeeIdAndWorkDate(
+                        Long employeeId, LocalDate workDate);
 
-    /**
-     * Tìm bản ghi chấm công của nhân viên theo ngày
-     */
-    Optional<AttendanceRecordEntity> findByEmployeeIdAndWorkDateAndDeletedFalse(
-            Long employeeId, LocalDate workDate);
+        /**
+         * Lấy danh sách chấm công của công ty trong khoảng thời gian (phân trang)
+         */
+        @Query("SELECT a FROM AttendanceRecordEntity a " +
+                        "WHERE a.companyId = :companyId " +
+                        "AND a.workDate BETWEEN :startDate AND :endDate " +
+                        "ORDER BY a.workDate DESC, a.employeeId ASC")
+        Page<AttendanceRecordEntity> findByCompanyIdAndWorkDateBetween(
+                        @Param("companyId") Long companyId,
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate,
+                        Pageable pageable);
 
-    /**
-     * Lấy danh sách chấm công của công ty trong khoảng thời gian (phân trang)
-     */
-    @Query("SELECT a FROM AttendanceRecordEntity a WHERE a.deleted = false " +
-            "AND a.companyId = :companyId " +
-            "AND a.workDate BETWEEN :startDate AND :endDate " +
-            "ORDER BY a.workDate DESC, a.employeeId ASC")
-    Page<AttendanceRecordEntity> findByCompanyIdAndWorkDateBetween(
-            @Param("companyId") Long companyId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate,
-            Pageable pageable);
+        /**
+         * Lấy danh sách chấm công của nhân viên trong khoảng thời gian
+         */
+        @Query("SELECT a FROM AttendanceRecordEntity a " +
+                        "WHERE a.employeeId = :employeeId " +
+                        "AND a.workDate BETWEEN :startDate AND :endDate " +
+                        "ORDER BY a.workDate DESC")
+        List<AttendanceRecordEntity> findByEmployeeIdAndWorkDateBetween(
+                        @Param("employeeId") Long employeeId,
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate);
 
-    /**
-     * Lấy danh sách chấm công của nhân viên trong khoảng thời gian
-     */
-    @Query("SELECT a FROM AttendanceRecordEntity a WHERE a.deleted = false " +
-            "AND a.employeeId = :employeeId " +
-            "AND a.workDate BETWEEN :startDate AND :endDate " +
-            "ORDER BY a.workDate DESC")
-    List<AttendanceRecordEntity> findByEmployeeIdAndWorkDateBetween(
-            @Param("employeeId") Long employeeId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate);
+        /**
+         * Lấy danh sách chấm công của nhân viên trong khoảng thời gian (phân trang)
+         */
+        @Query("SELECT a FROM AttendanceRecordEntity a " +
+                        "WHERE a.employeeId = :employeeId " +
+                        "AND a.workDate BETWEEN :startDate AND :endDate " +
+                        "ORDER BY a.workDate DESC")
+        Page<AttendanceRecordEntity> findByEmployeeIdAndWorkDateBetweenPaged(
+                        @Param("employeeId") Long employeeId,
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate,
+                        Pageable pageable);
 
-    /**
-     * Lấy danh sách chấm công của nhân viên trong khoảng thời gian (phân trang)
-     */
-    @Query("SELECT a FROM AttendanceRecordEntity a WHERE a.deleted = false " +
-            "AND a.employeeId = :employeeId " +
-            "AND a.workDate BETWEEN :startDate AND :endDate " +
-            "ORDER BY a.workDate DESC")
-    Page<AttendanceRecordEntity> findByEmployeeIdAndWorkDateBetweenPaged(
-            @Param("employeeId") Long employeeId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate,
-            Pageable pageable);
+        /**
+         * Đếm số ngày làm việc của nhân viên trong khoảng thời gian
+         */
+        @Query("SELECT COUNT(a) FROM AttendanceRecordEntity a " +
+                        "WHERE a.employeeId = :employeeId " +
+                        "AND a.workDate BETWEEN :startDate AND :endDate " +
+                        "AND a.status = :status")
+        long countByEmployeeIdAndWorkDateBetweenAndStatus(
+                        @Param("employeeId") Long employeeId,
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate,
+                        @Param("status") AttendanceStatus status);
 
-    /**
-     * Đếm số ngày làm việc của nhân viên trong khoảng thời gian
-     */
-    @Query("SELECT COUNT(a) FROM AttendanceRecordEntity a WHERE a.deleted = false " +
-            "AND a.employeeId = :employeeId " +
-            "AND a.workDate BETWEEN :startDate AND :endDate " +
-            "AND a.status = :status")
-    long countByEmployeeIdAndWorkDateBetweenAndStatus(
-            @Param("employeeId") Long employeeId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate,
-            @Param("status") AttendanceStatus status);
+        /**
+         * Tính tổng số phút làm việc của nhân viên trong khoảng thời gian
+         */
+        @Query("SELECT COALESCE(SUM(a.workingMinutes), 0) FROM AttendanceRecordEntity a " +
+                        "WHERE a.employeeId = :employeeId " +
+                        "AND a.workDate BETWEEN :startDate AND :endDate")
+        Integer sumWorkingMinutesByEmployeeIdAndWorkDateBetween(
+                        @Param("employeeId") Long employeeId,
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate);
 
-    /**
-     * Tính tổng số phút làm việc của nhân viên trong khoảng thời gian
-     */
-    @Query("SELECT COALESCE(SUM(a.workingMinutes), 0) FROM AttendanceRecordEntity a WHERE a.deleted = false " +
-            "AND a.employeeId = :employeeId " +
-            "AND a.workDate BETWEEN :startDate AND :endDate")
-    Integer sumWorkingMinutesByEmployeeIdAndWorkDateBetween(
-            @Param("employeeId") Long employeeId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate);
+        /**
+         * Tính tổng số phút tăng ca của nhân viên trong khoảng thời gian
+         */
+        @Query("SELECT COALESCE(SUM(a.overtimeMinutes), 0) FROM AttendanceRecordEntity a " +
+                        "WHERE a.employeeId = :employeeId " +
+                        "AND a.workDate BETWEEN :startDate AND :endDate")
+        Integer sumOvertimeMinutesByEmployeeIdAndWorkDateBetween(
+                        @Param("employeeId") Long employeeId,
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate);
 
-    /**
-     * Tính tổng số phút tăng ca của nhân viên trong khoảng thời gian
-     */
-    @Query("SELECT COALESCE(SUM(a.overtimeMinutes), 0) FROM AttendanceRecordEntity a WHERE a.deleted = false " +
-            "AND a.employeeId = :employeeId " +
-            "AND a.workDate BETWEEN :startDate AND :endDate")
-    Integer sumOvertimeMinutesByEmployeeIdAndWorkDateBetween(
-            @Param("employeeId") Long employeeId,
-            @Param("startDate") LocalDate startDate,
-            @Param("endDate") LocalDate endDate);
-
-    /**
-     * Kiểm tra nhân viên đã chấm công ngày hôm nay chưa
-     */
-    boolean existsByEmployeeIdAndWorkDateAndDeletedFalse(Long employeeId, LocalDate workDate);
+        /**
+         * Kiểm tra nhân viên đã chấm công ngày hôm nay chưa
+         */
+        boolean existsByEmployeeIdAndWorkDate(Long employeeId, LocalDate workDate);
 }

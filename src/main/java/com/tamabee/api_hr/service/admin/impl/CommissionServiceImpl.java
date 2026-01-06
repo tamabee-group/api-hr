@@ -54,7 +54,7 @@ public class CommissionServiceImpl implements ICommissionService {
     @Transactional
     public void processCommission(Long companyId) {
         // Kiểm tra company đã có commission chưa (chỉ tính lần đầu)
-        if (commissionRepository.existsByCompanyIdAndDeletedFalse(companyId)) {
+        if (commissionRepository.existsByCompanyId(companyId)) {
             log.debug("Company {} đã có commission, bỏ qua", companyId);
             return;
         }
@@ -170,7 +170,7 @@ public class CommissionServiceImpl implements ICommissionService {
             empSummary.setEmployeeName(employeeName);
 
             // Số lượng commission
-            empSummary.setCount(commissionRepository.countByEmployeeCodeAndDeletedFalse(employeeCode));
+            empSummary.setCount(commissionRepository.countByEmployeeCode(employeeCode));
 
             // Tổng pending
             empSummary.setTotalPending(commissionRepository.sumAmountByEmployeeCodeAndStatus(
@@ -236,7 +236,7 @@ public class CommissionServiceImpl implements ICommissionService {
     @Override
     @Transactional
     public CommissionResponse markAsPaid(Long id) {
-        EmployeeCommissionEntity commission = commissionRepository.findByIdAndDeletedFalse(id)
+        EmployeeCommissionEntity commission = commissionRepository.findById(id)
                 .orElseThrow(() -> NotFoundException.commission(id));
 
         // Chỉ cho phép pay khi status đã ELIGIBLE
@@ -297,7 +297,7 @@ public class CommissionServiceImpl implements ICommissionService {
                     filter.getEmployeeCode(), filter.getStatus(),
                     filter.getFromDate(), filter.getToDate(), pageable);
         } else if (hasEmployeeCode && hasStatus) {
-            return commissionRepository.findByDeletedFalseAndEmployeeCodeAndStatusOrderByCreatedAtDesc(
+            return commissionRepository.findByEmployeeCodeAndStatusOrderByCreatedAtDesc(
                     filter.getEmployeeCode(), filter.getStatus(), pageable);
         } else if (hasEmployeeCode && hasDateRange) {
             return commissionRepository.findByEmployeeCodeAndDateRange(
@@ -306,16 +306,16 @@ public class CommissionServiceImpl implements ICommissionService {
             return commissionRepository.findByStatusAndDateRange(
                     filter.getStatus(), filter.getFromDate(), filter.getToDate(), pageable);
         } else if (hasEmployeeCode) {
-            return commissionRepository.findByDeletedFalseAndEmployeeCodeOrderByCreatedAtDesc(
+            return commissionRepository.findByEmployeeCodeOrderByCreatedAtDesc(
                     filter.getEmployeeCode(), pageable);
         } else if (hasStatus) {
-            return commissionRepository.findByDeletedFalseAndStatusOrderByCreatedAtDesc(
+            return commissionRepository.findByStatusOrderByCreatedAtDesc(
                     filter.getStatus(), pageable);
         } else if (hasDateRange) {
             return commissionRepository.findByDateRange(
                     filter.getFromDate(), filter.getToDate(), pageable);
         } else {
-            return commissionRepository.findByDeletedFalseOrderByCreatedAtDesc(pageable);
+            return commissionRepository.findAllByOrderByCreatedAtDesc(pageable);
         }
     }
 
@@ -363,13 +363,13 @@ public class CommissionServiceImpl implements ICommissionService {
         response.setEmployeeName(employeeName);
 
         // Tổng số commission
-        response.setTotalCommissions(commissionRepository.countByEmployeeCodeAndDeletedFalse(employeeCode));
+        response.setTotalCommissions(commissionRepository.countByEmployeeCode(employeeCode));
 
         // Tổng số tiền
         response.setTotalAmount(commissionRepository.sumAmountByEmployeeCode(employeeCode));
 
         // Số commission pending
-        response.setPendingCommissions(commissionRepository.countByEmployeeCodeAndStatusAndDeletedFalse(
+        response.setPendingCommissions(commissionRepository.countByEmployeeCodeAndStatus(
                 employeeCode, CommissionStatus.PENDING));
 
         // Số tiền pending
@@ -377,7 +377,7 @@ public class CommissionServiceImpl implements ICommissionService {
                 employeeCode, CommissionStatus.PENDING));
 
         // Số commission paid
-        response.setPaidCommissions(commissionRepository.countByEmployeeCodeAndStatusAndDeletedFalse(
+        response.setPaidCommissions(commissionRepository.countByEmployeeCodeAndStatus(
                 employeeCode, CommissionStatus.PAID));
 
         // Số tiền paid
@@ -392,7 +392,7 @@ public class CommissionServiceImpl implements ICommissionService {
     @Override
     @Transactional
     public boolean calculateEligibility(Long commissionId) {
-        EmployeeCommissionEntity commission = commissionRepository.findByIdAndDeletedFalse(commissionId)
+        EmployeeCommissionEntity commission = commissionRepository.findById(commissionId)
                 .orElseThrow(() -> NotFoundException.commission(commissionId));
 
         // Nếu đã PAID thì không cần tính lại

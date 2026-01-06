@@ -13,6 +13,10 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class UserEntity extends BaseEntity {
 
+    // Soft delete flag
+    @Column(nullable = false)
+    private Boolean deleted = false;
+
     @Column(unique = true, length = 10)
     private String employeeCode;
 
@@ -38,6 +42,10 @@ public class UserEntity extends BaseEntity {
 
     @Column(nullable = false)
     private Long companyId = 0L;
+
+    // Tenant domain cho multi-tenant routing
+    @Column(name = "tenant_domain")
+    private String tenantDomain;
 
     // Phần trăm hoàn thiện thông tin profile (0-100)
     @Column(nullable = false)

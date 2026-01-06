@@ -35,7 +35,6 @@ public class WalletTransactionMapper {
         entity.setBalanceAfter(balanceAfter);
         entity.setDescription(description);
         entity.setReferenceId(referenceId);
-        entity.setDeleted(false);
 
         return entity;
     }

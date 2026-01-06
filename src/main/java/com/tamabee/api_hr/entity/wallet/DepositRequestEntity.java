@@ -26,6 +26,10 @@ import java.time.LocalDateTime;
 })
 public class DepositRequestEntity extends BaseEntity {
 
+    // Soft delete flag
+    @Column(nullable = false)
+    private Boolean deleted = false;
+
     @Column(name = "company_id", nullable = false)
     private Long companyId;
 

@@ -17,7 +17,6 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "work_mode_change_logs", indexes = {
         @Index(name = "idx_work_mode_change_logs_company_id", columnList = "companyId"),
-        @Index(name = "idx_work_mode_change_logs_deleted", columnList = "deleted"),
         @Index(name = "idx_work_mode_change_logs_changed_at", columnList = "changedAt")
 })
 public class WorkModeChangeLogEntity extends BaseEntity {

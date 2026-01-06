@@ -23,6 +23,10 @@ import java.time.LocalDate;
 })
 public class HolidayEntity extends BaseEntity {
 
+    // Soft delete flag
+    @Column(nullable = false)
+    private Boolean deleted = false;
+
     // ID công ty (null = ngày lễ quốc gia)
     private Long companyId;
 

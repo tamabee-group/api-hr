@@ -73,8 +73,9 @@ public class BreakServiceImpl implements IBreakService {
         }
 
         // Tìm bản ghi chấm công hôm nay
+        // AttendanceRecord không có soft delete
         AttendanceRecordEntity attendance = attendanceRecordRepository
-                .findByEmployeeIdAndWorkDateAndDeletedFalse(employeeId, today)
+                .findByEmployeeIdAndWorkDate(employeeId, today)
                 .orElseThrow(() -> new BadRequestException("Chưa check-in, không thể bắt đầu giải lao",
                         ErrorCode.NOT_CHECKED_IN));
 
@@ -92,10 +93,11 @@ public class BreakServiceImpl implements IBreakService {
         }
 
         // Kiểm tra số lần break đã đạt giới hạn chưa
+        // BreakRecord không có soft delete
         int maxBreaksPerDay = config.getMaxBreaksPerDay() != null
                 ? config.getMaxBreaksPerDay()
                 : 3;
-        long currentBreakCount = breakRecordRepository.countByAttendanceRecordIdAndDeletedFalse(attendance.getId());
+        long currentBreakCount = breakRecordRepository.countByAttendanceRecordId(attendance.getId());
         if (currentBreakCount >= maxBreaksPerDay) {
             throw new BadRequestException("Đã đạt số lần giải lao tối đa trong ngày", ErrorCode.MAX_BREAKS_REACHED);
         }
@@ -129,7 +131,8 @@ public class BreakServiceImpl implements IBreakService {
         LocalDateTime now = LocalDateTime.now();
 
         // Tìm bản ghi break
-        BreakRecordEntity breakRecord = breakRecordRepository.findByIdAndDeletedFalse(breakRecordId)
+        // BreakRecord không có soft delete
+        BreakRecordEntity breakRecord = breakRecordRepository.findById(breakRecordId)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy bản ghi giải lao", ErrorCode.NOT_FOUND));
 
         // Kiểm tra quyền sở hữu
@@ -182,8 +185,9 @@ public class BreakServiceImpl implements IBreakService {
     @Override
     @Transactional(readOnly = true)
     public List<BreakRecordResponse> getBreakRecordsByAttendance(Long attendanceRecordId) {
+        // BreakRecord không có soft delete
         List<BreakRecordEntity> records = breakRecordRepository
-                .findByAttendanceRecordIdAndDeletedFalse(attendanceRecordId);
+                .findByAttendanceRecordId(attendanceRecordId);
 
         return records.stream()
                 .map(this::toResponse)
@@ -193,15 +197,17 @@ public class BreakServiceImpl implements IBreakService {
     @Override
     @Transactional(readOnly = true)
     public BreakSummaryResponse getBreakSummary(Long employeeId, LocalDate date) {
+        // BreakRecord không có soft delete
         List<BreakRecordEntity> records = breakRecordRepository
-                .findByEmployeeIdAndWorkDateAndDeletedFalse(employeeId, date);
+                .findByEmployeeIdAndWorkDate(employeeId, date);
 
         // Lấy thông tin nhân viên
         String employeeName = getEmployeeName(employeeId);
 
         // Lấy attendance record để biết company
+        // AttendanceRecord không có soft delete
         AttendanceRecordEntity attendance = attendanceRecordRepository
-                .findByEmployeeIdAndWorkDateAndDeletedFalse(employeeId, date)
+                .findByEmployeeIdAndWorkDate(employeeId, date)
                 .orElse(null);
 
         if (attendance == null) {
@@ -337,8 +343,9 @@ public class BreakServiceImpl implements IBreakService {
     @Override
     @Transactional(readOnly = true)
     public Integer calculateTotalBreakMinutes(Long attendanceRecordId) {
+        // BreakRecord không có soft delete
         List<BreakRecordEntity> breaks = breakRecordRepository
-                .findByAttendanceRecordIdAndDeletedFalse(attendanceRecordId);
+                .findByAttendanceRecordId(attendanceRecordId);
 
         return breaks.stream()
                 .mapToInt(b -> b.getActualBreakMinutes() != null ? b.getActualBreakMinutes() : 0)
@@ -353,7 +360,8 @@ public class BreakServiceImpl implements IBreakService {
      */
     @Transactional
     public void autoCreateFixedBreakRecords(Long attendanceRecordId) {
-        AttendanceRecordEntity attendance = attendanceRecordRepository.findByIdAndDeletedFalse(attendanceRecordId)
+        // AttendanceRecord không có soft delete
+        AttendanceRecordEntity attendance = attendanceRecordRepository.findById(attendanceRecordId)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy bản ghi chấm công",
                         ErrorCode.ATTENDANCE_RECORD_NOT_FOUND));
 
@@ -365,8 +373,9 @@ public class BreakServiceImpl implements IBreakService {
         }
 
         // Kiểm tra đã có break records chưa
+        // BreakRecord không có soft delete
         List<BreakRecordEntity> existingBreaks = breakRecordRepository
-                .findByAttendanceRecordIdAndDeletedFalse(attendanceRecordId);
+                .findByAttendanceRecordId(attendanceRecordId);
         if (!existingBreaks.isEmpty()) {
             return; // Đã có break records
         }
@@ -454,15 +463,17 @@ public class BreakServiceImpl implements IBreakService {
      * Cập nhật thông tin break trong attendance record
      */
     private void updateAttendanceBreakInfo(Long attendanceRecordId, BreakConfig config) {
-        AttendanceRecordEntity attendance = attendanceRecordRepository.findByIdAndDeletedFalse(attendanceRecordId)
+        // AttendanceRecord không có soft delete
+        AttendanceRecordEntity attendance = attendanceRecordRepository.findById(attendanceRecordId)
                 .orElse(null);
 
         if (attendance == null) {
             return;
         }
 
+        // BreakRecord không có soft delete
         List<BreakRecordEntity> breaks = breakRecordRepository
-                .findByAttendanceRecordIdAndDeletedFalse(attendanceRecordId);
+                .findByAttendanceRecordId(attendanceRecordId);
 
         // Tính tổng break
         int totalBreak = breaks.stream()

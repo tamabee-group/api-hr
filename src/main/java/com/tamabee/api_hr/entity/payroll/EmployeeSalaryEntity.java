@@ -24,6 +24,10 @@ import java.time.LocalDate;
 })
 public class EmployeeSalaryEntity extends BaseEntity {
 
+    // Soft delete flag
+    @Column(nullable = false)
+    private Boolean deleted = false;
+
     @Column(nullable = false)
     private Long employeeId;
 

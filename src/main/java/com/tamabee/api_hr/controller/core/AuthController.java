@@ -1,5 +1,6 @@
 package com.tamabee.api_hr.controller.core;
 
+import com.tamabee.api_hr.dto.response.DomainAvailabilityResponse;
 import com.tamabee.api_hr.dto.response.UserResponse;
 import com.tamabee.api_hr.enums.ErrorCode;
 import com.tamabee.api_hr.model.request.*;
@@ -144,5 +145,15 @@ public class AuthController {
         response.addCookie(refreshCookie);
 
         return ResponseEntity.ok(BaseResponse.success(loginResponse.getUser(), "Đăng nhập thành công"));
+    }
+
+    @GetMapping("/check-domain")
+    public ResponseEntity<BaseResponse<DomainAvailabilityResponse>> checkDomain(
+            @RequestParam String domain) {
+        DomainAvailabilityResponse result = authService.checkDomainAvailability(domain);
+        String message = result.isAvailable()
+                ? "Tenant domain khả dụng"
+                : "Tenant domain không khả dụng";
+        return ResponseEntity.ok(BaseResponse.success(result, message));
     }
 }

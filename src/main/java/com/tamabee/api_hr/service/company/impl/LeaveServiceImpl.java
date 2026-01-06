@@ -110,8 +110,8 @@ public class LeaveServiceImpl implements ILeaveService {
                     ErrorCode.LEAVE_CANNOT_CANCEL);
         }
 
-        // Soft delete
-        entity.setDeleted(true);
+        // Set status = CANCELLED (LeaveRequest không có soft delete)
+        entity.setStatus(LeaveStatus.CANCELLED);
         leaveRequestRepository.save(entity);
 
         log.info("Nhân viên {} đã hủy yêu cầu nghỉ phép {}", employeeId, requestId);
@@ -240,7 +240,7 @@ public class LeaveServiceImpl implements ILeaveService {
     @Transactional
     public void updateLeaveBalance(Long employeeId, LeaveType type, Integer year, Integer adjustment) {
         LeaveBalanceEntity balance = leaveBalanceRepository
-                .findByEmployeeIdAndYearAndLeaveTypeAndDeletedFalse(employeeId, year, type)
+                .findByEmployeeIdAndYearAndLeaveType(employeeId, year, type)
                 .orElse(null);
 
         if (balance == null) {
@@ -270,7 +270,7 @@ public class LeaveServiceImpl implements ILeaveService {
      * Tìm yêu cầu nghỉ phép theo ID
      */
     private LeaveRequestEntity findLeaveRequest(Long requestId) {
-        return leaveRequestRepository.findByIdAndDeletedFalse(requestId)
+        return leaveRequestRepository.findById(requestId)
                 .orElseThrow(() -> new NotFoundException(
                         "Không tìm thấy yêu cầu nghỉ phép",
                         ErrorCode.LEAVE_REQUEST_NOT_FOUND));
@@ -298,7 +298,7 @@ public class LeaveServiceImpl implements ILeaveService {
     private void updateLeaveBalanceOnApproval(LeaveRequestEntity leaveRequest) {
         int year = leaveRequest.getStartDate().getYear();
         LeaveBalanceEntity balance = leaveBalanceRepository
-                .findByEmployeeIdAndYearAndLeaveTypeAndDeletedFalse(
+                .findByEmployeeIdAndYearAndLeaveType(
                         leaveRequest.getEmployeeId(), year, leaveRequest.getLeaveType())
                 .orElse(null);
 

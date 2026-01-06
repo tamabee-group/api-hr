@@ -152,7 +152,7 @@ public class AuditLogServiceImpl implements IAuditLogService {
     @Override
     @Transactional(readOnly = true)
     public AuditLogResponse getAuditLogById(Long id) {
-        AuditLogEntity entity = auditLogRepository.findByIdAndDeletedFalse(id)
+        AuditLogEntity entity = auditLogRepository.findById(id)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.AUDIT_LOG_NOT_FOUND));
         return toResponse(entity);
     }
@@ -160,7 +160,7 @@ public class AuditLogServiceImpl implements IAuditLogService {
     @Override
     @Transactional(readOnly = true)
     public Page<AuditLogResponse> getAuditLogs(Long companyId, Pageable pageable) {
-        return auditLogRepository.findByDeletedFalseAndCompanyIdOrderByTimestampDesc(companyId, pageable)
+        return auditLogRepository.findByCompanyIdOrderByTimestampDesc(companyId, pageable)
                 .map(this::toResponse);
     }
 
@@ -180,7 +180,7 @@ public class AuditLogServiceImpl implements IAuditLogService {
     @Override
     @Transactional(readOnly = true)
     public List<AuditLogResponse> getEntityHistory(AuditEntityType entityType, Long entityId) {
-        return auditLogRepository.findByDeletedFalseAndEntityTypeAndEntityIdOrderByTimestampDesc(entityType, entityId)
+        return auditLogRepository.findByEntityTypeAndEntityIdOrderByTimestampDesc(entityType, entityId)
                 .stream()
                 .map(this::toResponse)
                 .collect(Collectors.toList());
@@ -189,7 +189,7 @@ public class AuditLogServiceImpl implements IAuditLogService {
     @Override
     @Transactional(readOnly = true)
     public Page<AuditLogResponse> getAuditLogsByUser(Long userId, Pageable pageable) {
-        return auditLogRepository.findByDeletedFalseAndUserIdOrderByTimestampDesc(userId, pageable)
+        return auditLogRepository.findByUserIdOrderByTimestampDesc(userId, pageable)
                 .map(this::toResponse);
     }
 

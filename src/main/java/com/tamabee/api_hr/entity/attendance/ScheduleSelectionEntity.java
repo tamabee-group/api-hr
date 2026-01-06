@@ -20,7 +20,6 @@ import java.time.LocalDateTime;
         @Index(name = "idx_selection_employee_id", columnList = "employeeId"),
         @Index(name = "idx_selection_company_id", columnList = "companyId"),
         @Index(name = "idx_selection_schedule_id", columnList = "scheduleId"),
-        @Index(name = "idx_selection_deleted", columnList = "deleted"),
         @Index(name = "idx_selection_status", columnList = "status"),
         @Index(name = "idx_selection_pending", columnList = "companyId, status")
 })

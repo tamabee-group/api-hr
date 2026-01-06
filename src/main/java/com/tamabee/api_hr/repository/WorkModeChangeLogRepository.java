@@ -15,17 +15,17 @@ import java.util.List;
 public interface WorkModeChangeLogRepository extends JpaRepository<WorkModeChangeLogEntity, Long> {
 
     /**
-     * Tìm tất cả log thay đổi work mode của công ty (chưa bị xóa)
+     * Tìm tất cả log thay đổi work mode của công ty
      */
-    List<WorkModeChangeLogEntity> findByCompanyIdAndDeletedFalseOrderByChangedAtDesc(Long companyId);
+    List<WorkModeChangeLogEntity> findByCompanyIdOrderByChangedAtDesc(Long companyId);
 
     /**
      * Tìm tất cả log thay đổi work mode của công ty (phân trang)
      */
-    Page<WorkModeChangeLogEntity> findByCompanyIdAndDeletedFalse(Long companyId, Pageable pageable);
+    Page<WorkModeChangeLogEntity> findByCompanyId(Long companyId, Pageable pageable);
 
     /**
      * Đếm số lần thay đổi work mode của công ty
      */
-    long countByCompanyIdAndDeletedFalse(Long companyId);
+    long countByCompanyId(Long companyId);
 }

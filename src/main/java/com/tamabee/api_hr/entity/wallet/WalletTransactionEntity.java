@@ -18,9 +18,7 @@ import java.math.BigDecimal;
 @Table(name = "wallet_transactions", indexes = {
         @Index(name = "idx_wallet_transactions_wallet_id", columnList = "walletId"),
         @Index(name = "idx_wallet_transactions_transaction_type", columnList = "transactionType"),
-        @Index(name = "idx_wallet_transactions_created_at", columnList = "createdAt"),
-        @Index(name = "idx_wallet_transactions_deleted", columnList = "deleted"),
-        @Index(name = "idx_wallet_transactions_wallet_id_deleted", columnList = "walletId, deleted")
+        @Index(name = "idx_wallet_transactions_created_at", columnList = "createdAt")
 })
 public class WalletTransactionEntity extends BaseEntity {
 

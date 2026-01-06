@@ -250,7 +250,7 @@ public class ReportServiceImpl implements IReportService {
                 List<PayrollItemEntity> allItems = new ArrayList<>();
                 for (PayrollPeriodEntity period : periods) {
                         List<PayrollItemEntity> items = payrollItemRepository
-                                        .findByPayrollPeriodIdAndDeletedFalse(period.getId());
+                                        .findByPayrollPeriodId(period.getId());
                         allItems.addAll(items);
                 }
 
@@ -406,7 +406,7 @@ public class ReportServiceImpl implements IReportService {
                 List<PayrollItemEntity> allItems = new ArrayList<>();
                 for (PayrollPeriodEntity period : periods) {
                         List<PayrollItemEntity> items = payrollItemRepository
-                                        .findByPayrollPeriodIdAndDeletedFalse(period.getId());
+                                        .findByPayrollPeriodId(period.getId());
                         allItems.addAll(items);
                 }
 
@@ -596,7 +596,7 @@ public class ReportServiceImpl implements IReportService {
                 List<ShiftAssignmentEntity> allAssignments = new ArrayList<>();
                 for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
                         List<ShiftAssignmentEntity> dailyAssignments = shiftAssignmentRepository
-                                        .findByCompanyIdAndWorkDateAndDeletedFalse(companyId, date);
+                                        .findByCompanyIdAndWorkDate(companyId, date);
                         allAssignments.addAll(dailyAssignments);
                 }
 
@@ -972,7 +972,7 @@ public class ReportServiceImpl implements IReportService {
 
                 for (AttendanceRecordEntity attendance : attendanceRecords) {
                         List<BreakRecordEntity> breaks = breakRecordRepository
-                                        .findByAttendanceRecordIdAndDeletedFalse(attendance.getId());
+                                        .findByAttendanceRecordId(attendance.getId());
 
                         if (!breaks.isEmpty()) {
                                 daysWithBreaks++;

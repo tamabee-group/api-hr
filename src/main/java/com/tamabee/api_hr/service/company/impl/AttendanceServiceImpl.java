@@ -81,7 +81,8 @@ public class AttendanceServiceImpl implements IAttendanceService {
         LocalDateTime now = LocalDateTime.now();
 
         // Kiểm tra đã check-in chưa
-        if (attendanceRecordRepository.existsByEmployeeIdAndWorkDateAndDeletedFalse(employeeId, today)) {
+        // AttendanceRecord không có soft delete
+        if (attendanceRecordRepository.existsByEmployeeIdAndWorkDate(employeeId, today)) {
             throw new ConflictException("Đã check-in hôm nay", ErrorCode.ALREADY_CHECKED_IN);
         }
 
@@ -142,8 +143,9 @@ public class AttendanceServiceImpl implements IAttendanceService {
         LocalDateTime now = LocalDateTime.now();
 
         // Tìm bản ghi check-in hôm nay
+        // AttendanceRecord không có soft delete
         AttendanceRecordEntity entity = attendanceRecordRepository
-                .findByEmployeeIdAndWorkDateAndDeletedFalse(employeeId, today)
+                .findByEmployeeIdAndWorkDate(employeeId, today)
                 .orElseThrow(
                         () -> new BadRequestException("Chưa check-in, không thể check-out", ErrorCode.NOT_CHECKED_IN));
 
@@ -279,7 +281,8 @@ public class AttendanceServiceImpl implements IAttendanceService {
 
         if (breakRecordId != null) {
             // Cập nhật break record cụ thể được chỉ định
-            breakRecord = breakRecordRepository.findByIdAndDeletedFalse(breakRecordId)
+            // BreakRecord không có soft delete
+            breakRecord = breakRecordRepository.findById(breakRecordId)
                     .orElseThrow(() -> new NotFoundException(
                             "Không tìm thấy bản ghi giờ giải lao",
                             ErrorCode.BREAK_RECORD_NOT_FOUND));
@@ -292,8 +295,9 @@ public class AttendanceServiceImpl implements IAttendanceService {
             }
         } else {
             // Tìm break record hiện tại hoặc tạo mới
+            // BreakRecord không có soft delete
             List<BreakRecordEntity> breakRecords = breakRecordRepository
-                    .findByAttendanceRecordIdAndDeletedFalse(attendance.getId());
+                    .findByAttendanceRecordId(attendance.getId());
 
             if (breakRecords.isEmpty()) {
                 // Tạo mới nếu chưa có
@@ -335,8 +339,9 @@ public class AttendanceServiceImpl implements IAttendanceService {
      * Cập nhật tổng thời gian break trong attendance record từ tất cả break records
      */
     private void updateTotalBreakMinutes(AttendanceRecordEntity attendance) {
+        // BreakRecord không có soft delete
         List<BreakRecordEntity> allBreaks = breakRecordRepository
-                .findByAttendanceRecordIdAndDeletedFalse(attendance.getId());
+                .findByAttendanceRecordId(attendance.getId());
 
         int totalBreakMinutes = allBreaks.stream()
                 .filter(b -> b.getActualBreakMinutes() != null)
@@ -359,7 +364,8 @@ public class AttendanceServiceImpl implements IAttendanceService {
     @Override
     @Transactional(readOnly = true)
     public AttendanceRecordResponse getAttendanceByEmployeeAndDate(Long employeeId, LocalDate date) {
-        return attendanceRecordRepository.findByEmployeeIdAndWorkDateAndDeletedFalse(employeeId, date)
+        // AttendanceRecord không có soft delete
+        return attendanceRecordRepository.findByEmployeeIdAndWorkDate(employeeId, date)
                 .map(this::buildFullResponse)
                 .orElse(null);
     }
@@ -471,9 +477,10 @@ public class AttendanceServiceImpl implements IAttendanceService {
 
     /**
      * Tìm bản ghi chấm công theo ID
+     * AttendanceRecord không có soft delete
      */
     private AttendanceRecordEntity findRecordById(Long recordId) {
-        return attendanceRecordRepository.findByIdAndDeletedFalse(recordId)
+        return attendanceRecordRepository.findById(recordId)
                 .orElseThrow(() -> new NotFoundException(
                         "Không tìm thấy bản ghi chấm công", ErrorCode.ATTENDANCE_RECORD_NOT_FOUND));
     }
@@ -539,8 +546,9 @@ public class AttendanceServiceImpl implements IAttendanceService {
 
         if (breakConfig != null && Boolean.TRUE.equals(breakConfig.getBreakEnabled())) {
             // Lấy break records nếu có tracking
+            // BreakRecord không có soft delete
             List<BreakRecordEntity> breakRecords = breakRecordRepository
-                    .findByAttendanceRecordIdAndDeletedFalse(entity.getId());
+                    .findByAttendanceRecordId(entity.getId());
 
             if (Boolean.TRUE.equals(breakConfig.getBreakTrackingEnabled()) && !breakRecords.isEmpty()) {
                 // Sử dụng actual break từ records
@@ -720,8 +728,9 @@ public class AttendanceServiceImpl implements IAttendanceService {
                         ErrorCode.USER_NOT_FOUND));
 
         // Lấy attendance record hôm nay
+        // AttendanceRecord không có soft delete
         AttendanceRecordEntity attendance = attendanceRecordRepository
-                .findByEmployeeIdAndWorkDateAndDeletedFalse(employeeId, today)
+                .findByEmployeeIdAndWorkDate(employeeId, today)
                 .orElseThrow(() -> new NotFoundException(
                         "Employee has not checked in today",
                         ErrorCode.NOT_CHECKED_IN));
@@ -754,7 +763,8 @@ public class AttendanceServiceImpl implements IAttendanceService {
         }
 
         // Kiểm tra số lần break trong ngày
-        long breakCount = breakRecordRepository.countByAttendanceRecordIdAndDeletedFalse(attendance.getId());
+        // BreakRecord không có soft delete
+        long breakCount = breakRecordRepository.countByAttendanceRecordId(attendance.getId());
 
         Integer maxBreaks = breakConfig.getMaxBreaksPerDay() != null
                 ? breakConfig.getMaxBreaksPerDay()
@@ -802,7 +812,8 @@ public class AttendanceServiceImpl implements IAttendanceService {
                         ErrorCode.USER_NOT_FOUND));
 
         // Lấy break record
-        BreakRecordEntity breakRecord = breakRecordRepository.findByIdAndDeletedFalse(breakRecordId)
+        // BreakRecord không có soft delete
+        BreakRecordEntity breakRecord = breakRecordRepository.findById(breakRecordId)
                 .orElseThrow(() -> new NotFoundException(
                         "Break record not found with id: " + breakRecordId,
                         ErrorCode.BREAK_RECORD_NOT_FOUND));
@@ -855,8 +866,9 @@ public class AttendanceServiceImpl implements IAttendanceService {
                 employeeId, now, actualMinutes, effectiveMinutes);
 
         // Lấy attendance record để return full response
+        // AttendanceRecord không có soft delete
         AttendanceRecordEntity attendance = attendanceRecordRepository
-                .findByIdAndDeletedFalse(breakRecord.getAttendanceRecordId())
+                .findById(breakRecord.getAttendanceRecordId())
                 .orElseThrow(() -> new NotFoundException(
                         "Attendance record not found",
                         ErrorCode.ATTENDANCE_RECORD_NOT_FOUND));
@@ -877,8 +889,9 @@ public class AttendanceServiceImpl implements IAttendanceService {
         String employeeName = getEmployeeName(entity.getEmployeeId());
 
         // Lấy break records
+        // BreakRecord không có soft delete
         List<BreakRecordEntity> breakRecords = breakRecordRepository
-                .findByAttendanceRecordIdAndDeletedFalse(entity.getId());
+                .findByAttendanceRecordId(entity.getId());
 
         // Lấy shift info
         ShiftInfoResponse shiftInfo = getShiftInfo(entity.getEmployeeId(), entity.getWorkDate());
@@ -895,8 +908,9 @@ public class AttendanceServiceImpl implements IAttendanceService {
      * Get shift info for employee on specific date
      */
     private ShiftInfoResponse getShiftInfo(Long employeeId, LocalDate date) {
+        // ShiftAssignment không có soft delete
         List<ShiftAssignmentEntity> assignments = shiftAssignmentRepository
-                .findByEmployeeIdAndWorkDateAndDeletedFalse(employeeId, date);
+                .findByEmployeeIdAndWorkDate(employeeId, date);
 
         if (assignments.isEmpty()) {
             return null;

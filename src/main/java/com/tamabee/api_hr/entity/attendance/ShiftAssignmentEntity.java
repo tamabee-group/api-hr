@@ -19,7 +19,6 @@ import java.time.LocalDate;
         @Index(name = "idx_shift_assign_employee_id", columnList = "employeeId"),
         @Index(name = "idx_shift_assign_company_id", columnList = "companyId"),
         @Index(name = "idx_shift_assign_work_date", columnList = "workDate"),
-        @Index(name = "idx_shift_assign_deleted", columnList = "deleted"),
         @Index(name = "idx_shift_assign_employee_date", columnList = "employeeId, workDate"),
         @Index(name = "idx_shift_assign_company_date", columnList = "companyId, workDate")
 })

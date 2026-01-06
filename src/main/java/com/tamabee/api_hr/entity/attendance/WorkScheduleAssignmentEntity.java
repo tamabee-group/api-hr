@@ -17,7 +17,6 @@ import java.time.LocalDate;
 @Table(name = "work_schedule_assignments", indexes = {
         @Index(name = "idx_schedule_assignments_employee_id", columnList = "employeeId"),
         @Index(name = "idx_schedule_assignments_schedule_id", columnList = "scheduleId"),
-        @Index(name = "idx_schedule_assignments_deleted", columnList = "deleted"),
         @Index(name = "idx_schedule_assignments_effective", columnList = "employeeId, effectiveFrom, effectiveTo")
 })
 public class WorkScheduleAssignmentEntity extends BaseEntity {

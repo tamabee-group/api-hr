@@ -11,6 +11,10 @@ import lombok.EqualsAndHashCode;
 @EqualsAndHashCode(callSuper = true)
 public class UserProfileEntity extends BaseEntity {
 
+    // Soft delete flag
+    @Column(nullable = false)
+    private Boolean deleted = false;
+
     @OneToOne
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;

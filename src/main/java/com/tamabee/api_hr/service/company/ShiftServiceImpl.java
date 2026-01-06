@@ -71,7 +71,8 @@ public class ShiftServiceImpl implements IShiftService {
                 .orElseThrow(() -> new NotFoundException(ErrorCode.SHIFT_TEMPLATE_NOT_FOUND));
 
         // Kiểm tra xem mẫu ca có đang được sử dụng không
-        boolean inUse = shiftAssignmentRepository.existsByShiftTemplateIdAndDeletedFalse(id);
+        // ShiftAssignment không có soft delete nên dùng existsByShiftTemplateId
+        boolean inUse = shiftAssignmentRepository.existsByShiftTemplateId(id);
         if (inUse) {
             throw new ConflictException(ErrorCode.SHIFT_TEMPLATE_IN_USE);
         }
@@ -104,7 +105,8 @@ public class ShiftServiceImpl implements IShiftService {
 
         // Kiểm tra overlap: không được phân 2 ca trùng nhau cho cùng nhân viên trong
         // cùng ngày
-        boolean hasOverlap = shiftAssignmentRepository.existsByEmployeeIdAndWorkDateAndDeletedFalse(
+        // ShiftAssignment không có soft delete nên dùng existsByEmployeeIdAndWorkDate
+        boolean hasOverlap = shiftAssignmentRepository.existsByEmployeeIdAndWorkDate(
                 request.getEmployeeId(), request.getWorkDate());
         if (hasOverlap) {
             throw new ConflictException(ErrorCode.SHIFT_OVERLAP_EXISTS);
@@ -139,8 +141,8 @@ public class ShiftServiceImpl implements IShiftService {
                     continue;
                 }
 
-                // Kiểm tra overlap
-                boolean hasOverlap = shiftAssignmentRepository.existsByEmployeeIdAndWorkDateAndDeletedFalse(
+                // Kiểm tra overlap - ShiftAssignment không có soft delete
+                boolean hasOverlap = shiftAssignmentRepository.existsByEmployeeIdAndWorkDate(
                         employeeId, request.getWorkDate());
                 if (hasOverlap) {
                     String employeeName = employee.getProfile() != null ? employee.getProfile().getName()
@@ -183,11 +185,11 @@ public class ShiftServiceImpl implements IShiftService {
     @Override
     @Transactional
     public void unassignShift(Long assignmentId) {
-        ShiftAssignmentEntity entity = shiftAssignmentRepository.findByIdAndDeletedFalse(assignmentId)
+        // ShiftAssignment không có soft delete - xóa thẳng
+        ShiftAssignmentEntity entity = shiftAssignmentRepository.findById(assignmentId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.SHIFT_ASSIGNMENT_NOT_FOUND));
 
-        entity.setDeleted(true);
-        shiftAssignmentRepository.save(entity);
+        shiftAssignmentRepository.delete(entity);
     }
 
     @Override
@@ -214,7 +216,7 @@ public class ShiftServiceImpl implements IShiftService {
         return (root, criteriaQuery, cb) -> {
             var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
 
-            predicates.add(cb.equal(root.get("deleted"), false));
+            // ShiftAssignment không có soft delete nên không cần filter deleted
             predicates.add(cb.equal(root.get("companyId"), companyId));
 
             if (query.getEmployeeId() != null) {
@@ -242,13 +244,13 @@ public class ShiftServiceImpl implements IShiftService {
     @Override
     @Transactional
     public ShiftSwapRequestResponse requestSwap(Long companyId, Long employeeId, ShiftSwapRequest request) {
-        // Validate assignments exist
+        // Validate assignments exist - ShiftAssignment không có soft delete
         ShiftAssignmentEntity requesterAssignment = shiftAssignmentRepository
-                .findByIdAndDeletedFalse(request.getRequesterAssignmentId())
+                .findById(request.getRequesterAssignmentId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.SHIFT_ASSIGNMENT_NOT_FOUND));
 
         ShiftAssignmentEntity targetAssignment = shiftAssignmentRepository
-                .findByIdAndDeletedFalse(request.getTargetAssignmentId())
+                .findById(request.getTargetAssignmentId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.SHIFT_ASSIGNMENT_NOT_FOUND));
 
         // Validate requester owns the assignment
@@ -270,7 +272,8 @@ public class ShiftServiceImpl implements IShiftService {
     @Override
     @Transactional
     public ShiftSwapRequestResponse approveSwap(Long requestId, Long approverId) {
-        ShiftSwapRequestEntity swapRequest = shiftSwapRequestRepository.findByIdAndDeletedFalse(requestId)
+        // ShiftSwapRequest không có soft delete
+        ShiftSwapRequestEntity swapRequest = shiftSwapRequestRepository.findById(requestId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.SHIFT_SWAP_REQUEST_NOT_FOUND));
 
         if (swapRequest.getStatus() != SwapRequestStatus.PENDING) {
@@ -283,13 +286,13 @@ public class ShiftServiceImpl implements IShiftService {
         swapRequest.setApprovedAt(LocalDateTime.now());
         swapRequest = shiftSwapRequestRepository.save(swapRequest);
 
-        // Update both assignments
+        // Update both assignments - ShiftAssignment không có soft delete
         ShiftAssignmentEntity requesterAssignment = shiftAssignmentRepository
-                .findByIdAndDeletedFalse(swapRequest.getRequesterAssignmentId())
+                .findById(swapRequest.getRequesterAssignmentId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.SHIFT_ASSIGNMENT_NOT_FOUND));
 
         ShiftAssignmentEntity targetAssignment = shiftAssignmentRepository
-                .findByIdAndDeletedFalse(swapRequest.getTargetAssignmentId())
+                .findById(swapRequest.getTargetAssignmentId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.SHIFT_ASSIGNMENT_NOT_FOUND));
 
         // Swap the assignments
@@ -313,7 +316,8 @@ public class ShiftServiceImpl implements IShiftService {
     @Override
     @Transactional
     public ShiftSwapRequestResponse rejectSwap(Long requestId, Long approverId, String reason) {
-        ShiftSwapRequestEntity swapRequest = shiftSwapRequestRepository.findByIdAndDeletedFalse(requestId)
+        // ShiftSwapRequest không có soft delete
+        ShiftSwapRequestEntity swapRequest = shiftSwapRequestRepository.findById(requestId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.SHIFT_SWAP_REQUEST_NOT_FOUND));
 
         if (swapRequest.getStatus() != SwapRequestStatus.PENDING) {
@@ -344,7 +348,7 @@ public class ShiftServiceImpl implements IShiftService {
         return (root, criteriaQuery, cb) -> {
             var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
 
-            predicates.add(cb.equal(root.get("deleted"), false));
+            // ShiftSwapRequest không có soft delete nên không cần filter deleted
             predicates.add(cb.equal(root.get("companyId"), companyId));
 
             if (query.getRequesterId() != null) {
@@ -378,10 +382,11 @@ public class ShiftServiceImpl implements IShiftService {
                 ? userRepository.findByIdAndDeletedFalse(entity.getApprovedBy()).orElse(null)
                 : null;
 
+        // ShiftAssignment không có soft delete
         ShiftAssignmentEntity requesterAssignment = shiftAssignmentRepository
-                .findByIdAndDeletedFalse(entity.getRequesterAssignmentId()).orElse(null);
+                .findById(entity.getRequesterAssignmentId()).orElse(null);
         ShiftAssignmentEntity targetAssignment = shiftAssignmentRepository
-                .findByIdAndDeletedFalse(entity.getTargetAssignmentId()).orElse(null);
+                .findById(entity.getTargetAssignmentId()).orElse(null);
 
         ShiftAssignmentResponse requesterAssignmentResponse = null;
         ShiftAssignmentResponse targetAssignmentResponse = null;

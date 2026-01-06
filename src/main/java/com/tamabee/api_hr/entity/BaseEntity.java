@@ -8,6 +8,10 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import java.time.LocalDateTime;
 
+/**
+ * Base entity chỉ chứa id, createdAt, updatedAt.
+ * Field deleted được thêm riêng vào từng entity cần soft delete.
+ */
 @Data
 @MappedSuperclass
 @EntityListeners(AuditingEntityListener.class)
@@ -16,9 +20,6 @@ public abstract class BaseEntity {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
-
-    @Column(nullable = false)
-    private Boolean deleted = false;
 
     @CreatedDate
     @Column(nullable = false, updatable = false)

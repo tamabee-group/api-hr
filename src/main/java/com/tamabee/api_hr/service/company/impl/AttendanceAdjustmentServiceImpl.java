@@ -111,9 +111,10 @@ public class AttendanceAdjustmentServiceImpl implements IAttendanceAdjustmentSer
                 }
 
                 // Validate breakRecord thuộc về attendanceRecord nếu có breakRecordId
+                // BreakRecord không có soft delete
                 BreakRecordEntity breakRecord = null;
                 if (request.getBreakRecordId() != null) {
-                        breakRecord = breakRecordRepository.findByIdAndDeletedFalse(request.getBreakRecordId())
+                        breakRecord = breakRecordRepository.findById(request.getBreakRecordId())
                                         .orElseThrow(() -> new NotFoundException(
                                                         "Không tìm thấy bản ghi giờ giải lao",
                                                         ErrorCode.BREAK_RECORD_NOT_FOUND));
@@ -193,17 +194,19 @@ public class AttendanceAdjustmentServiceImpl implements IAttendanceAdjustmentSer
 
                 log.info("Manager {} đã phê duyệt yêu cầu điều chỉnh {}", managerId, requestId);
 
+                // AttendanceRecord không có soft delete
                 AttendanceRecordEntity attendanceRecord = null;
                 if (entity.getAttendanceRecordId() != null) {
                         attendanceRecord = attendanceRecordRepository
-                                        .findByIdAndDeletedFalse(entity.getAttendanceRecordId())
+                                        .findById(entity.getAttendanceRecordId())
                                         .orElse(null);
                 }
 
                 // Lấy break record nếu có breakRecordId
+                // BreakRecord không có soft delete
                 BreakRecordEntity breakRecord = null;
                 if (entity.getBreakRecordId() != null) {
-                        breakRecord = breakRecordRepository.findByIdAndDeletedFalse(entity.getBreakRecordId())
+                        breakRecord = breakRecordRepository.findById(entity.getBreakRecordId())
                                         .orElse(null);
                 }
 
@@ -244,17 +247,19 @@ public class AttendanceAdjustmentServiceImpl implements IAttendanceAdjustmentSer
                 log.info("Manager {} đã từ chối yêu cầu điều chỉnh {} với lý do: {}",
                                 managerId, requestId, reason);
 
+                // AttendanceRecord không có soft delete
                 AttendanceRecordEntity attendanceRecord = null;
                 if (entity.getAttendanceRecordId() != null) {
                         attendanceRecord = attendanceRecordRepository
-                                        .findByIdAndDeletedFalse(entity.getAttendanceRecordId())
+                                        .findById(entity.getAttendanceRecordId())
                                         .orElse(null);
                 }
 
                 // Lấy break record nếu có breakRecordId
+                // BreakRecord không có soft delete
                 BreakRecordEntity breakRecord = null;
                 if (entity.getBreakRecordId() != null) {
-                        breakRecord = breakRecordRepository.findByIdAndDeletedFalse(entity.getBreakRecordId())
+                        breakRecord = breakRecordRepository.findById(entity.getBreakRecordId())
                                         .orElse(null);
                 }
 
@@ -273,17 +278,19 @@ public class AttendanceAdjustmentServiceImpl implements IAttendanceAdjustmentSer
         public AdjustmentRequestResponse getRequestById(Long requestId) {
                 AttendanceAdjustmentRequestEntity entity = findAdjustmentRequest(requestId);
 
+                // AttendanceRecord không có soft delete
                 AttendanceRecordEntity attendanceRecord = null;
                 if (entity.getAttendanceRecordId() != null) {
                         attendanceRecord = attendanceRecordRepository
-                                        .findByIdAndDeletedFalse(entity.getAttendanceRecordId())
+                                        .findById(entity.getAttendanceRecordId())
                                         .orElse(null);
                 }
 
                 // Lấy break record nếu có breakRecordId
+                // BreakRecord không có soft delete
                 BreakRecordEntity breakRecord = null;
                 if (entity.getBreakRecordId() != null) {
-                        breakRecord = breakRecordRepository.findByIdAndDeletedFalse(entity.getBreakRecordId())
+                        breakRecord = breakRecordRepository.findById(entity.getBreakRecordId())
                                         .orElse(null);
                 }
 
@@ -384,9 +391,10 @@ public class AttendanceAdjustmentServiceImpl implements IAttendanceAdjustmentSer
 
         /**
          * Tìm yêu cầu điều chỉnh theo ID
+         * AttendanceAdjustmentRequest không có soft delete
          */
         private AttendanceAdjustmentRequestEntity findAdjustmentRequest(Long requestId) {
-                return adjustmentRepository.findByIdAndDeletedFalse(requestId)
+                return adjustmentRepository.findById(requestId)
                                 .orElseThrow(() -> new NotFoundException(
                                                 "Không tìm thấy yêu cầu điều chỉnh",
                                                 ErrorCode.ADJUSTMENT_NOT_FOUND));
@@ -394,9 +402,10 @@ public class AttendanceAdjustmentServiceImpl implements IAttendanceAdjustmentSer
 
         /**
          * Tìm bản ghi chấm công theo ID
+         * AttendanceRecord không có soft delete
          */
         private AttendanceRecordEntity findAttendanceRecord(Long recordId) {
-                return attendanceRecordRepository.findByIdAndDeletedFalse(recordId)
+                return attendanceRecordRepository.findById(recordId)
                                 .orElseThrow(() -> new NotFoundException(
                                                 "Không tìm thấy bản ghi chấm công",
                                                 ErrorCode.ATTENDANCE_RECORD_NOT_FOUND));
@@ -486,17 +495,19 @@ public class AttendanceAdjustmentServiceImpl implements IAttendanceAdjustmentSer
          * Map entity sang response với đầy đủ thông tin
          */
         private AdjustmentRequestResponse mapToResponse(AttendanceAdjustmentRequestEntity entity) {
+                // AttendanceRecord không có soft delete
                 AttendanceRecordEntity attendanceRecord = null;
                 if (entity.getAttendanceRecordId() != null) {
                         attendanceRecord = attendanceRecordRepository
-                                        .findByIdAndDeletedFalse(entity.getAttendanceRecordId())
+                                        .findById(entity.getAttendanceRecordId())
                                         .orElse(null);
                 }
 
                 // Lấy break record nếu có breakRecordId
+                // BreakRecord không có soft delete
                 BreakRecordEntity breakRecord = null;
                 if (entity.getBreakRecordId() != null) {
-                        breakRecord = breakRecordRepository.findByIdAndDeletedFalse(entity.getBreakRecordId())
+                        breakRecord = breakRecordRepository.findById(entity.getBreakRecordId())
                                         .orElse(null);
                 }
 

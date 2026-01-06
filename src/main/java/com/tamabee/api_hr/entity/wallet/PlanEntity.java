@@ -21,6 +21,10 @@ import java.math.BigDecimal;
 })
 public class PlanEntity extends BaseEntity {
 
+    // Soft delete flag
+    @Column(nullable = false)
+    private Boolean deleted = false;
+
     // Vietnamese
     @Column(name = "name_vi", nullable = false)
     private String nameVi;

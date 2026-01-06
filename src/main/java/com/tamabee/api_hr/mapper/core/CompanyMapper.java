@@ -33,6 +33,7 @@ public class CompanyMapper {
         entity.setZipcode(request.getZipcode());
         entity.setLocale(request.getLocale());
         entity.setLanguage(request.getLanguage());
+        entity.setTenantDomain(request.getTenantDomain());
 
         // Tìm nhân viên tư vấn từ mã giới thiệu
         if (request.getReferralCode() != null && !request.getReferralCode().isEmpty()) {

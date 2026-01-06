@@ -1,5 +1,9 @@
 package com.tamabee.api_hr.util;
 
+import org.springframework.web.context.request.RequestContextHolder;
+import org.springframework.web.context.request.ServletRequestAttributes;
+
+import jakarta.servlet.http.HttpServletRequest;
 import java.util.Map;
 
 /**
@@ -10,6 +14,8 @@ public final class LocaleUtil {
     private LocaleUtil() {
         // Prevent instantiation
     }
+
+    private static final String ACCEPT_LANGUAGE_HEADER = "Accept-Language";
 
     // Mapping từ locale code sang timezone
     private static final Map<String, String> LOCALE_TO_TIMEZONE = Map.of(
@@ -64,6 +70,33 @@ public final class LocaleUtil {
      * Lấy locale mặc định
      */
     public static String getDefaultLocale() {
+        return DEFAULT_LOCALE;
+    }
+
+    /**
+     * Lấy locale hiện tại từ Accept-Language header của request.
+     * Nếu không có request hoặc header, trả về locale mặc định.
+     * 
+     * @return locale code (vi, ja, en)
+     */
+    public static String getCurrentLocale() {
+        try {
+            ServletRequestAttributes attributes = (ServletRequestAttributes) RequestContextHolder
+                    .getRequestAttributes();
+            if (attributes != null) {
+                HttpServletRequest request = attributes.getRequest();
+                String acceptLanguage = request.getHeader(ACCEPT_LANGUAGE_HEADER);
+                if (acceptLanguage != null && !acceptLanguage.isEmpty()) {
+                    // Parse Accept-Language header (e.g., "vi", "ja", "en-US")
+                    String locale = acceptLanguage.split(",")[0].split("-")[0].toLowerCase();
+                    if (LOCALE_TO_TIMEZONE.containsKey(locale)) {
+                        return locale;
+                    }
+                }
+            }
+        } catch (Exception e) {
+            // Ignore exception, return default
+        }
         return DEFAULT_LOCALE;
     }
 }

@@ -105,7 +105,7 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
     public void sendAdjustmentApprovedNotification(Long employeeId, Long requestId) {
         try {
             UserEntity employee = userRepository.findById(employeeId).orElse(null);
-            AttendanceAdjustmentRequestEntity request = adjustmentRequestRepository.findByIdAndDeletedFalse(requestId)
+            AttendanceAdjustmentRequestEntity request = adjustmentRequestRepository.findById(requestId)
                     .orElse(null);
 
             if (employee == null || request == null) {
@@ -156,7 +156,7 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
     public void sendAdjustmentRejectedNotification(Long employeeId, Long requestId) {
         try {
             UserEntity employee = userRepository.findById(employeeId).orElse(null);
-            AttendanceAdjustmentRequestEntity request = adjustmentRequestRepository.findByIdAndDeletedFalse(requestId)
+            AttendanceAdjustmentRequestEntity request = adjustmentRequestRepository.findById(requestId)
                     .orElse(null);
 
             if (employee == null || request == null) {
@@ -211,7 +211,7 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
     public void sendLeaveApprovedNotification(Long employeeId, Long requestId) {
         try {
             UserEntity employee = userRepository.findById(employeeId).orElse(null);
-            LeaveRequestEntity request = leaveRequestRepository.findByIdAndDeletedFalse(requestId).orElse(null);
+            LeaveRequestEntity request = leaveRequestRepository.findById(requestId).orElse(null);
 
             if (employee == null || request == null) {
                 log.warn("Không tìm thấy nhân viên {} hoặc yêu cầu {} để gửi thông báo", employeeId, requestId);
@@ -257,7 +257,7 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
     public void sendLeaveRejectedNotification(Long employeeId, Long requestId) {
         try {
             UserEntity employee = userRepository.findById(employeeId).orElse(null);
-            LeaveRequestEntity request = leaveRequestRepository.findByIdAndDeletedFalse(requestId).orElse(null);
+            LeaveRequestEntity request = leaveRequestRepository.findById(requestId).orElse(null);
 
             if (employee == null || request == null) {
                 log.warn("Không tìm thấy nhân viên {} hoặc yêu cầu {} để gửi thông báo", employeeId, requestId);
@@ -552,9 +552,10 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
         }
 
         // Lấy breakNumber từ BreakRecordEntity nếu có breakRecordId
+        // BreakRecord không có soft delete
         Integer breakNumber = null;
         if (request.getBreakRecordId() != null) {
-            BreakRecordEntity breakRecord = breakRecordRepository.findByIdAndDeletedFalse(request.getBreakRecordId())
+            BreakRecordEntity breakRecord = breakRecordRepository.findById(request.getBreakRecordId())
                     .orElse(null);
             if (breakRecord != null) {
                 breakNumber = breakRecord.getBreakNumber();
@@ -638,9 +639,10 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
         }
 
         // Lấy breakNumber từ BreakRecordEntity nếu có breakRecordId
+        // BreakRecord không có soft delete
         Integer breakNumber = null;
         if (request.getBreakRecordId() != null) {
-            BreakRecordEntity breakRecord = breakRecordRepository.findByIdAndDeletedFalse(request.getBreakRecordId())
+            BreakRecordEntity breakRecord = breakRecordRepository.findById(request.getBreakRecordId())
                     .orElse(null);
             if (breakRecord != null) {
                 breakNumber = breakRecord.getBreakNumber();

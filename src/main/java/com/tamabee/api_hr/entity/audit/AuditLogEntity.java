@@ -22,8 +22,7 @@ import java.time.LocalDateTime;
         @Index(name = "idx_audit_entity_id", columnList = "entityId"),
         @Index(name = "idx_audit_action", columnList = "action"),
         @Index(name = "idx_audit_user_id", columnList = "userId"),
-        @Index(name = "idx_audit_timestamp", columnList = "timestamp"),
-        @Index(name = "idx_audit_deleted", columnList = "deleted")
+        @Index(name = "idx_audit_timestamp", columnList = "timestamp")
 })
 public class AuditLogEntity extends BaseEntity {
 

@@ -46,7 +46,7 @@ public class BreakReportServiceImpl implements IBreakReportService {
 
                 // Lấy tất cả bản ghi giải lao trong ngày
                 List<BreakRecordEntity> breakRecords = breakRecordRepository
-                                .findByCompanyIdAndWorkDateBetweenAndDeletedFalse(companyId, date, date);
+                                .findByCompanyIdAndWorkDateBetween(companyId, date, date);
 
                 // Lấy danh sách nhân viên của công ty
                 List<UserEntity> employees = userRepository.findByCompanyIdAndDeletedFalse(companyId);
@@ -167,7 +167,7 @@ public class BreakReportServiceImpl implements IBreakReportService {
 
                 // Lấy tất cả bản ghi giải lao trong tháng
                 List<BreakRecordEntity> breakRecords = breakRecordRepository
-                                .findByCompanyIdAndWorkDateBetweenAndDeletedFalse(companyId, startDate, endDate);
+                                .findByCompanyIdAndWorkDateBetween(companyId, startDate, endDate);
 
                 // Lấy danh sách nhân viên của công ty
                 List<UserEntity> employees = userRepository.findByCompanyIdAndDeletedFalse(companyId);

@@ -6,5 +6,6 @@ package com.tamabee.api_hr.enums;
 public enum LeaveStatus {
     PENDING, // Chờ duyệt
     APPROVED, // Đã duyệt
-    REJECTED // Từ chối
+    REJECTED, // Từ chối
+    CANCELLED // Đã hủy
 }

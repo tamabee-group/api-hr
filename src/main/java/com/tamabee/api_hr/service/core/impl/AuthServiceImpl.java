@@ -1,9 +1,12 @@
 package com.tamabee.api_hr.service.core.impl;
 
+import com.tamabee.api_hr.datasource.TenantProvisioningService;
+import com.tamabee.api_hr.dto.response.DomainAvailabilityResponse;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.entity.user.UserProfileEntity;
 import com.tamabee.api_hr.entity.wallet.WalletEntity;
+import com.tamabee.api_hr.enums.CompanyStatus;
 import com.tamabee.api_hr.enums.ErrorCode;
 import com.tamabee.api_hr.enums.UserRole;
 import com.tamabee.api_hr.enums.UserStatus;
@@ -21,6 +24,7 @@ import com.tamabee.api_hr.model.response.LoginResponse;
 import com.tamabee.api_hr.util.EmployeeCodeGenerator;
 import com.tamabee.api_hr.util.JwtUtil;
 import com.tamabee.api_hr.util.ReferralCodeGenerator;
+import com.tamabee.api_hr.util.TenantDomainValidator;
 import com.tamabee.api_hr.repository.CompanyRepository;
 import com.tamabee.api_hr.repository.EmailVerificationRepository;
 import com.tamabee.api_hr.repository.UserRepository;
@@ -28,6 +32,7 @@ import com.tamabee.api_hr.repository.WalletRepository;
 import com.tamabee.api_hr.service.admin.ISettingService;
 import com.tamabee.api_hr.service.core.IAuthService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -38,6 +43,7 @@ import java.time.LocalDateTime;
 
 @Service
 @RequiredArgsConstructor
+@Slf4j
 public class AuthServiceImpl implements IAuthService {
 
     private final UserRepository userRepository;
@@ -50,6 +56,7 @@ public class AuthServiceImpl implements IAuthService {
     private final WalletFactory walletFactory;
     private final JwtUtil jwtUtil;
     private final ISettingService settingService;
+    private final TenantProvisioningService tenantProvisioningService;
 
     @Override
     @Transactional
@@ -57,6 +64,7 @@ public class AuthServiceImpl implements IAuthService {
         validateEmailNotExists(request.getEmail());
         validateEmailVerified(request.getEmail());
         validateCompanyNameNotExists(request.getCompanyName());
+        validateTenantDomain(request.getTenantDomain());
         validateReferralCode(request.getReferralCode());
 
         CompanyEntity company = createCompany(request);
@@ -70,6 +78,25 @@ public class AuthServiceImpl implements IAuthService {
         // Cập nhật owner cho company
         company.setOwner(user);
         companyRepository.save(company);
+
+        // Provision tenant database sau khi tạo company thành công
+        provisionTenantDatabase(company);
+    }
+
+    /**
+     * Provision tenant database cho company mới.
+     * Nếu thất bại, set company status = FAILED và log error.
+     */
+    private void provisionTenantDatabase(CompanyEntity company) {
+        try {
+            tenantProvisioningService.provisionTenant(company.getTenantDomain());
+            log.info("Successfully provisioned tenant database for company: {}", company.getId());
+        } catch (Exception e) {
+            log.error("Failed to provision tenant database for company: {}", company.getId(), e);
+            company.setStatus(CompanyStatus.FAILED);
+            companyRepository.save(company);
+            throw new BadRequestException(ErrorCode.TENANT_PROVISIONING_FAILED);
+        }
     }
 
     /**
@@ -93,6 +120,25 @@ public class AuthServiceImpl implements IAuthService {
         boolean isVerified = emailVerificationRepository.existsByEmailAndUsedTrue(email);
         if (!isVerified) {
             throw new BadRequestException(ErrorCode.EMAIL_NOT_VERIFIED);
+        }
+    }
+
+    /**
+     * Validate tenant domain: format, reserved words, và existence
+     */
+    private void validateTenantDomain(String tenantDomain) {
+        TenantDomainValidator.ValidationResult result = TenantDomainValidator.validate(tenantDomain);
+
+        if (!result.isValid()) {
+            if (result.getError() == TenantDomainValidator.ValidationError.RESERVED) {
+                throw new BadRequestException(ErrorCode.TENANT_DOMAIN_RESERVED);
+            }
+            throw new BadRequestException(ErrorCode.INVALID_TENANT_DOMAIN);
+        }
+
+        // Check existence trong database
+        if (companyRepository.existsByTenantDomainAndDeletedFalse(tenantDomain)) {
+            throw new ConflictException(ErrorCode.TENANT_DOMAIN_EXISTS);
         }
     }
 
@@ -156,11 +202,17 @@ public class AuthServiceImpl implements IAuthService {
             throw UnauthorizedException.invalidCredentials();
         }
 
+        // Lấy thông tin tenant và plan
+        String tenantDomain = getTenantDomain(user);
+        Long planId = getPlanId(user.getCompanyId());
+
         String accessToken = jwtUtil.generateAccessToken(
                 user.getId(),
                 user.getEmail(),
                 user.getRole().name(),
-                user.getCompanyId());
+                user.getCompanyId(),
+                tenantDomain,
+                planId);
 
         String refreshToken = jwtUtil.generateRefreshToken(
                 user.getId(),
@@ -222,11 +274,17 @@ public class AuthServiceImpl implements IAuthService {
         UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
                 .orElseThrow(() -> NotFoundException.user(email));
 
+        // Lấy thông tin tenant và plan
+        String tenantDomain = getTenantDomain(user);
+        Long planId = getPlanId(user.getCompanyId());
+
         String newAccessToken = jwtUtil.generateAccessToken(
                 user.getId(),
                 user.getEmail(),
                 user.getRole().name(),
-                user.getCompanyId());
+                user.getCompanyId(),
+                tenantDomain,
+                planId);
 
         // Lấy tên công ty
         String companyName = getCompanyName(user.getCompanyId());
@@ -263,5 +321,77 @@ public class AuthServiceImpl implements IAuthService {
         return companyRepository.findById(companyId)
                 .map(CompanyEntity::getName)
                 .orElse(null);
+    }
+
+    /**
+     * Lấy tenantDomain cho user.
+     * Tamabee users (companyId = 0): tenantDomain = "tamabee"
+     * Company users: tenantDomain từ company hoặc user
+     */
+    private String getTenantDomain(UserEntity user) {
+        // Tamabee users luôn có tenantDomain = "tamabee"
+        if (user.getCompanyId() == null || user.getCompanyId() == 0) {
+            return "tamabee";
+        }
+
+        // Ưu tiên lấy từ user nếu có
+        if (user.getTenantDomain() != null && !user.getTenantDomain().isEmpty()) {
+            return user.getTenantDomain();
+        }
+
+        // Fallback: lấy từ company
+        return companyRepository.findById(user.getCompanyId())
+                .map(CompanyEntity::getTenantDomain)
+                .orElse(null);
+    }
+
+    /**
+     * Lấy planId cho user.
+     * Tamabee users (companyId = 0): planId = null (all features enabled)
+     * Company users: planId từ company
+     */
+    private Long getPlanId(Long companyId) {
+        // Tamabee users không có plan (all features enabled)
+        if (companyId == null || companyId == 0) {
+            return null;
+        }
+
+        return companyRepository.findById(companyId)
+                .map(CompanyEntity::getPlanId)
+                .orElse(null);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public DomainAvailabilityResponse checkDomainAvailability(String domain) {
+        // Validate format và reserved words
+        TenantDomainValidator.ValidationResult validationResult = TenantDomainValidator.validate(domain);
+
+        if (!validationResult.isValid()) {
+            String reason = validationResult.getError() == TenantDomainValidator.ValidationError.RESERVED
+                    ? "RESERVED"
+                    : "INVALID_FORMAT";
+            return DomainAvailabilityResponse.builder()
+                    .domain(domain)
+                    .available(false)
+                    .reason(reason)
+                    .build();
+        }
+
+        // Check existence trong database
+        boolean exists = companyRepository.existsByTenantDomainAndDeletedFalse(domain);
+        if (exists) {
+            return DomainAvailabilityResponse.builder()
+                    .domain(domain)
+                    .available(false)
+                    .reason("ALREADY_EXISTS")
+                    .build();
+        }
+
+        return DomainAvailabilityResponse.builder()
+                .domain(domain)
+                .available(true)
+                .reason(null)
+                .build();
     }
 }
