@@ -1,12 +1,12 @@
 package com.tamabee.api_hr.controller.admin;
 
-import com.tamabee.api_hr.dto.request.DepositFilterRequest;
-import com.tamabee.api_hr.dto.request.RejectRequest;
-import com.tamabee.api_hr.dto.response.DepositRequestResponse;
+import com.tamabee.api_hr.dto.request.wallet.DepositFilterRequest;
+import com.tamabee.api_hr.dto.request.company.RejectRequest;
+import com.tamabee.api_hr.dto.response.wallet.DepositRequestResponse;
 import com.tamabee.api_hr.enums.DepositStatus;
 import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.service.admin.IDepositRequestService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.service.admin.interfaces.IDepositRequestService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

@@ -12,13 +12,13 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.tamabee.api_hr.dto.request.TransactionFilterRequest;
-import com.tamabee.api_hr.dto.response.WalletResponse;
-import com.tamabee.api_hr.dto.response.WalletTransactionResponse;
+import com.tamabee.api_hr.dto.request.wallet.TransactionFilterRequest;
+import com.tamabee.api_hr.dto.response.wallet.WalletResponse;
+import com.tamabee.api_hr.dto.response.wallet.WalletTransactionResponse;
 import com.tamabee.api_hr.enums.RoleConstants;
 import com.tamabee.api_hr.enums.TransactionType;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.service.company.ICompanyWalletService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.service.company.interfaces.ICompanyWalletService;
 
 import lombok.RequiredArgsConstructor;
 

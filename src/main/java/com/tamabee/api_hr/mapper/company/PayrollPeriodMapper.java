@@ -1,9 +1,9 @@
 package com.tamabee.api_hr.mapper.company;
 
-import com.tamabee.api_hr.dto.request.PayrollPeriodRequest;
-import com.tamabee.api_hr.dto.response.PayrollItemResponse;
-import com.tamabee.api_hr.dto.response.PayrollPeriodDetailResponse;
-import com.tamabee.api_hr.dto.response.PayrollPeriodResponse;
+import com.tamabee.api_hr.dto.request.payroll.PayrollPeriodRequest;
+import com.tamabee.api_hr.dto.response.payroll.PayrollItemResponse;
+import com.tamabee.api_hr.dto.response.payroll.PayrollPeriodDetailResponse;
+import com.tamabee.api_hr.dto.response.payroll.PayrollPeriodResponse;
 import com.tamabee.api_hr.entity.payroll.PayrollItemEntity;
 import com.tamabee.api_hr.entity.payroll.PayrollPeriodEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;

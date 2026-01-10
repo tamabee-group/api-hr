@@ -18,11 +18,11 @@ import com.tamabee.api_hr.entity.wallet.WalletEntity;
 import com.tamabee.api_hr.enums.CompanyStatus;
 import com.tamabee.api_hr.enums.UserRole;
 import com.tamabee.api_hr.enums.UserStatus;
-import com.tamabee.api_hr.filter.TenantContext;
+import com.tamabee.api_hr.datasource.TenantContext;
 import com.tamabee.api_hr.mapper.core.WalletFactory;
-import com.tamabee.api_hr.repository.CompanyRepository;
-import com.tamabee.api_hr.repository.UserRepository;
-import com.tamabee.api_hr.repository.WalletRepository;
+import com.tamabee.api_hr.repository.company.CompanyRepository;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.repository.wallet.WalletRepository;
 import com.tamabee.api_hr.util.EmployeeCodeGenerator;
 import com.tamabee.api_hr.util.ReferralCodeGenerator;
 

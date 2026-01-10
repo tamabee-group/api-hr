@@ -1,10 +1,10 @@
 package com.tamabee.api_hr.controller.admin;
 
-import com.tamabee.api_hr.dto.request.UpdateCompanyRequest;
-import com.tamabee.api_hr.dto.response.CompanyResponse;
+import com.tamabee.api_hr.dto.request.company.UpdateCompanyRequest;
+import com.tamabee.api_hr.dto.response.company.CompanyResponse;
 import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.service.admin.ICompanyManagerService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.service.admin.interfaces.ICompanyManagerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

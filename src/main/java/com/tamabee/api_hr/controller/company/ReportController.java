@@ -1,24 +1,21 @@
 package com.tamabee.api_hr.controller.company;
 
-import com.tamabee.api_hr.dto.request.ReportQuery;
+import com.tamabee.api_hr.dto.request.report.ReportQuery;
 import com.tamabee.api_hr.dto.response.report.*;
-import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.ContractType;
 import com.tamabee.api_hr.enums.ExportFormat;
 import com.tamabee.api_hr.enums.ReportType;
 import com.tamabee.api_hr.enums.RoleConstants;
 import com.tamabee.api_hr.enums.SalaryType;
-import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.repository.UserRepository;
-import com.tamabee.api_hr.service.company.IReportService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.IReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;

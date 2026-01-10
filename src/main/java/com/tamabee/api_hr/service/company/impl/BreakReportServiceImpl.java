@@ -1,18 +1,18 @@
 package com.tamabee.api_hr.service.company.impl;
 
 import com.tamabee.api_hr.dto.config.BreakConfig;
-import com.tamabee.api_hr.dto.response.DailyBreakReportResponse;
-import com.tamabee.api_hr.dto.response.DailyBreakReportResponse.BreakSessionInfo;
-import com.tamabee.api_hr.dto.response.DailyBreakReportResponse.EmployeeBreakDetail;
-import com.tamabee.api_hr.dto.response.MonthlyBreakReportResponse;
-import com.tamabee.api_hr.dto.response.MonthlyBreakReportResponse.EmployeeMonthlyBreakDetail;
+import com.tamabee.api_hr.dto.response.attendance.DailyBreakReportResponse;
+import com.tamabee.api_hr.dto.response.attendance.DailyBreakReportResponse.BreakSessionInfo;
+import com.tamabee.api_hr.dto.response.attendance.DailyBreakReportResponse.EmployeeBreakDetail;
+import com.tamabee.api_hr.dto.response.attendance.MonthlyBreakReportResponse;
+import com.tamabee.api_hr.dto.response.attendance.MonthlyBreakReportResponse.EmployeeMonthlyBreakDetail;
 import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
-import com.tamabee.api_hr.repository.BreakRecordRepository;
-import com.tamabee.api_hr.repository.UserRepository;
+import com.tamabee.api_hr.repository.attendance.BreakRecordRepository;
+import com.tamabee.api_hr.repository.user.UserRepository;
 import com.tamabee.api_hr.service.calculator.LegalBreakRequirements;
-import com.tamabee.api_hr.service.company.IBreakReportService;
-import com.tamabee.api_hr.service.company.ICompanySettingsService;
+import com.tamabee.api_hr.service.company.interfaces.IBreakReportService;
+import com.tamabee.api_hr.service.company.interfaces.ICompanySettingsService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;

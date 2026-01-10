@@ -14,8 +14,8 @@ import com.tamabee.api_hr.dto.response.SettingResponse;
 import com.tamabee.api_hr.entity.wallet.TamabeeSettingEntity;
 import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.mapper.admin.TamabeeSettingMapper;
-import com.tamabee.api_hr.repository.TamabeeSettingRepository;
-import com.tamabee.api_hr.service.admin.ISettingService;
+import com.tamabee.api_hr.repository.wallet.TamabeeSettingRepository;
+import com.tamabee.api_hr.service.admin.interfaces.ISettingService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

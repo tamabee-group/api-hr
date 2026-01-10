@@ -1,12 +1,11 @@
 package com.tamabee.api_hr.integration;
 
-import com.tamabee.api_hr.filter.TenantContext;
+import com.tamabee.api_hr.datasource.TenantContext;
 import com.tamabee.api_hr.datasource.TenantDataSourceManager;
-import com.tamabee.api_hr.datasource.TenantProvisioningService;
-import com.tamabee.api_hr.dto.response.PlanFeaturesResponse;
+import com.tamabee.api_hr.dto.response.wallet.PlanFeaturesResponse;
 import com.tamabee.api_hr.enums.FeatureCode;
 import com.tamabee.api_hr.enums.UserRole;
-import com.tamabee.api_hr.service.core.IPlanFeaturesService;
+import com.tamabee.api_hr.service.core.interfaces.IPlanFeaturesService;
 import com.tamabee.api_hr.util.JwtUtil;
 import com.tamabee.api_hr.util.TenantDomainValidator;
 import org.junit.jupiter.api.*;

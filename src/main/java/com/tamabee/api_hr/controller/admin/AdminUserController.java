@@ -1,11 +1,11 @@
 package com.tamabee.api_hr.controller.admin;
 
-import com.tamabee.api_hr.dto.request.CreateTamabeeUserRequest;
-import com.tamabee.api_hr.dto.request.UpdateUserProfileRequest;
-import com.tamabee.api_hr.dto.response.UserResponse;
+import com.tamabee.api_hr.dto.request.user.CreateTamabeeUserRequest;
+import com.tamabee.api_hr.dto.request.user.UpdateUserProfileRequest;
+import com.tamabee.api_hr.dto.response.user.UserResponse;
 import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.service.admin.IEmployeeManagerService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.service.admin.interfaces.IEmployeeManagerService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

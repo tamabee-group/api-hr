@@ -1,18 +1,18 @@
 package com.tamabee.api_hr.controller.company;
 
-import com.tamabee.api_hr.dto.request.*;
-import com.tamabee.api_hr.dto.response.BatchAssignmentResult;
-import com.tamabee.api_hr.dto.response.ShiftAssignmentResponse;
-import com.tamabee.api_hr.dto.response.ShiftSwapRequestResponse;
-import com.tamabee.api_hr.dto.response.ShiftTemplateResponse;
+import com.tamabee.api_hr.dto.request.attendance.*;
+import com.tamabee.api_hr.dto.response.attendance.BatchAssignmentResult;
+import com.tamabee.api_hr.dto.response.attendance.ShiftAssignmentResponse;
+import com.tamabee.api_hr.dto.response.attendance.ShiftSwapRequestResponse;
+import com.tamabee.api_hr.dto.response.attendance.ShiftTemplateResponse;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.RoleConstants;
 import com.tamabee.api_hr.enums.ShiftAssignmentStatus;
 import com.tamabee.api_hr.enums.SwapRequestStatus;
 import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.repository.UserRepository;
-import com.tamabee.api_hr.service.company.IShiftService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.IShiftService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

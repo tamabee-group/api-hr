@@ -10,11 +10,11 @@ import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.tamabee.api_hr.dto.request.UpdateCompanyProfileRequest;
-import com.tamabee.api_hr.dto.response.CompanyProfileResponse;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.service.company.ICompanyProfileService;
-import com.tamabee.api_hr.service.core.IUploadService;
+import com.tamabee.api_hr.dto.request.company.UpdateCompanyProfileRequest;
+import com.tamabee.api_hr.dto.response.company.CompanyProfileResponse;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.service.company.interfaces.ICompanyProfileService;
+import com.tamabee.api_hr.service.core.interfaces.IUploadService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

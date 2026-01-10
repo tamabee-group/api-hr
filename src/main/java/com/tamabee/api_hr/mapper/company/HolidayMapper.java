@@ -1,8 +1,8 @@
 package com.tamabee.api_hr.mapper.company;
 
-import com.tamabee.api_hr.dto.request.CreateHolidayRequest;
-import com.tamabee.api_hr.dto.request.UpdateHolidayRequest;
-import com.tamabee.api_hr.dto.response.HolidayResponse;
+import com.tamabee.api_hr.dto.request.leave.CreateHolidayRequest;
+import com.tamabee.api_hr.dto.request.leave.UpdateHolidayRequest;
+import com.tamabee.api_hr.dto.response.leave.HolidayResponse;
 import com.tamabee.api_hr.entity.leave.HolidayEntity;
 import org.springframework.stereotype.Component;
 

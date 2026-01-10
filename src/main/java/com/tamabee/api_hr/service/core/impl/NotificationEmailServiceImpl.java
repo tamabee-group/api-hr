@@ -18,12 +18,12 @@ import com.tamabee.api_hr.entity.leave.LeaveRequestEntity;
 import com.tamabee.api_hr.entity.payroll.PayrollRecordEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.LeaveType;
-import com.tamabee.api_hr.repository.AttendanceAdjustmentRequestRepository;
-import com.tamabee.api_hr.repository.BreakRecordRepository;
-import com.tamabee.api_hr.repository.LeaveRequestRepository;
-import com.tamabee.api_hr.repository.PayrollRecordRepository;
-import com.tamabee.api_hr.repository.UserRepository;
-import com.tamabee.api_hr.service.core.INotificationEmailService;
+import com.tamabee.api_hr.repository.attendance.AttendanceAdjustmentRequestRepository;
+import com.tamabee.api_hr.repository.attendance.BreakRecordRepository;
+import com.tamabee.api_hr.repository.leave.LeaveRequestRepository;
+import com.tamabee.api_hr.repository.payroll.PayrollRecordRepository;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.core.interfaces.INotificationEmailService;
 import com.tamabee.api_hr.util.LocaleUtil;
 
 import jakarta.mail.internet.MimeMessage;

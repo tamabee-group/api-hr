@@ -1,17 +1,17 @@
 package com.tamabee.api_hr.controller.company;
 
-import com.tamabee.api_hr.dto.request.PaymentRequest;
-import com.tamabee.api_hr.dto.request.PayrollAdjustmentRequest;
-import com.tamabee.api_hr.dto.request.PayrollPeriodRequest;
-import com.tamabee.api_hr.dto.response.PayrollItemResponse;
-import com.tamabee.api_hr.dto.response.PayrollPeriodDetailResponse;
-import com.tamabee.api_hr.dto.response.PayrollPeriodResponse;
+import com.tamabee.api_hr.dto.request.wallet.PaymentRequest;
+import com.tamabee.api_hr.dto.request.payroll.PayrollAdjustmentRequest;
+import com.tamabee.api_hr.dto.request.payroll.PayrollPeriodRequest;
+import com.tamabee.api_hr.dto.response.payroll.PayrollItemResponse;
+import com.tamabee.api_hr.dto.response.payroll.PayrollPeriodDetailResponse;
+import com.tamabee.api_hr.dto.response.payroll.PayrollPeriodResponse;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.RoleConstants;
 import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.repository.UserRepository;
-import com.tamabee.api_hr.service.company.IPayrollPeriodService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.IPayrollPeriodService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

@@ -49,7 +49,6 @@ src/main/java/com/tamabee/api_hr/
 │   └── core/                        # /api/auth/**, /api/users/**
 │
 ├── datasource/                      # ✅ Giữ nguyên (multi-tenant)
-│   ├── TenantContext.java           # ← Di chuyển từ filter/
 │   ├── TenantDatabaseInitializer.java
 │   ├── TenantDataSourceLoader.java
 │   ├── TenantDataSourceManager.java
@@ -98,8 +97,168 @@ src/main/java/com/tamabee/api_hr/
 │   │   ├── PayrollResult.java
 │   │   └── WorkingHoursResult.java
 │   │
-│   ├── request/                     # ✅ Giữ nguyên (API requests)
-│   └── response/                    # ✅ Giữ nguyên (API responses)
+│   ├── request/                     # 🔄 Tổ chức theo domain
+│   │   ├── attendance/
+│   │   │   ├── AdjustAttendanceRequest.java
+│   │   │   ├── AttendanceConfigRequest.java
+│   │   │   ├── AttendanceQueryRequest.java
+│   │   │   ├── BatchShiftAssignmentRequest.java
+│   │   │   ├── BreakConfigRequest.java
+│   │   │   ├── CheckInRequest.java
+│   │   │   ├── CheckOutRequest.java
+│   │   │   ├── CreateAdjustmentRequest.java
+│   │   │   ├── EmployeeSwapRequest.java
+│   │   │   ├── ShiftAssignmentQuery.java
+│   │   │   ├── ShiftAssignmentRequest.java
+│   │   │   ├── ShiftSwapRequest.java
+│   │   │   ├── ShiftTemplateRequest.java
+│   │   │   ├── StartBreakRequest.java
+│   │   │   └── SwapRequestQuery.java
+│   │   │
+│   │   ├── company/
+│   │   │   ├── UpdateCompanyProfileRequest.java
+│   │   │   └── UpdateCompanyRequest.java
+│   │   │
+│   │   ├── leave/
+│   │   │   ├── CreateHolidayRequest.java
+│   │   │   ├── CreateLeaveRequest.java
+│   │   │   └── UpdateHolidayRequest.java
+│   │   │
+│   │   ├── payroll/
+│   │   │   ├── AllowanceAssignmentRequest.java
+│   │   │   ├── AllowanceConfigRequest.java
+│   │   │   ├── ContractQuery.java
+│   │   │   ├── ContractRequest.java
+│   │   │   ├── DeductionAssignmentRequest.java
+│   │   │   ├── DeductionConfigRequest.java
+│   │   │   ├── OvertimeConfigRequest.java
+│   │   │   ├── PayrollAdjustmentRequest.java
+│   │   │   ├── PayrollConfigRequest.java
+│   │   │   ├── PayrollPeriodRequest.java
+│   │   │   ├── ReportQuery.java
+│   │   │   └── SalaryConfigRequest.java
+│   │   │
+│   │   ├── schedule/
+│   │   │   ├── AssignScheduleRequest.java
+│   │   │   ├── CreateWorkScheduleRequest.java
+│   │   │   ├── SelectScheduleRequest.java
+│   │   │   ├── UpdateWorkScheduleRequest.java
+│   │   │   └── WorkModeConfigRequest.java
+│   │   │
+│   │   ├── user/
+│   │   │   ├── CreateCompanyEmployeeRequest.java
+│   │   │   ├── CreateTamabeeUserRequest.java
+│   │   │   ├── CreateUserRequest.java
+│   │   │   ├── UpdateUserProfileRequest.java
+│   │   │   └── UpdateUserRequest.java
+│   │   │
+│   │   ├── wallet/
+│   │   │   ├── CommissionFilterRequest.java
+│   │   │   ├── DepositFilterRequest.java
+│   │   │   ├── DepositRequestCreateRequest.java
+│   │   │   ├── DirectWalletRequest.java
+│   │   │   ├── PaymentRequest.java
+│   │   │   ├── PlanCreateRequest.java
+│   │   │   ├── PlanFeatureRequest.java
+│   │   │   ├── PlanUpdateRequest.java
+│   │   │   ├── RefundRequest.java
+│   │   │   └── TransactionFilterRequest.java
+│   │   │
+│   │   ├── AuditLogQueryRequest.java
+│   │   ├── RejectRequest.java
+│   │   └── SettingUpdateRequest.java
+│   │
+│   └── response/                    # 🔄 Tổ chức theo domain
+│       ├── attendance/
+│       │   ├── AdjustmentRequestResponse.java
+│       │   ├── AttendanceRecordResponse.java
+│       │   ├── AttendanceSummaryResponse.java
+│       │   ├── BatchAssignmentResult.java
+│       │   ├── BreakConfigResponse.java
+│       │   ├── BreakConfigSnapshot.java
+│       │   ├── BreakRecordResponse.java
+│       │   ├── BreakSummaryResponse.java
+│       │   ├── DailyBreakReportResponse.java
+│       │   ├── MonthlyBreakReportResponse.java
+│       │   ├── ShiftAssignmentResponse.java
+│       │   ├── ShiftInfoResponse.java
+│       │   ├── ShiftSwapRequestResponse.java
+│       │   └── ShiftTemplateResponse.java
+│       │
+│       ├── audit/
+│       │   └── AuditLogResponse.java
+│       │
+│       ├── company/
+│       │   ├── CompanyProfileResponse.java
+│       │   ├── CompanyResponse.java
+│       │   ├── CompanySettingsResponse.java
+│       │   ├── DomainAvailabilityResponse.java
+│       │   └── PublicSettingsResponse.java
+│       │
+│       ├── leave/
+│       │   ├── HolidayResponse.java
+│       │   ├── LeaveBalanceResponse.java
+│       │   └── LeaveRequestResponse.java
+│       │
+│       ├── payroll/
+│       │   ├── AppliedSettingsSnapshot.java
+│       │   ├── ContractResponse.java
+│       │   ├── EmployeeAllowanceResponse.java
+│       │   ├── EmployeeDeductionResponse.java
+│       │   ├── EmployeeSalaryConfigResponse.java
+│       │   ├── OvertimeConfigResponse.java
+│       │   ├── PayrollItemResponse.java
+│       │   ├── PayrollPeriodDetailResponse.java
+│       │   ├── PayrollPeriodResponse.java
+│       │   ├── PayrollPeriodSummaryResponse.java
+│       │   ├── PayrollPreviewResponse.java
+│       │   ├── PayrollRecordResponse.java
+│       │   ├── RoundingConfigSnapshot.java
+│       │   └── SalaryConfigValidationResponse.java
+│       │
+│       ├── report/
+│       │   ├── AttendanceSummaryReport.java
+│       │   ├── BreakComplianceReport.java
+│       │   ├── CostAnalysisReport.java
+│       │   ├── CostByContractType.java
+│       │   ├── CostBySalaryType.java
+│       │   ├── EmployeeAttendanceSummary.java
+│       │   ├── EmployeeBreakSummary.java
+│       │   ├── EmployeeOvertimeSummary.java
+│       │   ├── EmployeePayrollSummary.java
+│       │   ├── OvertimeReport.java
+│       │   ├── PayrollSummaryReport.java
+│       │   ├── ShiftTemplateSummary.java
+│       │   └── ShiftUtilizationReport.java
+│       │
+│       ├── schedule/
+│       │   ├── EmployeeScheduleDataResponse.java
+│       │   ├── ScheduleSelectionResponse.java
+│       │   ├── WorkModeChangeLogResponse.java
+│       │   ├── WorkModeConfigResponse.java
+│       │   ├── WorkScheduleAssignmentResponse.java
+│       │   └── WorkScheduleResponse.java
+│       │
+│       ├── user/
+│       │   ├── ApproverResponse.java
+│       │   ├── UserProfileResponse.java
+│       │   └── UserResponse.java
+│       │
+│       ├── wallet/
+│       │   ├── CommissionOverallSummaryResponse.java
+│       │   ├── CommissionResponse.java
+│       │   ├── CommissionSummaryResponse.java
+│       │   ├── DepositRequestResponse.java
+│       │   ├── PlanFeatureResponse.java
+│       │   ├── PlanFeaturesResponse.java
+│       │   ├── PlanResponse.java
+│       │   ├── ReferredCompanyResponse.java
+│       │   ├── WalletOverviewResponse.java
+│       │   ├── WalletResponse.java
+│       │   ├── WalletStatisticsResponse.java
+│       │   └── WalletTransactionResponse.java
+│       │
+│       └── SettingResponse.java
 ```
 
 ```
@@ -317,44 +476,107 @@ src/main/java/com/tamabee/api_hr/
 
 ---
 
-## Danh sách file cần di chuyển
+## Danh sách file cần di chuyển (với checkbox)
 
 ### 1. Xóa package `model/` (merge vào `dto/`)
 
-| File hiện tại                                | Di chuyển đến                           |
-| -------------------------------------------- | --------------------------------------- |
-| `model/request/LoginRequest.java`            | `dto/auth/LoginRequest.java`            |
-| `model/request/RegisterRequest.java`         | `dto/auth/RegisterRequest.java`         |
-| `model/request/ForgotPasswordRequest.java`   | `dto/auth/ForgotPasswordRequest.java`   |
-| `model/request/ResetPasswordRequest.java`    | `dto/auth/ResetPasswordRequest.java`    |
-| `model/request/SendVerificationRequest.java` | `dto/auth/SendVerificationRequest.java` |
-| `model/request/VerifyEmailRequest.java`      | `dto/auth/VerifyEmailRequest.java`      |
-| `model/response/BaseResponse.java`           | `dto/common/BaseResponse.java`          |
-| `model/response/LoginResponse.java`          | `dto/auth/LoginResponse.java`           |
+- [ ] `model/request/LoginRequest.java` → `dto/auth/LoginRequest.java`
+- [ ] `model/request/RegisterRequest.java` → `dto/auth/RegisterRequest.java`
+- [ ] `model/request/ForgotPasswordRequest.java` → `dto/auth/ForgotPasswordRequest.java`
+- [ ] `model/request/ResetPasswordRequest.java` → `dto/auth/ResetPasswordRequest.java`
+- [ ] `model/request/SendVerificationRequest.java` → `dto/auth/SendVerificationRequest.java`
+- [ ] `model/request/VerifyEmailRequest.java` → `dto/auth/VerifyEmailRequest.java`
+- [ ] `model/response/BaseResponse.java` → `dto/common/BaseResponse.java`
+- [ ] `model/response/LoginResponse.java` → `dto/auth/LoginResponse.java`
+- [ ] Xóa folder `model/`
 
 ### 2. Di chuyển `filter/` vào `datasource/`
 
-| File hiện tại               | Di chuyển đến                   |
-| --------------------------- | ------------------------------- |
-| `filter/TenantContext.java` | `datasource/TenantContext.java` |
-| `filter/TenantFilter.java`  | `datasource/TenantFilter.java`  |
+- [ ] `filter/TenantContext.java` → `datasource/TenantContext.java`
+- [ ] `filter/TenantFilter.java` → `datasource/TenantFilter.java`
+- [ ] Xóa folder `filter/`
 
 **Lý do**: TenantContext và TenantFilter liên quan trực tiếp đến multi-tenant datasource.
 
 ### 3. Di chuyển Service Impl vào `impl/`
 
-| File hiện tại                                          | Di chuyển đến                                               |
-| ------------------------------------------------------ | ----------------------------------------------------------- |
-| `service/company/EmployeeAllowanceServiceImpl.java`    | `service/company/impl/EmployeeAllowanceServiceImpl.java`    |
-| `service/company/EmployeeDeductionServiceImpl.java`    | `service/company/impl/EmployeeDeductionServiceImpl.java`    |
-| `service/company/EmployeeSalaryConfigServiceImpl.java` | `service/company/impl/EmployeeSalaryConfigServiceImpl.java` |
-| `service/company/EmploymentContractServiceImpl.java`   | `service/company/impl/EmploymentContractServiceImpl.java`   |
-| `service/company/PayrollPeriodServiceImpl.java`        | `service/company/impl/PayrollPeriodServiceImpl.java`        |
-| `service/company/ReportExportService.java`             | `service/company/impl/ReportExportService.java`             |
-| `service/company/ReportServiceImpl.java`               | `service/company/impl/ReportServiceImpl.java`               |
-| `service/company/ShiftServiceImpl.java`                | `service/company/impl/ShiftServiceImpl.java`                |
-| `service/core/EmployeeScheduleServiceImpl.java`        | `service/core/impl/EmployeeScheduleServiceImpl.java`        |
-| `service/core/PayslipPdfGenerator.java`                | `service/core/impl/PayslipPdfGenerator.java`                |
+**Company Services:**
+
+- [ ] `service/company/EmployeeAllowanceServiceImpl.java` → `service/company/impl/`
+- [ ] `service/company/EmployeeDeductionServiceImpl.java` → `service/company/impl/`
+- [ ] `service/company/EmployeeSalaryConfigServiceImpl.java` → `service/company/impl/`
+- [ ] `service/company/EmploymentContractServiceImpl.java` → `service/company/impl/`
+- [ ] `service/company/PayrollPeriodServiceImpl.java` → `service/company/impl/`
+- [ ] `service/company/ReportExportService.java` → `service/company/impl/`
+- [ ] `service/company/ReportServiceImpl.java` → `service/company/impl/`
+- [ ] `service/company/ShiftServiceImpl.java` → `service/company/impl/`
+
+**Core Services:**
+
+- [ ] `service/core/EmployeeScheduleServiceImpl.java` → `service/core/impl/`
+- [ ] `service/core/PayslipPdfGenerator.java` → `service/core/impl/`
+
+### 4. Tổ chức Repository theo domain
+
+**Attendance:**
+
+- [ ] `repository/AttendanceAdjustmentRequestRepository.java` → `repository/attendance/`
+- [ ] `repository/AttendanceRecordRepository.java` → `repository/attendance/`
+- [ ] `repository/BreakRecordRepository.java` → `repository/attendance/`
+- [ ] `repository/ScheduleSelectionRepository.java` → `repository/attendance/`
+- [ ] `repository/ShiftAssignmentRepository.java` → `repository/attendance/`
+- [ ] `repository/ShiftSwapRequestRepository.java` → `repository/attendance/`
+- [ ] `repository/ShiftTemplateRepository.java` → `repository/attendance/`
+- [ ] `repository/WorkModeChangeLogRepository.java` → `repository/attendance/`
+- [ ] `repository/WorkScheduleAssignmentRepository.java` → `repository/attendance/`
+- [ ] `repository/WorkScheduleRepository.java` → `repository/attendance/`
+
+**Audit:**
+
+- [ ] `repository/AuditLogRepository.java` → `repository/audit/`
+
+**Company:**
+
+- [ ] `repository/CompanyRepository.java` → `repository/company/`
+- [ ] `repository/CompanySettingsRepository.java` → `repository/company/`
+
+**Contract:**
+
+- [ ] `repository/EmploymentContractRepository.java` → `repository/contract/`
+
+**Core:**
+
+- [ ] `repository/EmailVerificationRepository.java` → `repository/core/`
+
+**Leave:**
+
+- [ ] `repository/HolidayRepository.java` → `repository/leave/`
+- [ ] `repository/LeaveBalanceRepository.java` → `repository/leave/`
+- [ ] `repository/LeaveRequestRepository.java` → `repository/leave/`
+
+**Payroll:**
+
+- [ ] `repository/EmployeeAllowanceRepository.java` → `repository/payroll/`
+- [ ] `repository/EmployeeDeductionRepository.java` → `repository/payroll/`
+- [ ] `repository/EmployeeSalaryRepository.java` → `repository/payroll/`
+- [ ] `repository/PayrollItemRepository.java` → `repository/payroll/`
+- [ ] `repository/PayrollPeriodRepository.java` → `repository/payroll/`
+- [ ] `repository/PayrollRecordRepository.java` → `repository/payroll/`
+
+**User:**
+
+- [ ] `repository/UserRepository.java` → `repository/user/`
+
+**Wallet:**
+
+- [ ] `repository/DepositRequestRepository.java` → `repository/wallet/`
+- [ ] `repository/EmployeeCommissionRepository.java` → `repository/wallet/`
+- [ ] `repository/PlanFeatureCodeRepository.java` → `repository/wallet/`
+- [ ] `repository/PlanFeatureRepository.java` → `repository/wallet/`
+- [ ] `repository/PlanRepository.java` → `repository/wallet/`
+- [ ] `repository/TamabeeSettingRepository.java` → `repository/wallet/`
+- [ ] `repository/WalletRepository.java` → `repository/wallet/`
+- [ ] `repository/WalletTransactionRepository.java` → `repository/wallet/`
 
 ---
 
@@ -368,6 +590,10 @@ mkdir -p src/main/java/com/tamabee/api_hr/repository/{attendance,audit,company,c
 
 # DTO auth & common
 mkdir -p src/main/java/com/tamabee/api_hr/dto/{auth,common}
+
+# DTO request/response theo domain
+mkdir -p src/main/java/com/tamabee/api_hr/dto/request/{attendance,company,leave,payroll,user,wallet}
+mkdir -p src/main/java/com/tamabee/api_hr/dto/response/{attendance,company,leave,payroll,user,wallet}
 ```
 
 ### Bước 2: Di chuyển Repository (ưu tiên cao)
@@ -446,14 +672,16 @@ git mv service/core/PayslipPdfGenerator.java service/core/impl/
 ### Bước 4: Merge model/ vào dto/
 
 ```bash
-# Auth DTOs
-git mv model/request/LoginRequest.java dto/auth/
-git mv model/request/RegisterRequest.java dto/auth/
-git mv model/request/ForgotPasswordRequest.java dto/auth/
-git mv model/request/ResetPasswordRequest.java dto/auth/
-git mv model/request/SendVerificationRequest.java dto/auth/
-git mv model/request/VerifyEmailRequest.java dto/auth/
-git mv model/response/LoginResponse.java dto/auth/
+# Auth Request DTOs
+git mv model/request/LoginRequest.java dto/auth/request/
+git mv model/request/RegisterRequest.java dto/auth/request/
+git mv model/request/ForgotPasswordRequest.java dto/auth/request/
+git mv model/request/ResetPasswordRequest.java dto/auth/request/
+git mv model/request/SendVerificationRequest.java dto/auth/request/
+git mv model/request/VerifyEmailRequest.java dto/auth/request/
+
+# Auth Response DTOs
+git mv model/response/LoginResponse.java dto/auth/response/
 
 # Common
 git mv model/response/BaseResponse.java dto/common/
@@ -478,14 +706,16 @@ Sau khi di chuyển, cần update import statements. IDE (IntelliJ) sẽ tự đ
 
 ```java
 // Trước
-import com.tamabee.api_hr.repository.UserRepository;
+
+import com.tamabee.api_hr.model.request.LoginRequest;
 import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.filter.TenantContext;
+import com.tamabee.api_hr.model.response.LoginResponse;
 
 // Sau
 import com.tamabee.api_hr.repository.user.UserRepository;
-import com.tamabee.api_hr.dto.common.BaseResponse;
-import com.tamabee.api_hr.datasource.TenantContext;
+import com.tamabee.api_hr.dto.auth.request.LoginRequest;
+import com.tamabee.api_hr.dto.auth.response.LoginResponse;
+
 ```
 
 ---
@@ -524,14 +754,22 @@ import com.tamabee.api_hr.datasource.TenantContext;
 
 ## Checklist sau refactor
 
-- [ ] Tất cả file đã di chuyển đúng vị trí
-- [ ] Import statements đã được cập nhật
+### Build & Test
+
 - [ ] Build thành công: `.\mvnw clean compile`
 - [ ] Tests pass: `.\mvnw test`
+
+### Packages đã xóa
+
 - [ ] Không còn package `model/`
 - [ ] Không còn package `filter/`
+
+### Cấu trúc mới
+
 - [ ] Tất cả ServiceImpl nằm trong `impl/`
 - [ ] Repository được tổ chức theo domain
+- [ ] Import statements đã được cập nhật
+- [ ] Không còn file nào ở vị trí cũ
 
 ---
 

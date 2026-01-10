@@ -1,6 +1,6 @@
 package com.tamabee.api_hr.util;
 
-import com.tamabee.api_hr.repository.UserRepository;
+import com.tamabee.api_hr.repository.user.UserRepository;
 
 /**
  * Utility class để tạo mã nhân viên

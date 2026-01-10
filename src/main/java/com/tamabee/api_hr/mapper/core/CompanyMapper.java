@@ -3,11 +3,11 @@ package com.tamabee.api_hr.mapper.core;
 import org.springframework.stereotype.Component;
 
 import static com.tamabee.api_hr.constants.PlanConstants.FREE_PLAN_ID;
-import com.tamabee.api_hr.dto.response.CompanyResponse;
+import com.tamabee.api_hr.dto.response.company.CompanyResponse;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
-import com.tamabee.api_hr.model.request.RegisterRequest;
-import com.tamabee.api_hr.repository.UserRepository;
+import com.tamabee.api_hr.dto.auth.RegisterRequest;
+import com.tamabee.api_hr.repository.user.UserRepository;
 
 import lombok.RequiredArgsConstructor;
 

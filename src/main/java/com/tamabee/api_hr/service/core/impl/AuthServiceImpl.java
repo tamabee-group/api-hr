@@ -2,6 +2,7 @@ package com.tamabee.api_hr.service.core.impl;
 
 import java.time.LocalDateTime;
 
+import com.tamabee.api_hr.datasource.TenantContext;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -10,8 +11,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tamabee.api_hr.datasource.TenantProvisioningService;
-import com.tamabee.api_hr.dto.response.DomainAvailabilityResponse;
-import com.tamabee.api_hr.dto.response.UserResponse;
+import com.tamabee.api_hr.dto.response.company.DomainAvailabilityResponse;
+import com.tamabee.api_hr.dto.response.user.UserResponse;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.entity.user.UserProfileEntity;
@@ -27,15 +28,15 @@ import com.tamabee.api_hr.exception.UnauthorizedException;
 import com.tamabee.api_hr.mapper.core.CompanyMapper;
 import com.tamabee.api_hr.mapper.core.UserMapper;
 import com.tamabee.api_hr.mapper.core.WalletFactory;
-import com.tamabee.api_hr.model.request.LoginRequest;
-import com.tamabee.api_hr.model.request.RegisterRequest;
-import com.tamabee.api_hr.model.response.LoginResponse;
-import com.tamabee.api_hr.repository.CompanyRepository;
-import com.tamabee.api_hr.repository.EmailVerificationRepository;
-import com.tamabee.api_hr.repository.UserRepository;
-import com.tamabee.api_hr.repository.WalletRepository;
-import com.tamabee.api_hr.service.admin.ISettingService;
-import com.tamabee.api_hr.service.core.IAuthService;
+import com.tamabee.api_hr.dto.auth.LoginRequest;
+import com.tamabee.api_hr.dto.auth.RegisterRequest;
+import com.tamabee.api_hr.dto.auth.LoginResponse;
+import com.tamabee.api_hr.repository.company.CompanyRepository;
+import com.tamabee.api_hr.repository.core.EmailVerificationRepository;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.repository.wallet.WalletRepository;
+import com.tamabee.api_hr.service.admin.interfaces.ISettingService;
+import com.tamabee.api_hr.service.core.interfaces.IAuthService;
 import com.tamabee.api_hr.util.EmployeeCodeGenerator;
 import com.tamabee.api_hr.util.JwtUtil;
 import com.tamabee.api_hr.util.ReferralCodeGenerator;
@@ -224,7 +225,7 @@ public class AuthServiceImpl implements IAuthService {
     public LoginResponse login(LoginRequest request) {
         log.info("Login attempt for email: {}, current tenant: {}",
                 request.getEmail(),
-                com.tamabee.api_hr.filter.TenantContext.getCurrentTenant());
+                TenantContext.getCurrentTenant());
 
         // Tìm user bằng email hoặc mã nhân viên
         UserEntity user = userRepository.findByEmailAndDeletedFalse(request.getEmail())

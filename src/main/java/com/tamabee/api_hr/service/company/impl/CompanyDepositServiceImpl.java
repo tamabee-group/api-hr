@@ -15,11 +15,11 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.tamabee.api_hr.dto.request.DepositFilterRequest;
-import com.tamabee.api_hr.dto.response.DepositRequestResponse;
+import com.tamabee.api_hr.dto.request.wallet.DepositFilterRequest;
+import com.tamabee.api_hr.dto.response.wallet.DepositRequestResponse;
 import com.tamabee.api_hr.enums.DepositStatus;
 import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.service.company.ICompanyDepositService;
+import com.tamabee.api_hr.service.company.interfaces.ICompanyDepositService;
 import com.tamabee.api_hr.util.SecurityUtil;
 
 import lombok.RequiredArgsConstructor;

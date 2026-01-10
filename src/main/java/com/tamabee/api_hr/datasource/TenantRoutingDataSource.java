@@ -1,6 +1,5 @@
 package com.tamabee.api_hr.datasource;
 
-import com.tamabee.api_hr.filter.TenantContext;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.jdbc.datasource.lookup.AbstractRoutingDataSource;
 

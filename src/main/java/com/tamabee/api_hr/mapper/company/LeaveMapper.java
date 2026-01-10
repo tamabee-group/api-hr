@@ -1,8 +1,8 @@
 package com.tamabee.api_hr.mapper.company;
 
-import com.tamabee.api_hr.dto.request.CreateLeaveRequest;
-import com.tamabee.api_hr.dto.response.LeaveBalanceResponse;
-import com.tamabee.api_hr.dto.response.LeaveRequestResponse;
+import com.tamabee.api_hr.dto.request.leave.CreateLeaveRequest;
+import com.tamabee.api_hr.dto.response.leave.LeaveBalanceResponse;
+import com.tamabee.api_hr.dto.response.leave.LeaveRequestResponse;
 import com.tamabee.api_hr.entity.leave.LeaveBalanceEntity;
 import com.tamabee.api_hr.entity.leave.LeaveRequestEntity;
 import org.springframework.stereotype.Component;
@@ -52,7 +52,6 @@ public class LeaveMapper {
      * Chuyển đổi request sang entity
      *
      * @param employeeId ID nhân viên
-     * @param companyId  ID công ty
      * @param request    request tạo mới
      * @return entity
      */

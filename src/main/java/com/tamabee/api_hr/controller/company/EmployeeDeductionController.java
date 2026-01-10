@@ -1,10 +1,10 @@
 package com.tamabee.api_hr.controller.company;
 
-import com.tamabee.api_hr.dto.request.DeductionAssignmentRequest;
-import com.tamabee.api_hr.dto.response.EmployeeDeductionResponse;
+import com.tamabee.api_hr.dto.request.payroll.DeductionAssignmentRequest;
+import com.tamabee.api_hr.dto.response.payroll.EmployeeDeductionResponse;
 import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.service.company.IEmployeeDeductionService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.service.company.interfaces.IEmployeeDeductionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

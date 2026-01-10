@@ -8,13 +8,13 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.tamabee.api_hr.dto.response.PlanFeaturesResponse;
-import com.tamabee.api_hr.dto.response.PlanResponse;
-import com.tamabee.api_hr.dto.response.PublicSettingsResponse;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.service.admin.IPlanService;
-import com.tamabee.api_hr.service.admin.ISettingService;
-import com.tamabee.api_hr.service.core.IPlanFeaturesService;
+import com.tamabee.api_hr.dto.response.wallet.PlanFeaturesResponse;
+import com.tamabee.api_hr.dto.response.wallet.PlanResponse;
+import com.tamabee.api_hr.dto.response.company.PublicSettingsResponse;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.service.admin.interfaces.IPlanService;
+import com.tamabee.api_hr.service.admin.interfaces.ISettingService;
+import com.tamabee.api_hr.service.core.interfaces.IPlanFeaturesService;
 
 import lombok.RequiredArgsConstructor;
 

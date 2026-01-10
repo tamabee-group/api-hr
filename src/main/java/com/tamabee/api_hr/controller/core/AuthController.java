@@ -1,13 +1,12 @@
 package com.tamabee.api_hr.controller.core;
 
-import com.tamabee.api_hr.dto.response.DomainAvailabilityResponse;
-import com.tamabee.api_hr.dto.response.UserResponse;
+import com.tamabee.api_hr.dto.auth.*;
+import com.tamabee.api_hr.dto.response.company.DomainAvailabilityResponse;
+import com.tamabee.api_hr.dto.response.user.UserResponse;
 import com.tamabee.api_hr.enums.ErrorCode;
-import com.tamabee.api_hr.model.request.*;
-import com.tamabee.api_hr.model.response.LoginResponse;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.service.core.IAuthService;
-import com.tamabee.api_hr.service.core.IEmailVerificationService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.service.core.interfaces.IAuthService;
+import com.tamabee.api_hr.service.core.interfaces.IEmailVerificationService;
 import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.UnauthorizedException;
 import jakarta.servlet.http.Cookie;

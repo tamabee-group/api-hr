@@ -1,6 +1,6 @@
 package com.tamabee.api_hr.config;
 
-import com.tamabee.api_hr.filter.TenantContext;
+import com.tamabee.api_hr.datasource.TenantContext;
 import com.tamabee.api_hr.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;

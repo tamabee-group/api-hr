@@ -1,13 +1,13 @@
 package com.tamabee.api_hr.service;
 
-import com.tamabee.api_hr.dto.response.PlanFeaturesResponse;
-import com.tamabee.api_hr.dto.response.PlanFeaturesResponse.FeatureItem;
+import com.tamabee.api_hr.dto.response.wallet.PlanFeaturesResponse;
+import com.tamabee.api_hr.dto.response.wallet.PlanFeaturesResponse.FeatureItem;
 import com.tamabee.api_hr.entity.wallet.PlanEntity;
 import com.tamabee.api_hr.entity.wallet.PlanFeatureCodeEntity;
 import com.tamabee.api_hr.enums.FeatureCode;
 import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.repository.PlanFeatureCodeRepository;
-import com.tamabee.api_hr.repository.PlanRepository;
+import com.tamabee.api_hr.repository.wallet.PlanFeatureCodeRepository;
+import com.tamabee.api_hr.repository.wallet.PlanRepository;
 import com.tamabee.api_hr.service.core.impl.PlanFeaturesServiceImpl;
 import net.jqwik.api.*;
 import net.jqwik.api.constraints.*;

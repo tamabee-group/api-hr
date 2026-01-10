@@ -1,12 +1,12 @@
 package com.tamabee.api_hr.controller.core;
 
-import com.tamabee.api_hr.dto.request.EmployeeSwapRequest;
-import com.tamabee.api_hr.dto.response.EmployeeScheduleDataResponse;
-import com.tamabee.api_hr.dto.response.ShiftAssignmentResponse;
-import com.tamabee.api_hr.dto.response.ShiftSwapRequestResponse;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.service.core.IAuthService;
-import com.tamabee.api_hr.service.core.IEmployeeScheduleService;
+import com.tamabee.api_hr.dto.request.attendance.EmployeeSwapRequest;
+import com.tamabee.api_hr.dto.response.schedule.EmployeeScheduleDataResponse;
+import com.tamabee.api_hr.dto.response.attendance.ShiftAssignmentResponse;
+import com.tamabee.api_hr.dto.response.attendance.ShiftSwapRequestResponse;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.service.core.interfaces.IAuthService;
+import com.tamabee.api_hr.service.core.interfaces.IEmployeeScheduleService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.format.annotation.DateTimeFormat;

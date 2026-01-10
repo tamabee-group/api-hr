@@ -1,8 +1,8 @@
 package com.tamabee.api_hr.service.company.impl;
 
-import com.tamabee.api_hr.dto.request.CreateLeaveRequest;
-import com.tamabee.api_hr.dto.response.LeaveBalanceResponse;
-import com.tamabee.api_hr.dto.response.LeaveRequestResponse;
+import com.tamabee.api_hr.dto.request.leave.CreateLeaveRequest;
+import com.tamabee.api_hr.dto.response.leave.LeaveBalanceResponse;
+import com.tamabee.api_hr.dto.response.leave.LeaveRequestResponse;
 import com.tamabee.api_hr.entity.leave.LeaveBalanceEntity;
 import com.tamabee.api_hr.entity.leave.LeaveRequestEntity;
 import com.tamabee.api_hr.enums.ErrorCode;
@@ -12,10 +12,10 @@ import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.ConflictException;
 import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.mapper.company.LeaveMapper;
-import com.tamabee.api_hr.repository.LeaveBalanceRepository;
-import com.tamabee.api_hr.repository.LeaveRequestRepository;
-import com.tamabee.api_hr.repository.UserRepository;
-import com.tamabee.api_hr.service.company.ILeaveService;
+import com.tamabee.api_hr.repository.leave.LeaveBalanceRepository;
+import com.tamabee.api_hr.repository.leave.LeaveRequestRepository;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.ILeaveService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

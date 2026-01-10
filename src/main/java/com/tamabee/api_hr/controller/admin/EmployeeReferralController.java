@@ -1,13 +1,13 @@
 package com.tamabee.api_hr.controller.admin;
 
-import com.tamabee.api_hr.dto.response.ReferredCompanyResponse;
+import com.tamabee.api_hr.dto.response.wallet.ReferredCompanyResponse;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.RoleConstants;
 import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.exception.UnauthorizedException;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.repository.UserRepository;
-import com.tamabee.api_hr.service.admin.IEmployeeReferralService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.admin.interfaces.IEmployeeReferralService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

@@ -1,15 +1,15 @@
 package com.tamabee.api_hr.service.company.impl;
 
-import com.tamabee.api_hr.dto.request.CreateHolidayRequest;
-import com.tamabee.api_hr.dto.request.UpdateHolidayRequest;
-import com.tamabee.api_hr.dto.response.HolidayResponse;
+import com.tamabee.api_hr.dto.request.leave.CreateHolidayRequest;
+import com.tamabee.api_hr.dto.request.leave.UpdateHolidayRequest;
+import com.tamabee.api_hr.dto.response.leave.HolidayResponse;
 import com.tamabee.api_hr.entity.leave.HolidayEntity;
 import com.tamabee.api_hr.enums.ErrorCode;
 import com.tamabee.api_hr.exception.ConflictException;
 import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.mapper.company.HolidayMapper;
-import com.tamabee.api_hr.repository.HolidayRepository;
-import com.tamabee.api_hr.service.company.IHolidayService;
+import com.tamabee.api_hr.repository.leave.HolidayRepository;
+import com.tamabee.api_hr.service.company.interfaces.IHolidayService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

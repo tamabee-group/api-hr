@@ -3,12 +3,14 @@
 ## Service Layer
 
 - Interface + Implementation: `I{Entity}Service` + `{Entity}ServiceImpl`
+- **Tất cả ServiceImpl PHẢI nằm trong `impl/` subfolder**
 - `@Transactional` cho write, `@Transactional(readOnly = true)` cho read
 - Constructor injection với `@RequiredArgsConstructor`
 
 ## Repository
 
 - Spring Data JPA conventions: `findBy...`, `existsBy...`, `countBy...`
+- **Repository được tổ chức theo domain** (attendance/, user/, payroll/...)
 - **ALWAYS** `deleted = false` check FIRST in queries
 - ALL list APIs MUST use `Pageable`
 
@@ -32,8 +34,31 @@ public class CompanyController { }
 ## Naming
 
 - Entity: `{Name}Entity` (UserEntity)
+- Service Interface: `I{Domain}Service` (IPayrollService)
+- Service Impl: `{Domain}ServiceImpl` (PayrollServiceImpl) - đặt trong `impl/`
+- Calculator Interface: `I{Name}Calculator` (IOvertimeCalculator)
+- Calculator Impl: `{Name}Calculator` (OvertimeCalculator)
 - Mapper: `{Name}Mapper` với `@Component`
 - Methods: `toEntity()`, `toResponse()`, `updateEntity()`
+- Request DTO: `{Action}{Domain}Request` (CreateUserRequest)
+- Response DTO: `{Domain}Response` (UserResponse)
+- Query DTO: `{Domain}Query` (ContractQuery)
+
+## Import Paths
+
+```java
+// Repository - theo domain
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.repository.attendance.AttendanceRecordRepository;
+
+// DTO
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.dto.auth.request.LoginRequest;
+import com.tamabee.api_hr.dto.auth.response.LoginResponse;
+
+// Datasource (thay vì filter)
+import com.tamabee.api_hr.datasource.TenantContext;
+```
 
 ## Database (Flyway)
 

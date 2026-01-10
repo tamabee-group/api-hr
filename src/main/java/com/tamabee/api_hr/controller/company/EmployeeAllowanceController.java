@@ -1,10 +1,10 @@
 package com.tamabee.api_hr.controller.company;
 
-import com.tamabee.api_hr.dto.request.AllowanceAssignmentRequest;
-import com.tamabee.api_hr.dto.response.EmployeeAllowanceResponse;
+import com.tamabee.api_hr.dto.request.payroll.AllowanceAssignmentRequest;
+import com.tamabee.api_hr.dto.response.payroll.EmployeeAllowanceResponse;
 import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.service.company.IEmployeeAllowanceService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.service.company.interfaces.IEmployeeAllowanceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

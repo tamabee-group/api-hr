@@ -1,9 +1,9 @@
 package com.tamabee.api_hr.mapper.admin;
 
-import com.tamabee.api_hr.dto.request.PlanCreateRequest;
-import com.tamabee.api_hr.dto.request.PlanUpdateRequest;
-import com.tamabee.api_hr.dto.response.PlanFeatureResponse;
-import com.tamabee.api_hr.dto.response.PlanResponse;
+import com.tamabee.api_hr.dto.request.wallet.PlanCreateRequest;
+import com.tamabee.api_hr.dto.request.wallet.PlanUpdateRequest;
+import com.tamabee.api_hr.dto.response.wallet.PlanFeatureResponse;
+import com.tamabee.api_hr.dto.response.wallet.PlanResponse;
 import com.tamabee.api_hr.entity.wallet.PlanEntity;
 import com.tamabee.api_hr.entity.wallet.PlanFeatureEntity;
 import lombok.RequiredArgsConstructor;

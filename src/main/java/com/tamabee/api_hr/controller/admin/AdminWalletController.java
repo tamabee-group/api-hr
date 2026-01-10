@@ -1,16 +1,16 @@
 package com.tamabee.api_hr.controller.admin;
 
-import com.tamabee.api_hr.dto.request.DirectWalletRequest;
-import com.tamabee.api_hr.dto.request.RefundRequest;
-import com.tamabee.api_hr.dto.request.TransactionFilterRequest;
-import com.tamabee.api_hr.dto.response.WalletOverviewResponse;
-import com.tamabee.api_hr.dto.response.WalletResponse;
-import com.tamabee.api_hr.dto.response.WalletStatisticsResponse;
-import com.tamabee.api_hr.dto.response.WalletTransactionResponse;
+import com.tamabee.api_hr.dto.request.wallet.DirectWalletRequest;
+import com.tamabee.api_hr.dto.request.wallet.RefundRequest;
+import com.tamabee.api_hr.dto.request.wallet.TransactionFilterRequest;
+import com.tamabee.api_hr.dto.response.wallet.WalletOverviewResponse;
+import com.tamabee.api_hr.dto.response.wallet.WalletResponse;
+import com.tamabee.api_hr.dto.response.wallet.WalletStatisticsResponse;
+import com.tamabee.api_hr.dto.response.wallet.WalletTransactionResponse;
 import com.tamabee.api_hr.enums.RoleConstants;
 import com.tamabee.api_hr.enums.TransactionType;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.service.admin.IWalletService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.service.admin.interfaces.IWalletService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

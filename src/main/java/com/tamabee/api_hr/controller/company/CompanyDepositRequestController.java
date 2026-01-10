@@ -16,14 +16,14 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.tamabee.api_hr.dto.request.DepositFilterRequest;
-import com.tamabee.api_hr.dto.request.DepositRequestCreateRequest;
-import com.tamabee.api_hr.dto.response.DepositRequestResponse;
+import com.tamabee.api_hr.dto.request.wallet.DepositFilterRequest;
+import com.tamabee.api_hr.dto.request.wallet.DepositRequestCreateRequest;
+import com.tamabee.api_hr.dto.response.wallet.DepositRequestResponse;
 import com.tamabee.api_hr.enums.DepositStatus;
 import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.service.admin.IDepositRequestService;
-import com.tamabee.api_hr.service.company.ICompanyDepositService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.service.admin.interfaces.IDepositRequestService;
+import com.tamabee.api_hr.service.company.interfaces.ICompanyDepositService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;

@@ -3,10 +3,16 @@ package com.tamabee.api_hr.service.company.impl;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tamabee.api_hr.dto.config.*;
-import com.tamabee.api_hr.dto.request.*;
-import com.tamabee.api_hr.dto.response.CompanySettingsResponse;
-import com.tamabee.api_hr.dto.response.WorkModeChangeLogResponse;
-import com.tamabee.api_hr.dto.response.WorkModeConfigResponse;
+import com.tamabee.api_hr.dto.request.attendance.AttendanceConfigRequest;
+import com.tamabee.api_hr.dto.request.attendance.BreakConfigRequest;
+import com.tamabee.api_hr.dto.request.payroll.AllowanceConfigRequest;
+import com.tamabee.api_hr.dto.request.payroll.DeductionConfigRequest;
+import com.tamabee.api_hr.dto.request.payroll.OvertimeConfigRequest;
+import com.tamabee.api_hr.dto.request.payroll.PayrollConfigRequest;
+import com.tamabee.api_hr.dto.request.schedule.WorkModeConfigRequest;
+import com.tamabee.api_hr.dto.response.company.CompanySettingsResponse;
+import com.tamabee.api_hr.dto.response.schedule.WorkModeChangeLogResponse;
+import com.tamabee.api_hr.dto.response.schedule.WorkModeConfigResponse;
 import com.tamabee.api_hr.entity.audit.WorkModeChangeLogEntity;
 import com.tamabee.api_hr.entity.company.CompanySettingEntity;
 import com.tamabee.api_hr.enums.ErrorCode;
@@ -14,13 +20,13 @@ import com.tamabee.api_hr.enums.WorkMode;
 import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.ConflictException;
 import com.tamabee.api_hr.exception.InternalServerException;
-import com.tamabee.api_hr.repository.CompanySettingsRepository;
-import com.tamabee.api_hr.repository.WorkModeChangeLogRepository;
-import com.tamabee.api_hr.repository.WorkScheduleRepository;
+import com.tamabee.api_hr.repository.company.CompanySettingsRepository;
+import com.tamabee.api_hr.repository.attendance.WorkModeChangeLogRepository;
+import com.tamabee.api_hr.repository.attendance.WorkScheduleRepository;
 import com.tamabee.api_hr.service.company.cache.CompanySettingsCache;
 import com.tamabee.api_hr.service.calculator.LegalBreakRequirements;
 import com.tamabee.api_hr.service.calculator.LegalOvertimeRequirements;
-import com.tamabee.api_hr.service.company.ICompanySettingsService;
+import com.tamabee.api_hr.service.company.interfaces.ICompanySettingsService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.ObjectProvider;
@@ -87,7 +93,7 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
     @Override
     @Transactional
     public WorkModeConfigResponse updateWorkModeConfig(WorkModeConfigRequest request,
-            String changedBy) {
+                                                       String changedBy) {
         CompanySettingEntity entity = findSettings();
         WorkMode previousMode = entity.getWorkMode();
         WorkMode newMode = request.getMode();

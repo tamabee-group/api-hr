@@ -1,16 +1,16 @@
 package com.tamabee.api_hr.service.admin.impl;
 
 import com.tamabee.api_hr.datasource.TenantProvisioningService;
-import com.tamabee.api_hr.dto.request.UpdateCompanyRequest;
-import com.tamabee.api_hr.dto.response.CompanyResponse;
+import com.tamabee.api_hr.dto.request.company.UpdateCompanyRequest;
+import com.tamabee.api_hr.dto.response.company.CompanyResponse;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.enums.CompanyStatus;
 import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.mapper.core.CompanyMapper;
-import com.tamabee.api_hr.repository.CompanyRepository;
-import com.tamabee.api_hr.service.admin.ICompanyManagerService;
-import com.tamabee.api_hr.service.core.IUploadService;
+import com.tamabee.api_hr.repository.company.CompanyRepository;
+import com.tamabee.api_hr.service.admin.interfaces.ICompanyManagerService;
+import com.tamabee.api_hr.service.core.interfaces.IUploadService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

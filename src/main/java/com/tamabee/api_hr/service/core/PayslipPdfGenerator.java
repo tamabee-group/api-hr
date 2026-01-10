@@ -2,7 +2,7 @@ package com.tamabee.api_hr.service.core;
 
 import com.lowagie.text.*;
 import com.lowagie.text.pdf.*;
-import com.tamabee.api_hr.dto.response.PayrollRecordResponse;
+import com.tamabee.api_hr.dto.response.payroll.PayrollRecordResponse;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import lombok.extern.slf4j.Slf4j;

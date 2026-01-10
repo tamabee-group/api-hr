@@ -1,7 +1,7 @@
 package com.tamabee.api_hr.mapper.admin;
 
-import com.tamabee.api_hr.dto.request.PlanFeatureRequest;
-import com.tamabee.api_hr.dto.response.PlanFeatureResponse;
+import com.tamabee.api_hr.dto.request.wallet.PlanFeatureRequest;
+import com.tamabee.api_hr.dto.response.wallet.PlanFeatureResponse;
 import com.tamabee.api_hr.entity.wallet.PlanFeatureEntity;
 import org.springframework.stereotype.Component;
 

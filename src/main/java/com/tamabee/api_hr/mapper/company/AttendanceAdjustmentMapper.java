@@ -1,6 +1,6 @@
 package com.tamabee.api_hr.mapper.company;
 
-import com.tamabee.api_hr.dto.response.AdjustmentRequestResponse;
+import com.tamabee.api_hr.dto.response.attendance.AdjustmentRequestResponse;
 import com.tamabee.api_hr.entity.attendance.AttendanceAdjustmentRequestEntity;
 import com.tamabee.api_hr.entity.attendance.AttendanceRecordEntity;
 import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;

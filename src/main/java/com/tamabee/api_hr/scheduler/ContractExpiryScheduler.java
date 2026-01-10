@@ -1,11 +1,10 @@
 package com.tamabee.api_hr.scheduler;
 
 import com.tamabee.api_hr.entity.contract.EmploymentContractEntity;
-import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.ContractStatus;
 import com.tamabee.api_hr.enums.UserStatus;
-import com.tamabee.api_hr.repository.EmploymentContractRepository;
-import com.tamabee.api_hr.repository.UserRepository;
+import com.tamabee.api_hr.repository.contract.EmploymentContractRepository;
+import com.tamabee.api_hr.repository.user.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

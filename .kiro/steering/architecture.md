@@ -4,37 +4,62 @@
 
 ```
 src/main/java/com/tamabee/api_hr/
+├── config/                 # Configuration classes
+├── constants/              # Constants (PlanConstants)
 ├── controller/
-│   ├── admin/          # Tamabee admin APIs (/api/admin/**)
-│   ├── company/        # Company APIs (/api/company/**)
-│   └── core/           # Auth, public APIs (/api/auth/**, /api/users/**)
-├── service/
-│   ├── admin/          # Admin business logic
-│   ├── company/        # Company business logic
-│   └── core/           # Shared services (Auth, Email, File)
-├── mapper/
-│   ├── admin/          # Admin mappers
-│   ├── company/        # Company mappers
-│   └── core/           # Core mappers
+│   ├── admin/              # /api/admin/**
+│   ├── company/            # /api/company/**
+│   └── core/               # /api/auth/**, /api/users/**
+├── datasource/             # Multi-tenant (TenantContext, TenantFilter, routing)
+├── dto/
+│   ├── auth/
+│   │   ├── request/        # LoginRequest, RegisterRequest...
+│   │   └── response/       # LoginResponse
+│   ├── common/             # BaseResponse
+│   ├── config/             # AllowanceConfig, PayrollConfig...
+│   ├── result/             # Internal calculation results
+│   ├── request/            # API request DTOs (theo domain)
+│   └── response/           # API response DTOs (theo domain)
 ├── entity/
-│   ├── attendance/     # Shift, Schedule, AttendanceRecord
-│   ├── audit/          # AuditLog, WorkModeChangeLog
-│   ├── company/        # Company, CompanyProfile, CompanySetting
-│   ├── contract/       # EmploymentContract
-│   ├── core/           # EmailVerification, MailHistory
-│   ├── leave/          # Holiday, LeaveBalance, LeaveRequest
-│   ├── payroll/        # Salary, Allowance, Deduction, PayrollRecord
-│   ├── user/           # User, UserProfile
-│   └── wallet/         # Wallet, Transaction, Deposit, Plan, Commission
-├── repository/         # JPA repositories
-├── dto/request/        # Request DTOs
-├── dto/response/       # Response DTOs
-├── enums/              # All enums
-├── exception/          # Custom exceptions
-├── config/             # Configuration classes
-├── filter/             # Request filters
-├── scheduler/          # Scheduled tasks
-└── util/               # Utility classes
+│   ├── attendance/         # Shift, Schedule, AttendanceRecord
+│   ├── audit/              # AuditLog, WorkModeChangeLog
+│   ├── company/            # Company, CompanyProfile, CompanySetting
+│   ├── contract/           # EmploymentContract
+│   ├── core/               # EmailVerification, MailHistory
+│   ├── leave/              # Holiday, LeaveBalance, LeaveRequest
+│   ├── payroll/            # Salary, Allowance, Deduction, PayrollRecord
+│   ├── user/               # User, UserProfile
+│   └── wallet/             # Wallet, Transaction, Deposit, Plan
+├── enums/                  # All enums
+├── exception/              # Custom exceptions
+├── mapper/
+│   ├── admin/              # Admin mappers
+│   ├── company/            # Company mappers
+│   └── core/               # Core mappers
+├── repository/
+│   ├── attendance/         # AttendanceRecord, BreakRecord, Shift...
+│   ├── audit/              # AuditLog
+│   ├── company/            # Company, CompanySettings
+│   ├── contract/           # EmploymentContract
+│   ├── core/               # EmailVerification
+│   ├── leave/              # Holiday, LeaveBalance, LeaveRequest
+│   ├── payroll/            # Salary, Allowance, Deduction, PayrollRecord
+│   ├── user/               # User
+│   └── wallet/             # Wallet, Transaction, Deposit, Plan
+├── scheduler/              # Scheduled tasks
+├── service/
+│   ├── admin/
+│   │   ├── I{Name}Service.java
+│   │   └── impl/           # Tất cả ServiceImpl
+│   ├── calculator/         # Business logic calculators
+│   ├── company/
+│   │   ├── I{Name}Service.java
+│   │   ├── cache/          # Cached services
+│   │   └── impl/           # Tất cả ServiceImpl
+│   └── core/
+│       ├── I{Name}Service.java
+│       └── impl/           # Tất cả ServiceImpl
+└── util/                   # Utility classes
 ```
 
 ## Layer Flow

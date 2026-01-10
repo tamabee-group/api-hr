@@ -1,7 +1,7 @@
 package com.tamabee.api_hr.mapper.admin;
 
-import com.tamabee.api_hr.dto.request.DepositRequestCreateRequest;
-import com.tamabee.api_hr.dto.response.DepositRequestResponse;
+import com.tamabee.api_hr.dto.request.wallet.DepositRequestCreateRequest;
+import com.tamabee.api_hr.dto.response.wallet.DepositRequestResponse;
 import com.tamabee.api_hr.entity.wallet.DepositRequestEntity;
 import com.tamabee.api_hr.enums.DepositStatus;
 import org.springframework.stereotype.Component;

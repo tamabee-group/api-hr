@@ -2,10 +2,10 @@ package com.tamabee.api_hr.mapper.core;
 
 import org.springframework.stereotype.Component;
 
-import com.tamabee.api_hr.dto.response.UserProfileResponse;
-import com.tamabee.api_hr.dto.response.UserResponse;
+import com.tamabee.api_hr.dto.response.user.UserProfileResponse;
+import com.tamabee.api_hr.dto.response.user.UserResponse;
 import com.tamabee.api_hr.entity.user.UserEntity;
-import com.tamabee.api_hr.model.request.RegisterRequest;
+import com.tamabee.api_hr.dto.auth.RegisterRequest;
 import com.tamabee.api_hr.util.LocaleUtil;
 
 @Component

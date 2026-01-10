@@ -1,7 +1,7 @@
 package com.tamabee.api_hr.service.company.impl;
 
-import com.tamabee.api_hr.dto.response.PlanFeaturesResponse;
-import com.tamabee.api_hr.dto.response.PlanFeaturesResponse.FeatureItem;
+import com.tamabee.api_hr.dto.response.wallet.PlanFeaturesResponse;
+import com.tamabee.api_hr.dto.response.wallet.PlanFeaturesResponse.FeatureItem;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.wallet.PlanEntity;
 import com.tamabee.api_hr.entity.wallet.PlanFeatureCodeEntity;
@@ -9,10 +9,10 @@ import com.tamabee.api_hr.enums.ErrorCode;
 import com.tamabee.api_hr.enums.FeatureCode;
 import com.tamabee.api_hr.exception.ForbiddenException;
 import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.repository.CompanyRepository;
-import com.tamabee.api_hr.repository.PlanFeatureCodeRepository;
-import com.tamabee.api_hr.repository.PlanRepository;
-import com.tamabee.api_hr.service.company.IPlanFeatureService;
+import com.tamabee.api_hr.repository.company.CompanyRepository;
+import com.tamabee.api_hr.repository.wallet.PlanFeatureCodeRepository;
+import com.tamabee.api_hr.repository.wallet.PlanRepository;
+import com.tamabee.api_hr.service.company.interfaces.IPlanFeatureService;
 import com.tamabee.api_hr.util.LocaleUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

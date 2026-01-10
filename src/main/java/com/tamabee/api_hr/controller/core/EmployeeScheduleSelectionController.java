@@ -1,15 +1,14 @@
 package com.tamabee.api_hr.controller.core;
 
-import com.tamabee.api_hr.dto.request.SelectScheduleRequest;
-import com.tamabee.api_hr.dto.response.ScheduleSelectionResponse;
-import com.tamabee.api_hr.dto.response.WorkScheduleResponse;
+import com.tamabee.api_hr.dto.request.schedule.SelectScheduleRequest;
+import com.tamabee.api_hr.dto.response.schedule.ScheduleSelectionResponse;
+import com.tamabee.api_hr.dto.response.schedule.WorkScheduleResponse;
 import com.tamabee.api_hr.entity.user.UserEntity;
-import com.tamabee.api_hr.enums.RoleConstants;
 import com.tamabee.api_hr.enums.SelectionStatus;
 import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.repository.UserRepository;
-import com.tamabee.api_hr.service.company.IScheduleSelectionService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.IScheduleSelectionService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

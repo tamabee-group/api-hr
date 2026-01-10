@@ -1,18 +1,18 @@
 package com.tamabee.api_hr.service.admin.impl;
 
-import com.tamabee.api_hr.dto.request.PlanCreateRequest;
-import com.tamabee.api_hr.dto.request.PlanFeatureRequest;
-import com.tamabee.api_hr.dto.request.PlanUpdateRequest;
-import com.tamabee.api_hr.dto.response.PlanResponse;
+import com.tamabee.api_hr.dto.request.wallet.PlanCreateRequest;
+import com.tamabee.api_hr.dto.request.wallet.PlanFeatureRequest;
+import com.tamabee.api_hr.dto.request.wallet.PlanUpdateRequest;
+import com.tamabee.api_hr.dto.response.wallet.PlanResponse;
 import com.tamabee.api_hr.entity.wallet.PlanEntity;
 import com.tamabee.api_hr.entity.wallet.PlanFeatureEntity;
 import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.mapper.admin.PlanFeatureMapper;
 import com.tamabee.api_hr.mapper.admin.PlanMapper;
-import com.tamabee.api_hr.repository.PlanFeatureRepository;
-import com.tamabee.api_hr.repository.PlanRepository;
-import com.tamabee.api_hr.service.admin.IPlanService;
+import com.tamabee.api_hr.repository.wallet.PlanFeatureRepository;
+import com.tamabee.api_hr.repository.wallet.PlanRepository;
+import com.tamabee.api_hr.service.admin.interfaces.IPlanService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;

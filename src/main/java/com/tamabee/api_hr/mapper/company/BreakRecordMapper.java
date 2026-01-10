@@ -1,7 +1,7 @@
 package com.tamabee.api_hr.mapper.company;
 
-import com.tamabee.api_hr.dto.request.StartBreakRequest;
-import com.tamabee.api_hr.dto.response.BreakRecordResponse;
+import com.tamabee.api_hr.dto.request.attendance.StartBreakRequest;
+import com.tamabee.api_hr.dto.response.attendance.BreakRecordResponse;
 import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
 import org.springframework.stereotype.Component;
 

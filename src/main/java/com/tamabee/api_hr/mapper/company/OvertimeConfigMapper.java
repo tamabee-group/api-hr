@@ -1,8 +1,8 @@
 package com.tamabee.api_hr.mapper.company;
 
 import com.tamabee.api_hr.dto.config.OvertimeConfig;
-import com.tamabee.api_hr.dto.request.OvertimeConfigRequest;
-import com.tamabee.api_hr.dto.response.OvertimeConfigResponse;
+import com.tamabee.api_hr.dto.request.payroll.OvertimeConfigRequest;
+import com.tamabee.api_hr.dto.response.payroll.OvertimeConfigResponse;
 import org.springframework.stereotype.Component;
 
 import java.math.BigDecimal;

@@ -1,6 +1,6 @@
 package com.tamabee.api_hr.mapper.admin;
 
-import com.tamabee.api_hr.dto.response.CommissionResponse;
+import com.tamabee.api_hr.dto.response.wallet.CommissionResponse;
 import com.tamabee.api_hr.entity.wallet.EmployeeCommissionEntity;
 import com.tamabee.api_hr.enums.CommissionStatus;
 import org.springframework.stereotype.Component;

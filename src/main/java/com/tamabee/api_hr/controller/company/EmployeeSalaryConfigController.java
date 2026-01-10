@@ -1,11 +1,11 @@
 package com.tamabee.api_hr.controller.company;
 
-import com.tamabee.api_hr.dto.request.SalaryConfigRequest;
-import com.tamabee.api_hr.dto.response.EmployeeSalaryConfigResponse;
-import com.tamabee.api_hr.dto.response.SalaryConfigValidationResponse;
+import com.tamabee.api_hr.dto.request.payroll.SalaryConfigRequest;
+import com.tamabee.api_hr.dto.response.payroll.EmployeeSalaryConfigResponse;
+import com.tamabee.api_hr.dto.response.payroll.SalaryConfigValidationResponse;
 import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.service.company.IEmployeeSalaryConfigService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.service.company.interfaces.IEmployeeSalaryConfigService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;

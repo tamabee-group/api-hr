@@ -1,8 +1,7 @@
 package com.tamabee.api_hr.service.core.impl;
 
-import com.tamabee.api_hr.enums.ErrorCode;
 import com.tamabee.api_hr.exception.InternalServerException;
-import com.tamabee.api_hr.service.core.IUploadService;
+import com.tamabee.api_hr.service.core.interfaces.IUploadService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;

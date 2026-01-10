@@ -1,8 +1,8 @@
 package com.tamabee.api_hr.service.company.impl;
 
-import com.tamabee.api_hr.dto.request.SelectScheduleRequest;
-import com.tamabee.api_hr.dto.response.ScheduleSelectionResponse;
-import com.tamabee.api_hr.dto.response.WorkScheduleResponse;
+import com.tamabee.api_hr.dto.request.schedule.SelectScheduleRequest;
+import com.tamabee.api_hr.dto.response.schedule.ScheduleSelectionResponse;
+import com.tamabee.api_hr.dto.response.schedule.WorkScheduleResponse;
 import com.tamabee.api_hr.entity.attendance.ScheduleSelectionEntity;
 import com.tamabee.api_hr.entity.attendance.WorkScheduleAssignmentEntity;
 import com.tamabee.api_hr.entity.attendance.WorkScheduleEntity;
@@ -13,11 +13,11 @@ import com.tamabee.api_hr.exception.ConflictException;
 import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.mapper.company.ScheduleSelectionMapper;
 import com.tamabee.api_hr.mapper.company.WorkScheduleMapper;
-import com.tamabee.api_hr.repository.ScheduleSelectionRepository;
-import com.tamabee.api_hr.repository.UserRepository;
-import com.tamabee.api_hr.repository.WorkScheduleAssignmentRepository;
-import com.tamabee.api_hr.repository.WorkScheduleRepository;
-import com.tamabee.api_hr.service.company.IScheduleSelectionService;
+import com.tamabee.api_hr.repository.attendance.ScheduleSelectionRepository;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.repository.attendance.WorkScheduleAssignmentRepository;
+import com.tamabee.api_hr.repository.attendance.WorkScheduleRepository;
+import com.tamabee.api_hr.service.company.interfaces.IScheduleSelectionService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;

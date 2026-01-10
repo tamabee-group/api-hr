@@ -1,7 +1,7 @@
 package com.tamabee.api_hr.scheduler;
 
 import com.tamabee.api_hr.entity.company.CompanyEntity;
-import com.tamabee.api_hr.repository.CompanyRepository;
+import com.tamabee.api_hr.repository.company.CompanyRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;

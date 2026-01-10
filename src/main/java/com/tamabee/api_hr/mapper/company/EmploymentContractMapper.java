@@ -1,7 +1,7 @@
 package com.tamabee.api_hr.mapper.company;
 
-import com.tamabee.api_hr.dto.request.ContractRequest;
-import com.tamabee.api_hr.dto.response.ContractResponse;
+import com.tamabee.api_hr.dto.request.payroll.ContractRequest;
+import com.tamabee.api_hr.dto.response.payroll.ContractResponse;
 import com.tamabee.api_hr.entity.contract.EmploymentContractEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.ContractStatus;

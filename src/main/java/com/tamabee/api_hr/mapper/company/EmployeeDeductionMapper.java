@@ -1,7 +1,7 @@
 package com.tamabee.api_hr.mapper.company;
 
-import com.tamabee.api_hr.dto.request.DeductionAssignmentRequest;
-import com.tamabee.api_hr.dto.response.EmployeeDeductionResponse;
+import com.tamabee.api_hr.dto.request.payroll.DeductionAssignmentRequest;
+import com.tamabee.api_hr.dto.response.payroll.EmployeeDeductionResponse;
 import com.tamabee.api_hr.entity.payroll.EmployeeDeductionEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import org.springframework.stereotype.Component;

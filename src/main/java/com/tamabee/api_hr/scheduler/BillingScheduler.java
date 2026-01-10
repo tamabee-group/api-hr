@@ -1,6 +1,6 @@
 package com.tamabee.api_hr.scheduler;
 
-import com.tamabee.api_hr.service.admin.IBillingService;
+import com.tamabee.api_hr.service.admin.interfaces.IBillingService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.scheduling.annotation.Scheduled;

@@ -1,18 +1,18 @@
 package com.tamabee.api_hr.controller.core;
 
-import com.tamabee.api_hr.dto.request.AttendanceQueryRequest;
-import com.tamabee.api_hr.dto.request.CheckInRequest;
-import com.tamabee.api_hr.dto.request.CheckOutRequest;
-import com.tamabee.api_hr.dto.request.StartBreakRequest;
-import com.tamabee.api_hr.dto.response.AttendanceRecordResponse;
-import com.tamabee.api_hr.dto.response.AttendanceSummaryResponse;
+import com.tamabee.api_hr.dto.request.attendance.AttendanceQueryRequest;
+import com.tamabee.api_hr.dto.request.attendance.CheckInRequest;
+import com.tamabee.api_hr.dto.request.attendance.CheckOutRequest;
+import com.tamabee.api_hr.dto.request.attendance.StartBreakRequest;
+import com.tamabee.api_hr.dto.response.attendance.AttendanceRecordResponse;
+import com.tamabee.api_hr.dto.response.attendance.AttendanceSummaryResponse;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.AttendanceStatus;
 import com.tamabee.api_hr.enums.RoleConstants;
 import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.repository.UserRepository;
-import com.tamabee.api_hr.service.company.IAttendanceService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.IAttendanceService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;

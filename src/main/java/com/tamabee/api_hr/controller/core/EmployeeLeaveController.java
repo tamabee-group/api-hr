@@ -1,14 +1,14 @@
 package com.tamabee.api_hr.controller.core;
 
-import com.tamabee.api_hr.dto.request.CreateLeaveRequest;
-import com.tamabee.api_hr.dto.response.LeaveBalanceResponse;
-import com.tamabee.api_hr.dto.response.LeaveRequestResponse;
+import com.tamabee.api_hr.dto.request.leave.CreateLeaveRequest;
+import com.tamabee.api_hr.dto.response.leave.LeaveBalanceResponse;
+import com.tamabee.api_hr.dto.response.leave.LeaveRequestResponse;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.RoleConstants;
 import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.repository.UserRepository;
-import com.tamabee.api_hr.service.company.ILeaveService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.ILeaveService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

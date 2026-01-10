@@ -1,17 +1,17 @@
 package com.tamabee.api_hr.controller.company;
 
-import com.tamabee.api_hr.dto.request.AdjustAttendanceRequest;
-import com.tamabee.api_hr.dto.request.AttendanceQueryRequest;
-import com.tamabee.api_hr.dto.response.AdjustmentRequestResponse;
-import com.tamabee.api_hr.dto.response.AttendanceRecordResponse;
+import com.tamabee.api_hr.dto.request.attendance.AdjustAttendanceRequest;
+import com.tamabee.api_hr.dto.request.attendance.AttendanceQueryRequest;
+import com.tamabee.api_hr.dto.response.attendance.AdjustmentRequestResponse;
+import com.tamabee.api_hr.dto.response.attendance.AttendanceRecordResponse;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.AttendanceStatus;
 import com.tamabee.api_hr.enums.RoleConstants;
 import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.repository.UserRepository;
-import com.tamabee.api_hr.service.company.IAttendanceAdjustmentService;
-import com.tamabee.api_hr.service.company.IAttendanceService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.IAttendanceAdjustmentService;
+import com.tamabee.api_hr.service.company.interfaces.IAttendanceService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;

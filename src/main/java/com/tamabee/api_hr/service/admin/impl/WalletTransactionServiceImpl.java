@@ -1,21 +1,17 @@
 package com.tamabee.api_hr.service.admin.impl;
 
-import com.tamabee.api_hr.dto.request.TransactionFilterRequest;
-import com.tamabee.api_hr.dto.response.WalletTransactionResponse;
-import com.tamabee.api_hr.entity.user.UserEntity;
+import com.tamabee.api_hr.dto.request.wallet.TransactionFilterRequest;
+import com.tamabee.api_hr.dto.response.wallet.WalletTransactionResponse;
 import com.tamabee.api_hr.entity.wallet.WalletTransactionEntity;
 import com.tamabee.api_hr.enums.TransactionType;
-import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.exception.UnauthorizedException;
 import com.tamabee.api_hr.mapper.admin.WalletTransactionMapper;
-import com.tamabee.api_hr.repository.UserRepository;
-import com.tamabee.api_hr.repository.WalletTransactionRepository;
-import com.tamabee.api_hr.service.admin.IWalletTransactionService;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.repository.wallet.WalletTransactionRepository;
+import com.tamabee.api_hr.service.admin.interfaces.IWalletTransactionService;
 import com.tamabee.api_hr.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 

@@ -1,11 +1,11 @@
 package com.tamabee.api_hr.mapper.company;
 
-import com.tamabee.api_hr.dto.request.ShiftAssignmentRequest;
-import com.tamabee.api_hr.dto.request.ShiftSwapRequest;
-import com.tamabee.api_hr.dto.request.ShiftTemplateRequest;
-import com.tamabee.api_hr.dto.response.ShiftAssignmentResponse;
-import com.tamabee.api_hr.dto.response.ShiftSwapRequestResponse;
-import com.tamabee.api_hr.dto.response.ShiftTemplateResponse;
+import com.tamabee.api_hr.dto.request.attendance.ShiftAssignmentRequest;
+import com.tamabee.api_hr.dto.request.attendance.ShiftSwapRequest;
+import com.tamabee.api_hr.dto.request.attendance.ShiftTemplateRequest;
+import com.tamabee.api_hr.dto.response.attendance.ShiftAssignmentResponse;
+import com.tamabee.api_hr.dto.response.attendance.ShiftSwapRequestResponse;
+import com.tamabee.api_hr.dto.response.attendance.ShiftTemplateResponse;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.entity.attendance.ShiftAssignmentEntity;
 import com.tamabee.api_hr.entity.attendance.ShiftSwapRequestEntity;

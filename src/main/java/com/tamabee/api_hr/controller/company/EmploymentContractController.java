@@ -1,16 +1,14 @@
 package com.tamabee.api_hr.controller.company;
 
-import com.tamabee.api_hr.dto.request.ContractQuery;
-import com.tamabee.api_hr.dto.request.ContractRequest;
-import com.tamabee.api_hr.dto.response.ContractResponse;
-import com.tamabee.api_hr.entity.user.UserEntity;
+import com.tamabee.api_hr.dto.request.payroll.ContractQuery;
+import com.tamabee.api_hr.dto.request.payroll.ContractRequest;
+import com.tamabee.api_hr.dto.response.payroll.ContractResponse;
 import com.tamabee.api_hr.enums.ContractStatus;
 import com.tamabee.api_hr.enums.ContractType;
 import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.repository.UserRepository;
-import com.tamabee.api_hr.service.company.IEmploymentContractService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.IEmploymentContractService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -21,7 +19,6 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;

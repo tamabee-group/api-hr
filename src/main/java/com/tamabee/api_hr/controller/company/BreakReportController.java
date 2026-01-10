@@ -1,17 +1,14 @@
 package com.tamabee.api_hr.controller.company;
 
-import com.tamabee.api_hr.dto.response.DailyBreakReportResponse;
-import com.tamabee.api_hr.dto.response.MonthlyBreakReportResponse;
-import com.tamabee.api_hr.entity.user.UserEntity;
+import com.tamabee.api_hr.dto.response.attendance.DailyBreakReportResponse;
+import com.tamabee.api_hr.dto.response.attendance.MonthlyBreakReportResponse;
 import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.repository.UserRepository;
-import com.tamabee.api_hr.service.company.IBreakReportService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.IBreakReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;

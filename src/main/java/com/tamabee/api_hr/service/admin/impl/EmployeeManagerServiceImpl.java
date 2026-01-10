@@ -1,8 +1,8 @@
 package com.tamabee.api_hr.service.admin.impl;
 
-import com.tamabee.api_hr.dto.request.CreateTamabeeUserRequest;
-import com.tamabee.api_hr.dto.request.UpdateUserProfileRequest;
-import com.tamabee.api_hr.dto.response.UserResponse;
+import com.tamabee.api_hr.dto.request.user.CreateTamabeeUserRequest;
+import com.tamabee.api_hr.dto.request.user.UpdateUserProfileRequest;
+import com.tamabee.api_hr.dto.response.user.UserResponse;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.entity.user.UserProfileEntity;
@@ -10,11 +10,11 @@ import com.tamabee.api_hr.enums.UserStatus;
 import com.tamabee.api_hr.exception.ConflictException;
 import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.mapper.core.UserMapper;
-import com.tamabee.api_hr.repository.CompanyRepository;
-import com.tamabee.api_hr.repository.UserRepository;
-import com.tamabee.api_hr.service.admin.IEmployeeManagerService;
-import com.tamabee.api_hr.service.core.IEmailService;
-import com.tamabee.api_hr.service.core.IUploadService;
+import com.tamabee.api_hr.repository.company.CompanyRepository;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.admin.interfaces.IEmployeeManagerService;
+import com.tamabee.api_hr.service.core.interfaces.IEmailService;
+import com.tamabee.api_hr.service.core.interfaces.IUploadService;
 import com.tamabee.api_hr.util.EmployeeCodeGenerator;
 import com.tamabee.api_hr.util.LocaleUtil;
 import com.tamabee.api_hr.util.ReferralCodeGenerator;

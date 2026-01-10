@@ -1,6 +1,6 @@
 package com.tamabee.api_hr.exception;
 
-import com.tamabee.api_hr.model.response.BaseResponse;
+import com.tamabee.api_hr.dto.common.BaseResponse;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;

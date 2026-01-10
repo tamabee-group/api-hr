@@ -1,8 +1,8 @@
 package com.tamabee.api_hr.mapper.company;
 
 import com.tamabee.api_hr.dto.config.BreakConfig;
-import com.tamabee.api_hr.dto.request.BreakConfigRequest;
-import com.tamabee.api_hr.dto.response.BreakConfigResponse;
+import com.tamabee.api_hr.dto.request.attendance.BreakConfigRequest;
+import com.tamabee.api_hr.dto.response.attendance.BreakConfigResponse;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;

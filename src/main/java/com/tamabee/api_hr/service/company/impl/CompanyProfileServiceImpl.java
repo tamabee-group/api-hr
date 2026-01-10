@@ -10,13 +10,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.tamabee.api_hr.dto.request.UpdateCompanyProfileRequest;
-import com.tamabee.api_hr.dto.response.CompanyProfileResponse;
+import com.tamabee.api_hr.dto.request.company.UpdateCompanyProfileRequest;
+import com.tamabee.api_hr.dto.response.company.CompanyProfileResponse;
 import com.tamabee.api_hr.enums.CompanyStatus;
 import com.tamabee.api_hr.exception.ConflictException;
 import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.filter.TenantContext;
-import com.tamabee.api_hr.service.company.ICompanyProfileService;
+import com.tamabee.api_hr.datasource.TenantContext;
+import com.tamabee.api_hr.service.company.interfaces.ICompanyProfileService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;

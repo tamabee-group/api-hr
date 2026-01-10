@@ -1,11 +1,11 @@
 package com.tamabee.api_hr.controller.admin;
 
-import com.tamabee.api_hr.dto.request.PlanCreateRequest;
-import com.tamabee.api_hr.dto.request.PlanUpdateRequest;
-import com.tamabee.api_hr.dto.response.PlanResponse;
+import com.tamabee.api_hr.dto.request.wallet.PlanCreateRequest;
+import com.tamabee.api_hr.dto.request.wallet.PlanUpdateRequest;
+import com.tamabee.api_hr.dto.response.wallet.PlanResponse;
 import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.service.admin.IPlanService;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.service.admin.interfaces.IPlanService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
