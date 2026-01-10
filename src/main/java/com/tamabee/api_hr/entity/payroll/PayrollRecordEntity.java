@@ -24,8 +24,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "payroll_records", indexes = {
         @Index(name = "idx_payroll_employee_id", columnList = "employeeId"),
-        @Index(name = "idx_payroll_company_id", columnList = "companyId"),
-        @Index(name = "idx_payroll_period", columnList = "companyId, year, month"),
+        @Index(name = "idx_payroll_period", columnList = "year, month"),
         @Index(name = "idx_payroll_employee_period", columnList = "employeeId, year, month"),
         @Index(name = "idx_payroll_status", columnList = "status")
 })
@@ -34,10 +33,6 @@ public class PayrollRecordEntity extends BaseEntity {
     // ID nhân viên
     @Column(nullable = false)
     private Long employeeId;
-
-    // ID công ty
-    @Column(nullable = false)
-    private Long companyId;
 
     // Kỳ lương: năm
     @Column(nullable = false)

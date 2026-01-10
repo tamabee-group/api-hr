@@ -13,21 +13,17 @@ import java.util.List;
 
 /**
  * Repository quản lý yêu cầu chọn lịch làm việc của nhân viên.
- * Entity này KHÔNG có soft delete - xóa thẳng.
  */
 @Repository
 public interface ScheduleSelectionRepository extends JpaRepository<ScheduleSelectionEntity, Long> {
 
         /**
-         * Lấy danh sách yêu cầu đang chờ duyệt của công ty (phân trang)
+         * Lấy danh sách yêu cầu đang chờ duyệt (phân trang)
          */
         @Query("SELECT s FROM ScheduleSelectionEntity s " +
-                        "WHERE s.companyId = :companyId " +
-                        "AND s.status = 'PENDING' " +
+                        "WHERE s.status = 'PENDING' " +
                         "ORDER BY s.createdAt DESC")
-        Page<ScheduleSelectionEntity> findPendingByCompanyId(
-                        @Param("companyId") Long companyId,
-                        Pageable pageable);
+        Page<ScheduleSelectionEntity> findPending(Pageable pageable);
 
         /**
          * Lấy lịch sử chọn lịch của nhân viên (sắp xếp theo thời gian tạo giảm dần)
@@ -49,24 +45,21 @@ public interface ScheduleSelectionRepository extends JpaRepository<ScheduleSelec
                         Pageable pageable);
 
         /**
-         * Lấy danh sách yêu cầu theo trạng thái của công ty (phân trang)
+         * Lấy danh sách yêu cầu theo trạng thái (phân trang)
          */
         @Query("SELECT s FROM ScheduleSelectionEntity s " +
-                        "WHERE s.companyId = :companyId " +
-                        "AND s.status = :status " +
+                        "WHERE s.status = :status " +
                         "ORDER BY s.createdAt DESC")
-        Page<ScheduleSelectionEntity> findByCompanyIdAndStatus(
-                        @Param("companyId") Long companyId,
+        Page<ScheduleSelectionEntity> findByStatus(
                         @Param("status") SelectionStatus status,
                         Pageable pageable);
 
         /**
-         * Đếm số yêu cầu đang chờ duyệt của công ty
+         * Đếm số yêu cầu đang chờ duyệt
          */
         @Query("SELECT COUNT(s) FROM ScheduleSelectionEntity s " +
-                        "WHERE s.companyId = :companyId " +
-                        "AND s.status = 'PENDING'")
-        long countPendingByCompanyId(@Param("companyId") Long companyId);
+                        "WHERE s.status = 'PENDING'")
+        long countPending();
 
         /**
          * Lấy các lịch đã được nhân viên chọn và được duyệt (để gợi ý)

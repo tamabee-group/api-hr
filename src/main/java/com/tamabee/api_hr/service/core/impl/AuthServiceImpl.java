@@ -1,7 +1,17 @@
 package com.tamabee.api_hr.service.core.impl;
 
+import java.time.LocalDateTime;
+
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.crypto.password.PasswordEncoder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.tamabee.api_hr.datasource.TenantProvisioningService;
 import com.tamabee.api_hr.dto.response.DomainAvailabilityResponse;
+import com.tamabee.api_hr.dto.response.UserResponse;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.entity.user.UserProfileEntity;
@@ -10,7 +20,6 @@ import com.tamabee.api_hr.enums.CompanyStatus;
 import com.tamabee.api_hr.enums.ErrorCode;
 import com.tamabee.api_hr.enums.UserRole;
 import com.tamabee.api_hr.enums.UserStatus;
-import com.tamabee.api_hr.dto.response.UserResponse;
 import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.ConflictException;
 import com.tamabee.api_hr.exception.NotFoundException;
@@ -21,28 +30,20 @@ import com.tamabee.api_hr.mapper.core.WalletFactory;
 import com.tamabee.api_hr.model.request.LoginRequest;
 import com.tamabee.api_hr.model.request.RegisterRequest;
 import com.tamabee.api_hr.model.response.LoginResponse;
-import com.tamabee.api_hr.util.EmployeeCodeGenerator;
-import com.tamabee.api_hr.util.JwtUtil;
-import com.tamabee.api_hr.util.ReferralCodeGenerator;
-import com.tamabee.api_hr.util.TenantDomainValidator;
 import com.tamabee.api_hr.repository.CompanyRepository;
 import com.tamabee.api_hr.repository.EmailVerificationRepository;
 import com.tamabee.api_hr.repository.UserRepository;
 import com.tamabee.api_hr.repository.WalletRepository;
 import com.tamabee.api_hr.service.admin.ISettingService;
 import com.tamabee.api_hr.service.core.IAuthService;
-import lombok.RequiredArgsConstructor;
+import com.tamabee.api_hr.util.EmployeeCodeGenerator;
+import com.tamabee.api_hr.util.JwtUtil;
+import com.tamabee.api_hr.util.ReferralCodeGenerator;
+import com.tamabee.api_hr.util.TenantDomainValidator;
+
 import lombok.extern.slf4j.Slf4j;
 
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.crypto.password.PasswordEncoder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class AuthServiceImpl implements IAuthService {
 
@@ -57,6 +58,34 @@ public class AuthServiceImpl implements IAuthService {
     private final JwtUtil jwtUtil;
     private final ISettingService settingService;
     private final TenantProvisioningService tenantProvisioningService;
+    private final JdbcTemplate masterJdbcTemplate;
+
+    public AuthServiceImpl(
+            UserRepository userRepository,
+            CompanyRepository companyRepository,
+            WalletRepository walletRepository,
+            EmailVerificationRepository emailVerificationRepository,
+            PasswordEncoder passwordEncoder,
+            UserMapper userMapper,
+            CompanyMapper companyMapper,
+            WalletFactory walletFactory,
+            JwtUtil jwtUtil,
+            ISettingService settingService,
+            TenantProvisioningService tenantProvisioningService,
+            @Qualifier("masterJdbcTemplate") JdbcTemplate masterJdbcTemplate) {
+        this.userRepository = userRepository;
+        this.companyRepository = companyRepository;
+        this.walletRepository = walletRepository;
+        this.emailVerificationRepository = emailVerificationRepository;
+        this.passwordEncoder = passwordEncoder;
+        this.userMapper = userMapper;
+        this.companyMapper = companyMapper;
+        this.walletFactory = walletFactory;
+        this.jwtUtil = jwtUtil;
+        this.settingService = settingService;
+        this.tenantProvisioningService = tenantProvisioningService;
+        this.masterJdbcTemplate = masterJdbcTemplate;
+    }
 
     @Override
     @Transactional
@@ -170,7 +199,7 @@ public class AuthServiceImpl implements IAuthService {
         user.setPassword(passwordEncoder.encode(request.getPassword()));
         user.setRole(UserRole.ADMIN_COMPANY);
         user.setStatus(UserStatus.ACTIVE);
-        user.setCompanyId(companyId);
+        user.setTenantDomain(request.getTenantDomain());
 
         // Tạo mã nhân viên duy nhất từ companyId và ngày sinh
         String employeeCode = EmployeeCodeGenerator.generateUnique(companyId, null, userRepository);
@@ -193,6 +222,10 @@ public class AuthServiceImpl implements IAuthService {
     @Override
     @Transactional(readOnly = true)
     public LoginResponse login(LoginRequest request) {
+        log.info("Login attempt for email: {}, current tenant: {}",
+                request.getEmail(),
+                com.tamabee.api_hr.filter.TenantContext.getCurrentTenant());
+
         // Tìm user bằng email hoặc mã nhân viên
         UserEntity user = userRepository.findByEmailAndDeletedFalse(request.getEmail())
                 .or(() -> userRepository.findByEmployeeCodeAndDeletedFalse(request.getEmail()))
@@ -202,15 +235,16 @@ public class AuthServiceImpl implements IAuthService {
             throw UnauthorizedException.invalidCredentials();
         }
 
-        // Lấy thông tin tenant và plan
-        String tenantDomain = getTenantDomain(user);
-        Long planId = getPlanId(user.getCompanyId());
+        // Lấy thông tin tenant và company từ tenantDomain
+        String tenantDomain = user.getTenantDomain();
+        Long companyId = getCompanyIdFromTenant(tenantDomain);
+        Long planId = getPlanId(companyId);
 
         String accessToken = jwtUtil.generateAccessToken(
                 user.getId(),
                 user.getEmail(),
                 user.getRole().name(),
-                user.getCompanyId(),
+                companyId,
                 tenantDomain,
                 planId);
 
@@ -218,9 +252,10 @@ public class AuthServiceImpl implements IAuthService {
                 user.getId(),
                 user.getEmail());
 
-        // Lấy tên công ty
-        String companyName = getCompanyName(user.getCompanyId());
-        UserResponse userResponse = userMapper.toResponse(user, companyName);
+        // Lấy tên và logo công ty
+        String companyName = getCompanyName(companyId, tenantDomain);
+        String companyLogo = getCompanyLogo(companyId, tenantDomain);
+        UserResponse userResponse = userMapper.toResponse(user, companyName, companyLogo, tenantDomain, planId);
 
         return new LoginResponse(accessToken, refreshToken, userResponse);
     }
@@ -274,21 +309,23 @@ public class AuthServiceImpl implements IAuthService {
         UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
                 .orElseThrow(() -> NotFoundException.user(email));
 
-        // Lấy thông tin tenant và plan
-        String tenantDomain = getTenantDomain(user);
-        Long planId = getPlanId(user.getCompanyId());
+        // Lấy thông tin tenant và company từ tenantDomain
+        String tenantDomain = user.getTenantDomain();
+        Long companyId = getCompanyIdFromTenant(tenantDomain);
+        Long planId = getPlanId(companyId);
 
         String newAccessToken = jwtUtil.generateAccessToken(
                 user.getId(),
                 user.getEmail(),
                 user.getRole().name(),
-                user.getCompanyId(),
+                companyId,
                 tenantDomain,
                 planId);
 
-        // Lấy tên công ty
-        String companyName = getCompanyName(user.getCompanyId());
-        UserResponse userResponse = userMapper.toResponse(user, companyName);
+        // Lấy tên và logo công ty
+        String companyName = getCompanyName(companyId, tenantDomain);
+        String companyLogo = getCompanyLogo(companyId, tenantDomain);
+        UserResponse userResponse = userMapper.toResponse(user, companyName, companyLogo, tenantDomain, planId);
 
         return new LoginResponse(newAccessToken, refreshToken, userResponse);
     }
@@ -305,60 +342,92 @@ public class AuthServiceImpl implements IAuthService {
         UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
                 .orElseThrow(() -> NotFoundException.user(email));
 
-        // Lấy tên công ty
-        String companyName = getCompanyName(user.getCompanyId());
-        return userMapper.toResponse(user, companyName);
+        // Lấy thông tin tenant và company từ tenantDomain
+        String tenantDomain = user.getTenantDomain();
+        Long companyId = getCompanyIdFromTenant(tenantDomain);
+        Long planId = getPlanId(companyId);
+
+        // Lấy tên và logo công ty
+        String companyName = getCompanyName(companyId, tenantDomain);
+        String companyLogo = getCompanyLogo(companyId, tenantDomain);
+        return userMapper.toResponse(user, companyName, companyLogo, tenantDomain, planId);
     }
 
     /**
-     * Lấy tên công ty từ companyId
-     * Trả về null nếu là user Tamabee (companyId = 0)
+     * Lấy tên công ty từ companyId hoặc tenantDomain (query master DB)
      */
-    private String getCompanyName(Long companyId) {
-        if (companyId == null || companyId == 0) {
+    private String getCompanyName(Long companyId, String tenantDomain) {
+        String sql;
+        Object param;
+        
+        if (companyId != null && companyId > 0) {
+            sql = "SELECT name FROM companies WHERE id = ? AND deleted = false";
+            param = companyId;
+        } else if (tenantDomain != null) {
+            sql = "SELECT name FROM companies WHERE tenant_domain = ? AND deleted = false";
+            param = tenantDomain;
+        } else {
             return null;
         }
-        return companyRepository.findById(companyId)
-                .map(CompanyEntity::getName)
-                .orElse(null);
+        
+        try {
+            return masterJdbcTemplate.queryForObject(sql, String.class, param);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     /**
-     * Lấy tenantDomain cho user.
-     * Tamabee users (companyId = 0): tenantDomain = "tamabee"
-     * Company users: tenantDomain từ company hoặc user
+     * Lấy logo công ty từ companyId hoặc tenantDomain (query master DB)
      */
-    private String getTenantDomain(UserEntity user) {
-        // Tamabee users luôn có tenantDomain = "tamabee"
-        if (user.getCompanyId() == null || user.getCompanyId() == 0) {
-            return "tamabee";
+    private String getCompanyLogo(Long companyId, String tenantDomain) {
+        String sql;
+        Object param;
+        
+        if (companyId != null && companyId > 0) {
+            sql = "SELECT logo FROM companies WHERE id = ? AND deleted = false";
+            param = companyId;
+        } else if (tenantDomain != null) {
+            sql = "SELECT logo FROM companies WHERE tenant_domain = ? AND deleted = false";
+            param = tenantDomain;
+        } else {
+            return null;
         }
-
-        // Ưu tiên lấy từ user nếu có
-        if (user.getTenantDomain() != null && !user.getTenantDomain().isEmpty()) {
-            return user.getTenantDomain();
+        
+        try {
+            return masterJdbcTemplate.queryForObject(sql, String.class, param);
+        } catch (Exception e) {
+            return null;
         }
-
-        // Fallback: lấy từ company
-        return companyRepository.findById(user.getCompanyId())
-                .map(CompanyEntity::getTenantDomain)
-                .orElse(null);
     }
 
     /**
-     * Lấy planId cho user.
-     * Tamabee users (companyId = 0): planId = null (all features enabled)
-     * Company users: planId từ company
+     * Lấy companyId từ tenantDomain.
+     * Tamabee tenant: companyId = 0
+     * Company tenant: companyId từ company table
+     */
+    private Long getCompanyIdFromTenant(String tenantDomain) {
+        if (tenantDomain == null || "tamabee".equals(tenantDomain)) {
+            return 0L;
+        }
+        return companyRepository.findByTenantDomainAndDeletedFalse(tenantDomain)
+                .map(CompanyEntity::getId)
+                .orElse(0L);
+    }
+
+    /**
+     * Lấy planId cho company từ master database.
      */
     private Long getPlanId(Long companyId) {
-        // Tamabee users không có plan (all features enabled)
-        if (companyId == null || companyId == 0) {
+        if (companyId == null) {
             return null;
         }
-
-        return companyRepository.findById(companyId)
-                .map(CompanyEntity::getPlanId)
-                .orElse(null);
+        String sql = "SELECT plan_id FROM companies WHERE id = ? AND deleted = false";
+        try {
+            return masterJdbcTemplate.queryForObject(sql, Long.class, companyId);
+        } catch (Exception e) {
+            return null;
+        }
     }
 
     @Override

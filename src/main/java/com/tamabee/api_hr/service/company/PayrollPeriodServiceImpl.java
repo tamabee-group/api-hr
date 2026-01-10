@@ -55,17 +55,15 @@ public class PayrollPeriodServiceImpl implements IPayrollPeriodService {
 
     @Override
     @Transactional
-    public PayrollPeriodResponse createPayrollPeriod(Long companyId, PayrollPeriodRequest request, Long createdBy) {
-        // Kiểm tra kỳ lương đã tồn tại chưa
+    public PayrollPeriodResponse createPayrollPeriod(PayrollPeriodRequest request, Long createdBy) {
         // PayrollPeriod không có soft delete
-        if (periodRepository.existsByCompanyIdAndYearAndMonth(
-                companyId, request.getYear(), request.getMonth())) {
+        if (periodRepository.existsByYearAndMonth(request.getYear(), request.getMonth())) {
             throw new ConflictException("Kỳ lương đã tồn tại cho tháng " + request.getMonth() + "/" + request.getYear(),
                     ErrorCode.PAYROLL_PERIOD_EXISTS);
         }
 
         // Tạo entity mới
-        PayrollPeriodEntity entity = mapper.toEntity(request, companyId, createdBy);
+        PayrollPeriodEntity entity = mapper.toEntity(request, createdBy);
         entity = periodRepository.save(entity);
 
         // Lấy thông tin user để trả về
@@ -91,8 +89,8 @@ public class PayrollPeriodServiceImpl implements IPayrollPeriodService {
         List<PayrollItemEntity> existingItems = itemRepository.findByPayrollPeriodId(periodId);
         itemRepository.deleteAll(existingItems);
 
-        // Lấy danh sách nhân viên active của công ty
-        List<UserEntity> employees = userRepository.findByCompanyIdAndDeletedFalse(period.getCompanyId());
+        // Lấy danh sách nhân viên active
+        List<UserEntity> employees = userRepository.findByDeletedFalse();
         List<Long> employeeIds = employees.stream().map(UserEntity::getId).collect(Collectors.toList());
 
         // Lấy dữ liệu cần thiết cho tính lương
@@ -183,9 +181,8 @@ public class PayrollPeriodServiceImpl implements IPayrollPeriodService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PayrollPeriodResponse> getPayrollPeriods(Long companyId, Pageable pageable) {
-        // PayrollPeriod không có soft delete
-        Page<PayrollPeriodEntity> periods = periodRepository.findByCompanyId(companyId, pageable);
+    public Page<PayrollPeriodResponse> getPayrollPeriods(Pageable pageable) {
+        Page<PayrollPeriodEntity> periods = periodRepository.findAllPaged(pageable);
 
         // Lấy danh sách user IDs
         Set<Long> userIds = new HashSet<>();
@@ -452,7 +449,6 @@ public class PayrollPeriodServiceImpl implements IPayrollPeriodService {
         PayrollItemEntity item = new PayrollItemEntity();
         item.setPayrollPeriodId(period.getId());
         item.setEmployeeId(employee.getId());
-        item.setCompanyId(period.getCompanyId());
         item.setSalaryType(salaryConfig.getSalaryType());
         item.setBaseSalary(baseSalary);
         item.setCalculatedBaseSalary(calculatedBaseSalary);

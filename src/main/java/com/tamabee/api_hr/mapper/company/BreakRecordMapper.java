@@ -20,7 +20,6 @@ public class BreakRecordMapper {
     public BreakRecordEntity toEntity(
             Long attendanceRecordId,
             Long employeeId,
-            Long companyId,
             LocalDate workDate,
             LocalDateTime breakStart,
             StartBreakRequest request) {
@@ -28,7 +27,6 @@ public class BreakRecordMapper {
         BreakRecordEntity entity = new BreakRecordEntity();
         entity.setAttendanceRecordId(attendanceRecordId);
         entity.setEmployeeId(employeeId);
-        entity.setCompanyId(companyId);
         entity.setWorkDate(workDate);
         entity.setBreakStart(breakStart);
 

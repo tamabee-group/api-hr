@@ -41,7 +41,7 @@ public class EmployeeDeductionServiceImpl implements IEmployeeDeductionService {
         validateDeductionRequest(request);
 
         // Tạo entity từ request
-        EmployeeDeductionEntity entity = deductionMapper.toEntity(request, employeeId, employee.getCompanyId());
+        EmployeeDeductionEntity entity = deductionMapper.toEntity(request, employeeId);
 
         // Lưu vào database
         entity = deductionRepository.save(entity);

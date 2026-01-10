@@ -3,9 +3,11 @@ package com.tamabee.api_hr.config;
 import lombok.extern.slf4j.Slf4j;
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.configuration.FluentConfiguration;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Primary;
 
 import javax.sql.DataSource;
@@ -25,17 +27,21 @@ public class FlywayMultiTenantConfig {
     /**
      * Flyway cho Master Database.
      * Chạy migrations từ db/master/
+     * Sử dụng masterDataSource cụ thể, không phải TenantRoutingDataSource.
      */
     @Bean
     @Primary
-    public Flyway masterFlyway(DataSource dataSource) {
+    @DependsOn("masterDataSource")
+    public Flyway masterFlyway(@Qualifier("masterDataSource") DataSource masterDataSource) {
         log.info("Khởi tạo Flyway cho Master Database");
 
         FluentConfiguration config = Flyway.configure()
-                .dataSource(dataSource)
+                .dataSource(masterDataSource)
                 .locations("classpath:db/master")
                 .baselineOnMigrate(true)
-                .cleanDisabled(false);
+                .cleanDisabled(false)
+                .defaultSchema("public")
+                .createSchemas(true);
 
         // Áp dụng target version nếu được cấu hình
         if (flywayTarget != null && !flywayTarget.isEmpty()) {
@@ -43,6 +49,7 @@ public class FlywayMultiTenantConfig {
         }
 
         Flyway flyway = config.load();
+        // flyway.clean();
         flyway.migrate();
 
         log.info("Hoàn thành migration cho Master Database");
@@ -67,6 +74,7 @@ public class FlywayMultiTenantConfig {
                 .cleanDisabled(false)
                 .load();
 
+        // flyway.clean();
         flyway.migrate();
 
         log.info("Hoàn thành migration cho Tenant Database: {}", jdbcUrl);
@@ -87,6 +95,7 @@ public class FlywayMultiTenantConfig {
                 .cleanDisabled(false)
                 .load();
 
+        // flyway.clean();
         flyway.migrate();
 
         log.info("Hoàn thành migration cho Tenant Database");

@@ -7,18 +7,18 @@ import org.springframework.stereotype.Repository;
 import java.util.Optional;
 
 /**
- * Repository quản lý cấu hình chấm công và tính lương của công ty.
+ * Repository quản lý cấu hình chấm công và tính lương.
  */
 @Repository
 public interface CompanySettingsRepository extends JpaRepository<CompanySettingEntity, Long> {
 
     /**
-     * Tìm settings của công ty theo companyId (chưa bị xóa)
+     * Tìm settings (chưa bị xóa) - mỗi tenant chỉ có 1 settings
      */
-    Optional<CompanySettingEntity> findByCompanyIdAndDeletedFalse(Long companyId);
+    Optional<CompanySettingEntity> findFirstByDeletedFalse();
 
     /**
-     * Kiểm tra settings đã tồn tại cho công ty chưa
+     * Kiểm tra settings đã tồn tại chưa
      */
-    boolean existsByCompanyIdAndDeletedFalse(Long companyId);
+    boolean existsByDeletedFalse();
 }

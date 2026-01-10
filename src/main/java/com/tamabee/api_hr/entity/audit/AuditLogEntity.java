@@ -17,18 +17,14 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "audit_logs", indexes = {
-        @Index(name = "idx_audit_company_id", columnList = "companyId"),
         @Index(name = "idx_audit_entity_type", columnList = "entityType"),
         @Index(name = "idx_audit_entity_id", columnList = "entityId"),
         @Index(name = "idx_audit_action", columnList = "action"),
         @Index(name = "idx_audit_user_id", columnList = "userId"),
-        @Index(name = "idx_audit_timestamp", columnList = "timestamp")
+        @Index(name = "idx_audit_timestamp", columnList = "timestamp"),
+        @Index(name = "idx_audit_entity_type_id", columnList = "entityType, entityId")
 })
 public class AuditLogEntity extends BaseEntity {
-
-    // ID công ty
-    @Column(nullable = false)
-    private Long companyId;
 
     // Loại entity được audit
     @Enumerated(EnumType.STRING)

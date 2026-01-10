@@ -76,7 +76,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
 
     @Override
     @Transactional
-    public AttendanceRecordResponse checkIn(Long employeeId, Long companyId, CheckInRequest request) {
+    public AttendanceRecordResponse checkIn(Long employeeId, CheckInRequest request) {
         LocalDate today = LocalDate.now();
         LocalDateTime now = LocalDateTime.now();
 
@@ -86,19 +86,18 @@ public class AttendanceServiceImpl implements IAttendanceService {
             throw new ConflictException("Đã check-in hôm nay", ErrorCode.ALREADY_CHECKED_IN);
         }
 
-        // Lấy cấu hình chấm công
-        AttendanceConfig config = companySettingsService.getAttendanceConfig(companyId);
+        AttendanceConfig config = companySettingsService.getAttendanceConfig();
 
         // Validate device nếu yêu cầu
         if (Boolean.TRUE.equals(config.getRequireDeviceRegistration())) {
-            if (!validateDevice(companyId, request.getDeviceId())) {
+            if (!validateDevice(request.getDeviceId())) {
                 throw new BadRequestException("Thiết bị chưa được đăng ký", ErrorCode.INVALID_DEVICE);
             }
         }
 
         // Validate location nếu yêu cầu
         if (Boolean.TRUE.equals(config.getRequireGeoLocation())) {
-            if (!validateLocation(companyId, request.getLatitude(), request.getLongitude())) {
+            if (!validateLocation(request.getLatitude(), request.getLongitude())) {
                 throw new BadRequestException("Vị trí nằm ngoài khu vực cho phép", ErrorCode.OUTSIDE_GEOFENCE);
             }
         }
@@ -106,7 +105,6 @@ public class AttendanceServiceImpl implements IAttendanceService {
         // Tạo bản ghi chấm công
         AttendanceRecordEntity entity = new AttendanceRecordEntity();
         entity.setEmployeeId(employeeId);
-        entity.setCompanyId(companyId);
         entity.setWorkDate(today);
         entity.setOriginalCheckIn(now);
         entity.setStatus(AttendanceStatus.PRESENT);
@@ -124,7 +122,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
         entity.setRoundedCheckIn(roundedCheckIn);
 
         // Tính số phút đi muộn
-        WorkScheduleResponse schedule = workScheduleService.getEffectiveSchedule(employeeId, companyId, today);
+        WorkScheduleResponse schedule = workScheduleService.getEffectiveSchedule(employeeId, today);
         if (schedule != null) {
             int lateMinutes = calculateLateMinutes(roundedCheckIn, schedule, config);
             entity.setLateMinutes(lateMinutes);
@@ -138,7 +136,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
 
     @Override
     @Transactional
-    public AttendanceRecordResponse checkOut(Long employeeId, Long companyId, CheckOutRequest request) {
+    public AttendanceRecordResponse checkOut(Long employeeId, CheckOutRequest request) {
         LocalDate today = LocalDate.now();
         LocalDateTime now = LocalDateTime.now();
 
@@ -155,18 +153,18 @@ public class AttendanceServiceImpl implements IAttendanceService {
         }
 
         // Lấy cấu hình chấm công
-        AttendanceConfig config = companySettingsService.getAttendanceConfig(companyId);
+        AttendanceConfig config = companySettingsService.getAttendanceConfig();
 
         // Validate device nếu yêu cầu
         if (Boolean.TRUE.equals(config.getRequireDeviceRegistration())) {
-            if (!validateDevice(companyId, request.getDeviceId())) {
+            if (!validateDevice(request.getDeviceId())) {
                 throw new BadRequestException("Thiết bị chưa được đăng ký", ErrorCode.INVALID_DEVICE);
             }
         }
 
         // Validate location nếu yêu cầu
         if (Boolean.TRUE.equals(config.getRequireGeoLocation())) {
-            if (!validateLocation(companyId, request.getLatitude(), request.getLongitude())) {
+            if (!validateLocation(request.getLatitude(), request.getLongitude())) {
                 throw new BadRequestException("Vị trí nằm ngoài khu vực cho phép", ErrorCode.OUTSIDE_GEOFENCE);
             }
         }
@@ -185,7 +183,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
         entity.setRoundedCheckOut(roundedCheckOut);
 
         // Tính toán giờ làm việc và về sớm
-        WorkScheduleResponse schedule = workScheduleService.getEffectiveSchedule(employeeId, companyId, today);
+        WorkScheduleResponse schedule = workScheduleService.getEffectiveSchedule(employeeId, today);
         if (schedule != null) {
             calculateWorkingHours(entity, schedule, config);
         }
@@ -227,7 +225,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
         }
 
         // Lấy cấu hình và tính toán lại
-        AttendanceConfig config = companySettingsService.getAttendanceConfig(entity.getCompanyId());
+        AttendanceConfig config = companySettingsService.getAttendanceConfig();
 
         // Áp dụng làm tròn
         if (Boolean.TRUE.equals(config.getEnableRounding())) {
@@ -246,7 +244,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
 
         // Tính toán lại giờ làm việc
         WorkScheduleResponse schedule = workScheduleService.getEffectiveSchedule(
-                entity.getEmployeeId(), entity.getCompanyId(), entity.getWorkDate());
+                entity.getEmployeeId(), entity.getWorkDate());
         if (schedule != null) {
             // Tính lại late minutes
             if (entity.getRoundedCheckIn() != null) {
@@ -304,7 +302,6 @@ public class AttendanceServiceImpl implements IAttendanceService {
                 breakRecord = new BreakRecordEntity();
                 breakRecord.setAttendanceRecordId(attendance.getId());
                 breakRecord.setEmployeeId(attendance.getEmployeeId());
-                breakRecord.setCompanyId(attendance.getCompanyId());
                 breakRecord.setWorkDate(attendance.getWorkDate());
                 breakRecord.setBreakNumber(1);
             } else {
@@ -381,7 +378,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
     @Override
     @Transactional(readOnly = true)
     public Page<AttendanceRecordResponse> getAttendanceRecords(
-            Long companyId, AttendanceQueryRequest request, Pageable pageable) {
+            AttendanceQueryRequest request, Pageable pageable) {
         // Mặc định lấy tháng hiện tại nếu không có date filter
         LocalDate startDate = request.getStartDate();
         LocalDate endDate = request.getEndDate();
@@ -396,8 +393,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
             endDate = YearMonth.from(startDate).atEndOfMonth();
         }
 
-        return attendanceRecordRepository.findByCompanyIdAndWorkDateBetween(
-                companyId, startDate, endDate, pageable)
+        return attendanceRecordRepository.findByWorkDateBetween(startDate, endDate, pageable)
                 .map(entity -> attendanceMapper.toResponse(entity, getEmployeeName(entity.getEmployeeId())));
     }
 
@@ -428,7 +424,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
 
     @Override
     @Transactional(readOnly = true)
-    public AttendanceSummaryResponse getAttendanceSummary(Long employeeId, Long companyId, YearMonth period) {
+    public AttendanceSummaryResponse getAttendanceSummary(Long employeeId, YearMonth period) {
         LocalDate startDate = period.atDay(1);
         LocalDate endDate = period.atEndOfMonth();
 
@@ -442,7 +438,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
     // ==================== Validation ====================
 
     @Override
-    public boolean validateDevice(Long companyId, String deviceId) {
+    public boolean validateDevice(String deviceId) {
         // Validate device ID không rỗng
         // Trong tương lai có thể mở rộng để kiểm tra device đã đăng ký trong bảng
         // registered_devices
@@ -455,7 +451,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
     }
 
     @Override
-    public boolean validateLocation(Long companyId, Double latitude, Double longitude) {
+    public boolean validateLocation(Double latitude, Double longitude) {
         if (latitude == null || longitude == null) {
             return false;
         }
@@ -529,8 +525,8 @@ public class AttendanceServiceImpl implements IAttendanceService {
             return;
         }
 
-        // Lấy break config - có thể null nếu chưa cấu hình
-        BreakConfig breakConfig = companySettingsService.getBreakConfig(entity.getCompanyId());
+        // Lấy break config
+        BreakConfig breakConfig = companySettingsService.getBreakConfig();
 
         // Tính tổng số phút làm việc (gross)
         long totalMinutes = ChronoUnit.MINUTES.between(checkIn, checkOut);
@@ -743,7 +739,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
         }
 
         // Lấy break config
-        BreakConfig breakConfig = companySettingsService.getBreakConfig(user.getCompanyId());
+        BreakConfig breakConfig = companySettingsService.getBreakConfig();
 
         // Kiểm tra break có được bật không
         if (breakConfig == null || !Boolean.TRUE.equals(breakConfig.getBreakEnabled())) {
@@ -784,7 +780,6 @@ public class AttendanceServiceImpl implements IAttendanceService {
         BreakRecordEntity breakRecord = new BreakRecordEntity();
         breakRecord.setAttendanceRecordId(attendance.getId());
         breakRecord.setEmployeeId(employeeId);
-        breakRecord.setCompanyId(user.getCompanyId());
         breakRecord.setWorkDate(today);
         breakRecord.setBreakNumber(nextBreakNumber);
         breakRecord.setBreakStart(now);
@@ -833,7 +828,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
         }
 
         // Lấy break config
-        BreakConfig breakConfig = companySettingsService.getBreakConfig(user.getCompanyId());
+        BreakConfig breakConfig = companySettingsService.getBreakConfig();
 
         // Update break record
         breakRecord.setBreakEnd(now);
@@ -897,8 +892,8 @@ public class AttendanceServiceImpl implements IAttendanceService {
         ShiftInfoResponse shiftInfo = getShiftInfo(entity.getEmployeeId(), entity.getWorkDate());
 
         // Lấy configs
-        AttendanceConfig attendanceConfig = companySettingsService.getAttendanceConfig(entity.getCompanyId());
-        BreakConfig breakConfig = companySettingsService.getBreakConfig(entity.getCompanyId());
+        AttendanceConfig attendanceConfig = companySettingsService.getAttendanceConfig();
+        BreakConfig breakConfig = companySettingsService.getBreakConfig();
 
         return attendanceMapper.toFullResponse(entity, employeeName, breakRecords, shiftInfo,
                 attendanceConfig, breakConfig);

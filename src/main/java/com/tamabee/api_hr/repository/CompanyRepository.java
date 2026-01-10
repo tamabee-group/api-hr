@@ -21,6 +21,8 @@ public interface CompanyRepository extends JpaRepository<CompanyEntity, Long> {
 
         boolean existsByTenantDomainAndDeletedFalse(String tenantDomain);
 
+        Optional<CompanyEntity> findByTenantDomainAndDeletedFalse(String tenantDomain);
+
         Optional<CompanyEntity> findByEmail(String email);
 
         Optional<CompanyEntity> findByIdAndDeletedFalse(Long id);

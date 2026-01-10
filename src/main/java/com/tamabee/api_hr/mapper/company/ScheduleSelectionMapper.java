@@ -33,7 +33,6 @@ public class ScheduleSelectionMapper {
                 .id(entity.getId())
                 .employeeId(entity.getEmployeeId())
                 .employeeName(employeeName)
-                .companyId(entity.getCompanyId())
                 .scheduleId(entity.getScheduleId())
                 .scheduleName(scheduleName)
                 .effectiveFrom(entity.getEffectiveFrom())

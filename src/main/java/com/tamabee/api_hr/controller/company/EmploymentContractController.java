@@ -53,8 +53,6 @@ public class EmploymentContractController {
             @RequestParam(required = false) Long employeeId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Long companyId = getCurrentUserCompanyId();
-
         ContractQuery query = new ContractQuery();
         query.setStatus(status);
         query.setContractType(contractType);
@@ -63,7 +61,7 @@ public class EmploymentContractController {
         query.setEmployeeId(employeeId);
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "startDate"));
-        Page<ContractResponse> contracts = contractService.getContracts(companyId, query, pageable);
+        Page<ContractResponse> contracts = contractService.getContracts(query, pageable);
         return ResponseEntity.ok(BaseResponse.success(contracts, "Lấy danh sách hợp đồng thành công"));
     }
 
@@ -73,12 +71,11 @@ public class EmploymentContractController {
      */
     @GetMapping("/expiring")
     public ResponseEntity<BaseResponse<Page<ContractResponse>>> getExpiringContracts(
-            @RequestParam(defaultValue = "30") int daysUntilExpiry,
+            @RequestParam(defaultValue = "30") int days,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Long companyId = getCurrentUserCompanyId();
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "endDate"));
-        Page<ContractResponse> contracts = contractService.getExpiringContracts(companyId, daysUntilExpiry, pageable);
+        Page<ContractResponse> contracts = contractService.getExpiringContracts(days, pageable);
         return ResponseEntity.ok(BaseResponse.success(contracts, "Lấy danh sách hợp đồng sắp hết hạn thành công"));
     }
 
@@ -147,16 +144,5 @@ public class EmploymentContractController {
             @RequestParam String reason) {
         ContractResponse response = contractService.terminateContract(id, reason);
         return ResponseEntity.ok(BaseResponse.success(response, "Chấm dứt hợp đồng thành công"));
-    }
-
-    /**
-     * Lấy companyId của user đang đăng nhập
-     */
-    private Long getCurrentUserCompanyId() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
-                .orElseThrow(() -> NotFoundException.user(email));
-        return user.getCompanyId();
     }
 }

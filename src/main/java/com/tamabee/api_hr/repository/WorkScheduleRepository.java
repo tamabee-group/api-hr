@@ -5,13 +5,13 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.util.List;
 import java.util.Optional;
 
 /**
- * Repository quản lý lịch làm việc của công ty.
+ * Repository quản lý lịch làm việc.
  */
 @Repository
 public interface WorkScheduleRepository extends JpaRepository<WorkScheduleEntity, Long> {
@@ -22,24 +22,34 @@ public interface WorkScheduleRepository extends JpaRepository<WorkScheduleEntity
     Optional<WorkScheduleEntity> findByIdAndDeletedFalse(Long id);
 
     /**
-     * Lấy danh sách lịch làm việc của công ty (phân trang)
+     * Lấy danh sách lịch làm việc (phân trang)
      */
-    Page<WorkScheduleEntity> findByCompanyIdAndDeletedFalse(Long companyId, Pageable pageable);
+    Page<WorkScheduleEntity> findByDeletedFalse(Pageable pageable);
 
     /**
-     * Tìm lịch làm việc mặc định của công ty
+     * Lấy tất cả lịch làm việc đang active
      */
-    @Query("SELECT w FROM WorkScheduleEntity w WHERE w.deleted = false " +
-            "AND w.companyId = :companyId AND w.isDefault = true")
-    Optional<WorkScheduleEntity> findDefaultByCompanyId(@Param("companyId") Long companyId);
+    List<WorkScheduleEntity> findByDeletedFalseAndIsActiveTrue();
 
     /**
-     * Kiểm tra tên lịch đã tồn tại trong công ty chưa
+     * Tìm lịch làm việc mặc định
      */
-    boolean existsByCompanyIdAndNameAndDeletedFalse(Long companyId, String name);
+    @Query("SELECT w FROM WorkScheduleEntity w WHERE w.deleted = false AND w.isDefault = true")
+    Optional<WorkScheduleEntity> findDefault();
 
     /**
-     * Đếm số lịch làm việc của công ty
+     * Tìm lịch làm việc mặc định (alias)
      */
-    long countByCompanyIdAndDeletedFalse(Long companyId);
+    @Query("SELECT w FROM WorkScheduleEntity w WHERE w.deleted = false AND w.isDefault = true")
+    Optional<WorkScheduleEntity> findDefaultSchedule();
+
+    /**
+     * Kiểm tra tên lịch đã tồn tại chưa
+     */
+    boolean existsByNameAndDeletedFalse(String name);
+
+    /**
+     * Đếm số lịch làm việc
+     */
+    long countByDeletedFalse();
 }

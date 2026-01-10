@@ -35,7 +35,6 @@ public class AttendanceMapper {
 
         AttendanceRecordEntity entity = new AttendanceRecordEntity();
         entity.setEmployeeId(employeeId);
-        entity.setCompanyId(companyId);
         entity.setWorkDate(workDate);
         entity.setOriginalCheckIn(checkInTime);
         entity.setStatus(AttendanceStatus.PRESENT);
@@ -60,7 +59,6 @@ public class AttendanceMapper {
         return AttendanceRecordResponse.builder()
                 .id(entity.getId())
                 .employeeId(entity.getEmployeeId())
-                .companyId(entity.getCompanyId())
                 .workDate(entity.getWorkDate())
                 .originalCheckIn(entity.getOriginalCheckIn())
                 .originalCheckOut(entity.getOriginalCheckOut())

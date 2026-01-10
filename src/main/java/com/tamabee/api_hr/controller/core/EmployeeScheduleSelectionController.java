@@ -44,7 +44,6 @@ public class EmployeeScheduleSelectionController {
                 UserEntity currentUser = getCurrentUser();
                 ScheduleSelectionResponse selection = scheduleSelectionService.selectSchedule(
                                 currentUser.getId(),
-                                currentUser.getCompanyId(),
                                 request);
                 return ResponseEntity.status(HttpStatus.CREATED)
                                 .body(BaseResponse.created(selection, "Gửi yêu cầu chọn lịch làm việc thành công"));
@@ -99,9 +98,7 @@ public class EmployeeScheduleSelectionController {
          */
         @GetMapping("/schedule-selections/available")
         public ResponseEntity<BaseResponse<List<WorkScheduleResponse>>> getAvailableSchedules() {
-                UserEntity currentUser = getCurrentUser();
                 List<WorkScheduleResponse> available = scheduleSelectionService.getAvailableSchedules(
-                                currentUser.getCompanyId(),
                                 LocalDate.now());
                 return ResponseEntity.ok(BaseResponse.success(available, "Lấy danh sách lịch có sẵn thành công"));
         }
@@ -114,8 +111,7 @@ public class EmployeeScheduleSelectionController {
         public ResponseEntity<BaseResponse<List<WorkScheduleResponse>>> getSuggestedSchedules() {
                 UserEntity currentUser = getCurrentUser();
                 List<WorkScheduleResponse> suggestions = scheduleSelectionService.getSuggestedSchedules(
-                                currentUser.getId(),
-                                currentUser.getCompanyId());
+                                currentUser.getId());
                 return ResponseEntity.ok(BaseResponse.success(suggestions, "Lấy danh sách lịch gợi ý thành công"));
         }
 

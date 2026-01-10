@@ -20,9 +20,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "leave_requests", indexes = {
         @Index(name = "idx_leave_requests_employee_id", columnList = "employeeId"),
-        @Index(name = "idx_leave_requests_company_id", columnList = "companyId"),
         @Index(name = "idx_leave_requests_status", columnList = "status"),
-        @Index(name = "idx_leave_requests_pending", columnList = "companyId, status"),
         @Index(name = "idx_leave_requests_dates", columnList = "employeeId, startDate, endDate")
 })
 public class LeaveRequestEntity extends BaseEntity {
@@ -30,10 +28,6 @@ public class LeaveRequestEntity extends BaseEntity {
     // ID nhân viên
     @Column(nullable = false)
     private Long employeeId;
-
-    // ID công ty
-    @Column(nullable = false)
-    private Long companyId;
 
     // Loại nghỉ phép
     @Enumerated(EnumType.STRING)

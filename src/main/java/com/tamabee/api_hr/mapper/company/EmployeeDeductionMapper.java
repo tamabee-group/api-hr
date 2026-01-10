@@ -17,17 +17,15 @@ public class EmployeeDeductionMapper {
      *
      * @param request    Request DTO
      * @param employeeId ID nhân viên
-     * @param companyId  ID công ty
      * @return Entity
      */
-    public EmployeeDeductionEntity toEntity(DeductionAssignmentRequest request, Long employeeId, Long companyId) {
+    public EmployeeDeductionEntity toEntity(DeductionAssignmentRequest request, Long employeeId) {
         if (request == null) {
             return null;
         }
 
         EmployeeDeductionEntity entity = new EmployeeDeductionEntity();
         entity.setEmployeeId(employeeId);
-        entity.setCompanyId(companyId);
         entity.setDeductionCode(request.getDeductionCode());
         entity.setDeductionName(request.getDeductionName());
         entity.setDeductionType(request.getDeductionType());
@@ -55,7 +53,6 @@ public class EmployeeDeductionMapper {
         EmployeeDeductionResponse response = new EmployeeDeductionResponse();
         response.setId(entity.getId());
         response.setEmployeeId(entity.getEmployeeId());
-        response.setCompanyId(entity.getCompanyId());
         response.setDeductionCode(entity.getDeductionCode());
         response.setDeductionName(entity.getDeductionName());
         response.setDeductionType(entity.getDeductionType());

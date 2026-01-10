@@ -20,11 +20,10 @@ public interface IAttendanceAdjustmentService {
      * Tạo yêu cầu điều chỉnh chấm công
      *
      * @param employeeId ID nhân viên
-     * @param companyId  ID công ty
      * @param request    thông tin yêu cầu điều chỉnh
      * @return yêu cầu điều chỉnh đã tạo
      */
-    AdjustmentRequestResponse createAdjustmentRequest(Long employeeId, Long companyId, CreateAdjustmentRequest request);
+    AdjustmentRequestResponse createAdjustmentRequest(Long employeeId, CreateAdjustmentRequest request);
 
     // ==================== Manager Operations ====================
 
@@ -62,25 +61,23 @@ public interface IAttendanceAdjustmentService {
      * Lấy danh sách yêu cầu đang chờ duyệt của công ty (phân trang)
      * Admin xem tất cả, Manager chỉ xem yêu cầu được gán cho mình
      *
-     * @param companyId ID công ty
-     * @param userId    ID người dùng hiện tại
-     * @param isAdmin   true nếu là admin
-     * @param pageable  thông tin phân trang
+     * @param userId   ID người dùng hiện tại
+     * @param isAdmin  true nếu là admin
+     * @param pageable thông tin phân trang
      * @return danh sách yêu cầu đang chờ duyệt
      */
-    Page<AdjustmentRequestResponse> getPendingRequests(Long companyId, Long userId, boolean isAdmin, Pageable pageable);
+    Page<AdjustmentRequestResponse> getPendingRequests(Long userId, boolean isAdmin, Pageable pageable);
 
     /**
      * Lấy tất cả yêu cầu điều chỉnh của công ty (phân trang)
      * Admin xem tất cả, Manager chỉ xem yêu cầu được gán cho mình
      *
-     * @param companyId ID công ty
-     * @param userId    ID người dùng hiện tại
-     * @param isAdmin   true nếu là admin
-     * @param pageable  thông tin phân trang
+     * @param userId   ID người dùng hiện tại
+     * @param isAdmin  true nếu là admin
+     * @param pageable thông tin phân trang
      * @return danh sách tất cả yêu cầu
      */
-    Page<AdjustmentRequestResponse> getAllRequests(Long companyId, Long userId, boolean isAdmin, Pageable pageable);
+    Page<AdjustmentRequestResponse> getAllRequests(Long userId, boolean isAdmin, Pageable pageable);
 
     /**
      * Lấy danh sách yêu cầu của nhân viên (phân trang)

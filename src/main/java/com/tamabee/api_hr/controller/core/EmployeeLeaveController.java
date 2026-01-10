@@ -47,7 +47,6 @@ public class EmployeeLeaveController {
         UserEntity currentUser = getCurrentUser();
         LeaveRequestResponse response = leaveService.createLeaveRequest(
                 currentUser.getId(),
-                currentUser.getCompanyId(),
                 request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.created(response, "Tạo yêu cầu nghỉ phép thành công"));

@@ -79,7 +79,6 @@ public class AttendanceAdjustmentMapper {
                 .id(entity.getId())
                 .employeeId(entity.getEmployeeId())
                 .employeeName(employeeName)
-                .companyId(entity.getCompanyId())
                 .attendanceRecordId(entity.getAttendanceRecordId())
                 .workDate(workDate)
                 .assignedTo(entity.getAssignedTo())

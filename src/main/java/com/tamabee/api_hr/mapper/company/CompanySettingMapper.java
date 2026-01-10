@@ -27,7 +27,6 @@ public class CompanySettingMapper {
      */
     public CompanySettingEntity toEntity(Long companyId) {
         CompanySettingEntity entity = new CompanySettingEntity();
-        entity.setCompanyId(companyId);
         entity.setAttendanceConfig(serializeConfig(AttendanceConfig.builder().build()));
         entity.setPayrollConfig(serializeConfig(PayrollConfig.builder().build()));
         entity.setOvertimeConfig(serializeConfig(OvertimeConfig.builder().build()));
@@ -46,7 +45,6 @@ public class CompanySettingMapper {
 
         return CompanySettingsResponse.builder()
                 .id(entity.getId())
-                .companyId(entity.getCompanyId())
                 .attendanceConfig(deserializeAttendanceConfig(entity.getAttendanceConfig()))
                 .payrollConfig(deserializePayrollConfig(entity.getPayrollConfig()))
                 .overtimeConfig(deserializeOvertimeConfig(entity.getOvertimeConfig()))

@@ -50,9 +50,8 @@ public class PayrollController {
     @GetMapping("/preview")
     public ResponseEntity<BaseResponse<PayrollPreviewResponse>> previewPayroll(
             @RequestParam String period) {
-        Long companyId = getCurrentUserCompanyId();
         YearMonth yearMonth = YearMonth.parse(period, PERIOD_FORMATTER);
-        PayrollPreviewResponse preview = payrollService.previewPayroll(companyId, yearMonth);
+        PayrollPreviewResponse preview = payrollService.previewPayroll(yearMonth);
         return ResponseEntity.ok(BaseResponse.success(preview, "Preview lương thành công"));
     }
 
@@ -67,7 +66,7 @@ public class PayrollController {
         UserEntity currentUser = getCurrentUser();
         YearMonth yearMonth = YearMonth.parse(period, PERIOD_FORMATTER);
         PayrollPeriodSummaryResponse summary = payrollService.finalizePayroll(
-                currentUser.getCompanyId(), yearMonth, currentUser.getId());
+                yearMonth, currentUser.getId());
         return ResponseEntity.ok(BaseResponse.success(summary, "Finalize lương thành công"));
     }
 
@@ -80,9 +79,8 @@ public class PayrollController {
     @PostMapping("/pay")
     @PreAuthorize(RoleConstants.HAS_ADMIN_COMPANY)
     public ResponseEntity<BaseResponse<Void>> markAsPaid(@RequestParam String period) {
-        Long companyId = getCurrentUserCompanyId();
         YearMonth yearMonth = YearMonth.parse(period, PERIOD_FORMATTER);
-        payrollService.markAsPaid(companyId, yearMonth);
+        payrollService.markAsPaid(yearMonth);
         return ResponseEntity.ok(BaseResponse.success(null, "Đánh dấu thanh toán thành công"));
     }
 
@@ -119,9 +117,8 @@ public class PayrollController {
     @PostMapping("/notify")
     @PreAuthorize(RoleConstants.HAS_ADMIN_COMPANY)
     public ResponseEntity<BaseResponse<Void>> sendSalaryNotifications(@RequestParam String period) {
-        Long companyId = getCurrentUserCompanyId();
         YearMonth yearMonth = YearMonth.parse(period, PERIOD_FORMATTER);
-        payrollService.sendSalaryNotifications(companyId, yearMonth);
+        payrollService.sendSalaryNotifications(yearMonth);
         return ResponseEntity.ok(BaseResponse.success(null, "Gửi thông báo lương thành công"));
     }
 
@@ -136,10 +133,9 @@ public class PayrollController {
             @RequestParam String period,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Long companyId = getCurrentUserCompanyId();
         YearMonth yearMonth = YearMonth.parse(period, PERIOD_FORMATTER);
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "employeeId"));
-        Page<PayrollRecordResponse> records = payrollService.getPayrollRecords(companyId, yearMonth, pageable);
+        Page<PayrollRecordResponse> records = payrollService.getPayrollRecords(yearMonth, pageable);
         return ResponseEntity.ok(BaseResponse.success(records, "Lấy danh sách lương thành công"));
     }
 
@@ -150,9 +146,8 @@ public class PayrollController {
     @GetMapping("/{period}/summary")
     public ResponseEntity<BaseResponse<PayrollPeriodSummaryResponse>> getPayrollPeriodSummary(
             @PathVariable String period) {
-        Long companyId = getCurrentUserCompanyId();
         YearMonth yearMonth = YearMonth.parse(period, PERIOD_FORMATTER);
-        PayrollPeriodSummaryResponse summary = payrollService.getPayrollPeriodSummary(companyId, yearMonth);
+        PayrollPeriodSummaryResponse summary = payrollService.getPayrollPeriodSummary(yearMonth);
         return ResponseEntity.ok(BaseResponse.success(summary, "Lấy tổng hợp lương thành công"));
     }
 
@@ -174,11 +169,10 @@ public class PayrollController {
      */
     @GetMapping("/export/csv")
     public ResponseEntity<byte[]> exportPayrollCsv(@RequestParam String period) {
-        Long companyId = getCurrentUserCompanyId();
         YearMonth yearMonth = YearMonth.parse(period, PERIOD_FORMATTER);
-        byte[] csvData = payrollService.exportPayrollCsv(companyId, yearMonth);
+        byte[] csvData = payrollService.exportPayrollCsv(yearMonth);
 
-        String filename = String.format("payroll_%s_%s.csv", companyId, period);
+        String filename = String.format("payroll_%s.csv", period);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .contentType(MediaType.parseMediaType("text/csv; charset=UTF-8"))
@@ -191,11 +185,10 @@ public class PayrollController {
      */
     @GetMapping("/export/pdf")
     public ResponseEntity<byte[]> exportPayrollPdf(@RequestParam String period) {
-        Long companyId = getCurrentUserCompanyId();
         YearMonth yearMonth = YearMonth.parse(period, PERIOD_FORMATTER);
-        byte[] pdfData = payrollService.exportPayrollPdf(companyId, yearMonth);
+        byte[] pdfData = payrollService.exportPayrollPdf(yearMonth);
 
-        String filename = String.format("payroll_%s_%s.pdf", companyId, period);
+        String filename = String.format("payroll_%s.pdf", period);
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
                 .contentType(MediaType.APPLICATION_PDF)
@@ -208,14 +201,8 @@ public class PayrollController {
      */
     @GetMapping("/{recordId}/download")
     public ResponseEntity<byte[]> downloadPayslip(@PathVariable Long recordId) {
-        Long companyId = getCurrentUserCompanyId();
         UserEntity currentUser = getCurrentUser();
         PayrollRecordResponse record = payrollService.getPayrollRecordById(recordId);
-
-        // Kiểm tra bản ghi lương thuộc về công ty hiện tại
-        if (!record.getCompanyId().equals(companyId)) {
-            throw NotFoundException.payrollRecord(recordId);
-        }
 
         byte[] pdfData = payrollService.generatePayslip(recordId);
 
@@ -251,13 +238,6 @@ public class PayrollController {
     }
 
     // ==================== Helper Methods ====================
-
-    /**
-     * Lấy companyId của user đang đăng nhập
-     */
-    private Long getCurrentUserCompanyId() {
-        return getCurrentUser().getCompanyId();
-    }
 
     /**
      * Lấy thông tin user đang đăng nhập

@@ -16,19 +16,14 @@ import java.time.LocalTime;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "shift_templates", indexes = {
-        @Index(name = "idx_shift_template_company_id", columnList = "companyId"),
         @Index(name = "idx_shift_template_deleted", columnList = "deleted"),
-        @Index(name = "idx_shift_template_active", columnList = "companyId, isActive")
+        @Index(name = "idx_shift_template_active", columnList = "isActive")
 })
 public class ShiftTemplateEntity extends BaseEntity {
 
     // Soft delete flag
     @Column(nullable = false)
     private Boolean deleted = false;
-
-    // ID công ty
-    @Column(nullable = false)
-    private Long companyId;
 
     // Tên ca làm việc
     @Column(nullable = false, length = 100)

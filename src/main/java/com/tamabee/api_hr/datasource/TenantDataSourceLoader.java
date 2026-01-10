@@ -9,6 +9,7 @@ import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
+import javax.sql.DataSource;
 import java.util.List;
 
 /**
@@ -25,12 +26,15 @@ public class TenantDataSourceLoader {
     private final CompanyRepository companyRepository;
     private final TenantDataSourceManager tenantDataSourceManager;
     private final TenantDatabaseInitializer tenantDatabaseInitializer;
+    private final DataSource dataSource; // TenantRoutingDataSource (primary)
 
     /**
      * Load tất cả tenant DataSources khi application sẵn sàng.
      * Chạy sau khi tất cả beans đã được khởi tạo.
+     * Order = 1 để chạy trước các listeners khác (như DataInitializer).
      */
     @EventListener(ApplicationReadyEvent.class)
+    @org.springframework.core.annotation.Order(1)
     public void loadAllTenantDataSources() {
         log.info("Starting to load tenant DataSources...");
 
@@ -49,23 +53,75 @@ public class TenantDataSourceLoader {
      * Tamabee là tenant đặc biệt với tenantDomain = "tamabee".
      */
     private void loadTamabeeTenant() {
+        log.info("Loading Tamabee tenant DataSource...");
         try {
             if (tenantDataSourceManager.hasTenant(TAMABEE_TENANT)) {
-                log.debug("Tamabee tenant already loaded");
+                log.info("Tamabee tenant already loaded in manager, adding to routing...");
+                addToRoutingDataSource(TAMABEE_TENANT);
                 return;
             }
 
             // Kiểm tra database tamabee_tamabee có tồn tại không
-            if (tenantDatabaseInitializer.databaseExists(TAMABEE_TENANT)) {
+            boolean dbExists = tenantDatabaseInitializer.databaseExists(TAMABEE_TENANT);
+            log.info("Tamabee database exists: {}", dbExists);
+
+            if (dbExists) {
                 tenantDataSourceManager.addTenant(TAMABEE_TENANT);
-                log.info("Loaded Tamabee tenant DataSource");
+                log.info("Added Tamabee to TenantDataSourceManager");
+                // Chạy migration để đảm bảo schema up-to-date
+                runTenantMigration(TAMABEE_TENANT);
+                // Add vào routing DataSource
+                addToRoutingDataSource(TAMABEE_TENANT);
+                log.info("Loaded Tamabee tenant DataSource successfully");
             } else {
                 log.warn("Tamabee database does not exist. Creating...");
                 tenantDatabaseInitializer.createTenantDatabase(TAMABEE_TENANT);
+                // Add vào routing DataSource
+                addToRoutingDataSource(TAMABEE_TENANT);
                 log.info("Created and loaded Tamabee tenant DataSource");
             }
         } catch (Exception e) {
             log.error("Failed to load Tamabee tenant DataSource", e);
+        }
+    }
+
+    /**
+     * Add tenant DataSource vào TenantRoutingDataSource.
+     */
+    private void addToRoutingDataSource(String tenantDomain) {
+        if (dataSource instanceof TenantRoutingDataSource routingDataSource) {
+            DataSource tenantDs = tenantDataSourceManager.getDataSource(tenantDomain);
+            if (tenantDs != null) {
+                routingDataSource.addTenantDataSource(tenantDomain, tenantDs);
+            }
+        }
+    }
+
+    /**
+     * Chạy Flyway migration cho tenant database.
+     * Đảm bảo schema luôn up-to-date khi load tenant.
+     */
+    private void runTenantMigration(String tenantDomain) {
+        try {
+            javax.sql.DataSource tenantDs = tenantDataSourceManager.getDataSource(tenantDomain);
+            if (tenantDs == null) {
+                log.warn("DataSource not found for tenant: {}", tenantDomain);
+                return;
+            }
+
+            org.flywaydb.core.Flyway flyway = org.flywaydb.core.Flyway.configure()
+                    .dataSource(tenantDs)
+                    .locations("classpath:db/tenant")
+                    .baselineOnMigrate(true)
+                    .cleanDisabled(false)
+                    .load();
+
+            // Clean và migrate lại từ đầu (DB local mới)
+            flyway.clean();
+            flyway.migrate();
+            log.info("Completed Flyway migration for tenant: {}", tenantDomain);
+        } catch (Exception e) {
+            log.error("Failed to run migration for tenant: {}", tenantDomain, e);
         }
     }
 
@@ -96,6 +152,10 @@ public class TenantDataSourceLoader {
                 // Kiểm tra database có tồn tại không
                 if (tenantDatabaseInitializer.databaseExists(tenantDomain)) {
                     tenantDataSourceManager.addTenant(tenantDomain);
+                    // Chạy migration để đảm bảo schema up-to-date
+                    runTenantMigration(tenantDomain);
+                    // Add vào routing DataSource
+                    addToRoutingDataSource(tenantDomain);
                     loaded++;
                     log.debug("Loaded tenant DataSource: {}", tenantDomain);
                 } else {

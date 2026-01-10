@@ -1,18 +1,22 @@
 package com.tamabee.api_hr.controller.core;
 
-import com.tamabee.api_hr.dto.response.PlanFeaturesResponse;
-import com.tamabee.api_hr.dto.response.PlanResponse;
-import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.service.admin.IPlanService;
-import com.tamabee.api_hr.service.core.IPlanFeaturesService;
-import lombok.RequiredArgsConstructor;
+import java.util.List;
+
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import java.util.List;
+import com.tamabee.api_hr.dto.response.PlanFeaturesResponse;
+import com.tamabee.api_hr.dto.response.PlanResponse;
+import com.tamabee.api_hr.dto.response.PublicSettingsResponse;
+import com.tamabee.api_hr.model.response.BaseResponse;
+import com.tamabee.api_hr.service.admin.IPlanService;
+import com.tamabee.api_hr.service.admin.ISettingService;
+import com.tamabee.api_hr.service.core.IPlanFeaturesService;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Controller công khai cho gói dịch vụ (Plan)
@@ -25,6 +29,7 @@ public class PublicPlanController {
 
     private final IPlanService planService;
     private final IPlanFeaturesService planFeaturesService;
+    private final ISettingService settingService;
 
     /**
      * Lấy danh sách plans đang active
@@ -35,6 +40,20 @@ public class PublicPlanController {
     public ResponseEntity<BaseResponse<List<PlanResponse>>> getActivePlans() {
         List<PlanResponse> plans = planService.getActivePlans();
         return ResponseEntity.ok(BaseResponse.success(plans));
+    }
+
+    /**
+     * Lấy public settings cho landing page
+     * GET /api/plans/settings
+     */
+    @GetMapping("/settings")
+    public ResponseEntity<BaseResponse<PublicSettingsResponse>> getPublicSettings() {
+        PublicSettingsResponse response = PublicSettingsResponse.builder()
+                .freeTrialMonths(settingService.getFreeTrialMonths())
+                .referralBonusMonths(settingService.getReferralBonusMonths())
+                .customPricePerEmployee(settingService.getCustomPricePerEmployee())
+                .build();
+        return ResponseEntity.ok(BaseResponse.success(response));
     }
 
     /**

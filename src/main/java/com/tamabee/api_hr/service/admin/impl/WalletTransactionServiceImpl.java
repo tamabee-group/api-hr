@@ -11,6 +11,7 @@ import com.tamabee.api_hr.mapper.admin.WalletTransactionMapper;
 import com.tamabee.api_hr.repository.UserRepository;
 import com.tamabee.api_hr.repository.WalletTransactionRepository;
 import com.tamabee.api_hr.service.admin.IWalletTransactionService;
+import com.tamabee.api_hr.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +36,7 @@ public class WalletTransactionServiceImpl implements IWalletTransactionService {
     private final WalletTransactionRepository walletTransactionRepository;
     private final WalletTransactionMapper walletTransactionMapper;
     private final UserRepository userRepository;
+    private final SecurityUtil securityUtil;
 
     @Override
     @Transactional
@@ -98,16 +100,7 @@ public class WalletTransactionServiceImpl implements IWalletTransactionService {
      * Lấy companyId của user hiện tại từ JWT token
      */
     private Long getCurrentUserCompanyId() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw UnauthorizedException.notAuthenticated();
-        }
-
-        String email = authentication.getName();
-        UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
-                .orElseThrow(() -> NotFoundException.user(email));
-
-        return user.getCompanyId();
+        return securityUtil.getCurrentUserCompanyId();
     }
 
     /**

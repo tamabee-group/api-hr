@@ -59,22 +59,20 @@ public interface IEmploymentContractService {
     /**
      * Lấy danh sách hợp đồng sắp hết hạn
      *
-     * @param companyId       ID công ty
      * @param daysUntilExpiry Số ngày còn lại đến khi hết hạn
      * @param pageable        Phân trang
      * @return Danh sách hợp đồng sắp hết hạn
      */
-    Page<ContractResponse> getExpiringContracts(Long companyId, int daysUntilExpiry, Pageable pageable);
+    Page<ContractResponse> getExpiringContracts(int daysUntilExpiry, Pageable pageable);
 
     /**
      * Lấy danh sách hợp đồng của công ty với filter
      *
-     * @param companyId ID công ty
-     * @param query     Điều kiện lọc
-     * @param pageable  Phân trang
+     * @param query    Điều kiện lọc
+     * @param pageable Phân trang
      * @return Danh sách hợp đồng
      */
-    Page<ContractResponse> getContracts(Long companyId, ContractQuery query, Pageable pageable);
+    Page<ContractResponse> getContracts(ContractQuery query, Pageable pageable);
 
     /**
      * Lấy chi tiết hợp đồng theo ID

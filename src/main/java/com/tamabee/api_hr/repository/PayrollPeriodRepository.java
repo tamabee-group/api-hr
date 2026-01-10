@@ -13,41 +13,41 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repository quản lý kỳ lương.
+ */
 @Repository
 public interface PayrollPeriodRepository extends JpaRepository<PayrollPeriodEntity, Long> {
 
         /**
-         * Lấy payroll period theo công ty, năm và tháng
+         * Lấy payroll period theo năm và tháng
          */
-        Optional<PayrollPeriodEntity> findByCompanyIdAndYearAndMonth(
-                        Long companyId, Integer year, Integer month);
+        Optional<PayrollPeriodEntity> findByYearAndMonth(Integer year, Integer month);
 
         /**
-         * Lấy danh sách payroll periods của công ty (phân trang)
+         * Lấy danh sách payroll periods (phân trang)
          */
-        Page<PayrollPeriodEntity> findByCompanyId(Long companyId, Pageable pageable);
+        @Query("SELECT pp FROM PayrollPeriodEntity pp ORDER BY pp.periodStart DESC")
+        Page<PayrollPeriodEntity> findAllPaged(Pageable pageable);
 
         /**
-         * Lấy danh sách payroll periods của công ty theo status
+         * Lấy danh sách payroll periods theo status
          */
-        Page<PayrollPeriodEntity> findByCompanyIdAndStatus(
-                        Long companyId, PayrollPeriodStatus status, Pageable pageable);
+        Page<PayrollPeriodEntity> findByStatus(PayrollPeriodStatus status, Pageable pageable);
 
         /**
-         * Lấy danh sách payroll periods của công ty theo năm
+         * Lấy danh sách payroll periods theo năm
          */
-        List<PayrollPeriodEntity> findByCompanyIdAndYear(Long companyId, Integer year);
+        List<PayrollPeriodEntity> findByYear(Integer year);
 
         /**
          * Lấy danh sách payroll periods trong khoảng thời gian
          */
         @Query("SELECT pp FROM PayrollPeriodEntity pp " +
-                        "WHERE pp.companyId = :companyId " +
-                        "AND pp.periodStart <= :endDate " +
+                        "WHERE pp.periodStart <= :endDate " +
                         "AND pp.periodEnd >= :startDate " +
                         "ORDER BY pp.periodStart DESC")
-        List<PayrollPeriodEntity> findByCompanyIdAndDateRange(
-                        @Param("companyId") Long companyId,
+        List<PayrollPeriodEntity> findByDateRange(
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate);
 
@@ -55,42 +55,37 @@ public interface PayrollPeriodRepository extends JpaRepository<PayrollPeriodEnti
          * Kiểm tra có payroll period nào overlap với khoảng thời gian không
          */
         @Query("SELECT COUNT(pp) > 0 FROM PayrollPeriodEntity pp " +
-                        "WHERE pp.companyId = :companyId " +
-                        "AND pp.id != :excludeId " +
+                        "WHERE pp.id != :excludeId " +
                         "AND pp.periodStart <= :endDate " +
                         "AND pp.periodEnd >= :startDate")
         boolean existsOverlappingPeriod(
-                        @Param("companyId") Long companyId,
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate,
                         @Param("excludeId") Long excludeId);
 
         /**
-         * Kiểm tra công ty đã có payroll period cho năm/tháng chưa
+         * Kiểm tra đã có payroll period cho năm/tháng chưa
          */
-        boolean existsByCompanyIdAndYearAndMonth(
-                        Long companyId, Integer year, Integer month);
+        boolean existsByYearAndMonth(Integer year, Integer month);
 
         /**
-         * Lấy payroll period gần nhất của công ty
+         * Lấy payroll period gần nhất
          */
         @Query("SELECT pp FROM PayrollPeriodEntity pp " +
-                        "WHERE pp.companyId = :companyId " +
                         "ORDER BY pp.periodEnd DESC " +
                         "LIMIT 1")
-        Optional<PayrollPeriodEntity> findLatestByCompanyId(@Param("companyId") Long companyId);
+        Optional<PayrollPeriodEntity> findLatest();
 
         /**
          * Đếm số payroll periods theo status
          */
-        long countByCompanyIdAndStatus(Long companyId, PayrollPeriodStatus status);
+        long countByStatus(PayrollPeriodStatus status);
 
         /**
          * Lấy danh sách payroll periods đang DRAFT hoặc REVIEWING
          */
         @Query("SELECT pp FROM PayrollPeriodEntity pp " +
-                        "WHERE pp.companyId = :companyId " +
-                        "AND pp.status IN ('DRAFT', 'REVIEWING') " +
+                        "WHERE pp.status IN ('DRAFT', 'REVIEWING') " +
                         "ORDER BY pp.periodStart DESC")
-        List<PayrollPeriodEntity> findPendingPeriodsByCompanyId(@Param("companyId") Long companyId);
+        List<PayrollPeriodEntity> findPendingPeriods();
 }

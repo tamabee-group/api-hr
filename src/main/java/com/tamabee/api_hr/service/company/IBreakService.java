@@ -19,11 +19,10 @@ public interface IBreakService {
      * Bắt đầu giờ giải lao
      *
      * @param employeeId ID nhân viên
-     * @param companyId  ID công ty
      * @param request    thông tin bắt đầu giải lao
      * @return bản ghi giải lao
      */
-    BreakRecordResponse startBreak(Long employeeId, Long companyId, StartBreakRequest request);
+    BreakRecordResponse startBreak(Long employeeId, StartBreakRequest request);
 
     /**
      * Kết thúc giờ giải lao
@@ -58,10 +57,9 @@ public interface IBreakService {
     /**
      * Validate thời gian giải lao theo cấu hình công ty
      *
-     * @param companyId    ID công ty
      * @param breakMinutes số phút giải lao
      */
-    void validateBreakDuration(Long companyId, Integer breakMinutes);
+    void validateBreakDuration(Integer breakMinutes);
 
     /**
      * Lấy thời gian giải lao tối thiểu theo quy định pháp luật
@@ -75,11 +73,10 @@ public interface IBreakService {
     /**
      * Lấy thời gian giải lao tối thiểu hiệu lực (max của legal và company config)
      *
-     * @param companyId    ID công ty
      * @param workingHours số giờ làm việc
      * @return số phút giải lao tối thiểu hiệu lực
      */
-    Integer getEffectiveMinimumBreak(Long companyId, Integer workingHours);
+    Integer getEffectiveMinimumBreak(Integer workingHours);
 
     // ==================== Calculation ====================
 

@@ -1,5 +1,14 @@
 package com.tamabee.api_hr.service.core.impl;
 
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import static com.tamabee.api_hr.constants.PlanConstants.FREE_PLAN_ID;
 import com.tamabee.api_hr.dto.response.PlanFeaturesResponse;
 import com.tamabee.api_hr.dto.response.PlanFeaturesResponse.FeatureItem;
 import com.tamabee.api_hr.entity.wallet.PlanEntity;
@@ -10,18 +19,15 @@ import com.tamabee.api_hr.repository.PlanFeatureCodeRepository;
 import com.tamabee.api_hr.repository.PlanRepository;
 import com.tamabee.api_hr.service.core.IPlanFeaturesService;
 import com.tamabee.api_hr.util.LocaleUtil;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Implementation của IPlanFeaturesService.
  * Lấy danh sách features của plan để frontend render sidebar động.
+ * 
+ * Free Plan (planId = 0): Trong thời gian trial được dùng full tính năng.
+ * Sau khi hết trial, cần upgrade lên plan khác.
  */
 @Service
 @RequiredArgsConstructor
@@ -33,6 +39,13 @@ public class PlanFeaturesServiceImpl implements IPlanFeaturesService {
 
     @Override
     public PlanFeaturesResponse getFeaturesByPlanId(Long planId) {
+        // Free Plan (planId = 0): Trả về tất cả features enabled
+        // Trong thời gian trial, company được dùng full tính năng
+        // Logic kiểm tra hết trial nằm ở BillingService
+        if (FREE_PLAN_ID.equals(planId)) {
+            return getFreePlanFeatures();
+        }
+
         // Lấy plan
         PlanEntity plan = planRepository.findByIdAndDeletedFalse(planId)
                 .orElseThrow(() -> NotFoundException.plan(planId));
@@ -57,6 +70,32 @@ public class PlanFeaturesServiceImpl implements IPlanFeaturesService {
         return PlanFeaturesResponse.builder()
                 .planId(plan.getId())
                 .planName(getPlanName(plan))
+                .features(features)
+                .build();
+    }
+
+    /**
+     * Lấy features cho Free Plan (planId = 0)
+     * Free Plan được dùng full tính năng trong thời gian trial
+     */
+    private PlanFeaturesResponse getFreePlanFeatures() {
+        // Tất cả features đều enabled cho Free Plan (trong thời gian trial)
+        List<FeatureItem> features = Arrays.stream(FeatureCode.values())
+                .map(code -> FeatureItem.builder()
+                        .code(code)
+                        .name(getFeatureName(code))
+                        .enabled(true)
+                        .build())
+                .collect(Collectors.toList());
+
+        // Lấy tên plan từ database nếu có
+        String planName = planRepository.findByIdAndDeletedFalse(FREE_PLAN_ID)
+                .map(this::getPlanName)
+                .orElse("Free Trial");
+
+        return PlanFeaturesResponse.builder()
+                .planId(FREE_PLAN_ID)
+                .planName(planName)
                 .features(features)
                 .build();
     }

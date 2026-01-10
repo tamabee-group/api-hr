@@ -18,22 +18,17 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "attendance_adjustment_requests", indexes = {
         @Index(name = "idx_adjustment_employee_id", columnList = "employeeId"),
-        @Index(name = "idx_adjustment_company_id", columnList = "companyId"),
         @Index(name = "idx_adjustment_record_id", columnList = "attendanceRecordId"),
         @Index(name = "idx_adjustment_break_record_id", columnList = "breakRecordId"),
         @Index(name = "idx_adjustment_assigned_to", columnList = "assignedTo"),
         @Index(name = "idx_adjustment_status", columnList = "status"),
-        @Index(name = "idx_adjustment_pending", columnList = "companyId, status")
+        @Index(name = "idx_adjustment_work_date", columnList = "workDate")
 })
 public class AttendanceAdjustmentRequestEntity extends BaseEntity {
 
     // ID nhân viên yêu cầu
     @Column(nullable = false)
     private Long employeeId;
-
-    // ID công ty
-    @Column(nullable = false)
-    private Long companyId;
 
     // ID bản ghi chấm công cần điều chỉnh (nullable khi tạo yêu cầu cho ngày chưa
     // có chấm công)

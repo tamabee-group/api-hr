@@ -1,5 +1,14 @@
 package com.tamabee.api_hr.service.admin.impl;
 
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.tamabee.api_hr.dto.request.SettingUpdateRequest;
 import com.tamabee.api_hr.dto.response.SettingResponse;
 import com.tamabee.api_hr.entity.wallet.TamabeeSettingEntity;
@@ -7,16 +16,9 @@ import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.mapper.admin.TamabeeSettingMapper;
 import com.tamabee.api_hr.repository.TamabeeSettingRepository;
 import com.tamabee.api_hr.service.admin.ISettingService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.ConcurrentHashMap;
-import java.util.stream.Collectors;
 
 /**
  * Service quản lý cấu hình hệ thống Tamabee
@@ -35,11 +37,13 @@ public class SettingServiceImpl implements ISettingService {
     private static final String FREE_TRIAL_MONTHS = "FREE_TRIAL_MONTHS";
     private static final String REFERRAL_BONUS_MONTHS = "REFERRAL_BONUS_MONTHS";
     private static final String COMMISSION_RATE = "COMMISSION_RATE";
+    private static final String CUSTOM_PRICE_PER_EMPLOYEE = "CUSTOM_PRICE_PER_EMPLOYEE";
 
     // Default values
     private static final int DEFAULT_FREE_TRIAL_MONTHS = 2;
     private static final int DEFAULT_REFERRAL_BONUS_MONTHS = 1;
     private static final BigDecimal DEFAULT_COMMISSION_RATE = new BigDecimal("0.10");
+    private static final int DEFAULT_CUSTOM_PRICE_PER_EMPLOYEE = 400;
 
     // In-memory cache cho các giá trị thường xuyên truy cập
     private final Map<String, Object> cache = new ConcurrentHashMap<>();
@@ -91,6 +95,11 @@ public class SettingServiceImpl implements ISettingService {
     @Override
     public BigDecimal getCommissionRate() {
         return getCachedDecimalValue(COMMISSION_RATE, DEFAULT_COMMISSION_RATE);
+    }
+
+    @Override
+    public int getCustomPricePerEmployee() {
+        return getCachedIntValue(CUSTOM_PRICE_PER_EMPLOYEE, DEFAULT_CUSTOM_PRICE_PER_EMPLOYEE);
     }
 
     /**

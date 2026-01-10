@@ -19,27 +19,23 @@ import java.util.Optional;
 public interface PayrollRecordRepository extends JpaRepository<PayrollRecordEntity, Long> {
 
         /**
-         * Lấy danh sách bản ghi lương của công ty theo kỳ (phân trang)
+         * Lấy danh sách bản ghi lương theo kỳ (phân trang)
          */
         @Query("SELECT p FROM PayrollRecordEntity p " +
-                        "WHERE p.companyId = :companyId " +
-                        "AND p.year = :year AND p.month = :month " +
+                        "WHERE p.year = :year AND p.month = :month " +
                         "ORDER BY p.employeeId ASC")
-        Page<PayrollRecordEntity> findByCompanyIdAndYearAndMonth(
-                        @Param("companyId") Long companyId,
+        Page<PayrollRecordEntity> findByYearAndMonth(
                         @Param("year") Integer year,
                         @Param("month") Integer month,
                         Pageable pageable);
 
         /**
-         * Lấy tất cả bản ghi lương của công ty theo kỳ
+         * Lấy tất cả bản ghi lương theo kỳ
          */
         @Query("SELECT p FROM PayrollRecordEntity p " +
-                        "WHERE p.companyId = :companyId " +
-                        "AND p.year = :year AND p.month = :month " +
+                        "WHERE p.year = :year AND p.month = :month " +
                         "ORDER BY p.employeeId ASC")
-        List<PayrollRecordEntity> findAllByCompanyIdAndYearAndMonth(
-                        @Param("companyId") Long companyId,
+        List<PayrollRecordEntity> findAllByYearAndMonth(
                         @Param("year") Integer year,
                         @Param("month") Integer month);
 
@@ -63,23 +59,19 @@ public interface PayrollRecordRepository extends JpaRepository<PayrollRecordEnti
          * Lấy danh sách bản ghi lương theo trạng thái
          */
         @Query("SELECT p FROM PayrollRecordEntity p " +
-                        "WHERE p.companyId = :companyId " +
-                        "AND p.year = :year AND p.month = :month " +
+                        "WHERE p.year = :year AND p.month = :month " +
                         "AND p.status = :status")
-        List<PayrollRecordEntity> findByCompanyIdAndYearAndMonthAndStatus(
-                        @Param("companyId") Long companyId,
+        List<PayrollRecordEntity> findByYearAndMonthAndStatus(
                         @Param("year") Integer year,
                         @Param("month") Integer month,
                         @Param("status") PayrollStatus status);
 
         /**
-         * Đếm số bản ghi lương của công ty theo kỳ
+         * Đếm số bản ghi lương theo kỳ
          */
         @Query("SELECT COUNT(p) FROM PayrollRecordEntity p " +
-                        "WHERE p.companyId = :companyId " +
-                        "AND p.year = :year AND p.month = :month")
-        long countByCompanyIdAndYearAndMonth(
-                        @Param("companyId") Long companyId,
+                        "WHERE p.year = :year AND p.month = :month")
+        long countByYearAndMonth(
                         @Param("year") Integer year,
                         @Param("month") Integer month);
 
@@ -93,12 +85,10 @@ public interface PayrollRecordRepository extends JpaRepository<PayrollRecordEnti
          * Lấy danh sách bản ghi lương chưa gửi thông báo
          */
         @Query("SELECT p FROM PayrollRecordEntity p " +
-                        "WHERE p.companyId = :companyId " +
-                        "AND p.year = :year AND p.month = :month " +
+                        "WHERE p.year = :year AND p.month = :month " +
                         "AND p.status = 'FINALIZED' " +
                         "AND p.notificationSent = false")
         List<PayrollRecordEntity> findPendingNotifications(
-                        @Param("companyId") Long companyId,
                         @Param("year") Integer year,
                         @Param("month") Integer month);
 }

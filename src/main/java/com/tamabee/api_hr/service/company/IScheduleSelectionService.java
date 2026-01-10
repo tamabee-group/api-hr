@@ -21,11 +21,10 @@ public interface IScheduleSelectionService {
      * Nhân viên chọn lịch làm việc
      *
      * @param employeeId ID nhân viên
-     * @param companyId  ID công ty
      * @param request    thông tin lịch muốn chọn
      * @return yêu cầu chọn lịch đã tạo
      */
-    ScheduleSelectionResponse selectSchedule(Long employeeId, Long companyId, SelectScheduleRequest request);
+    ScheduleSelectionResponse selectSchedule(Long employeeId, SelectScheduleRequest request);
 
     // ==================== Manager Operations ====================
 
@@ -63,28 +62,25 @@ public interface IScheduleSelectionService {
      * Dựa trên lịch sử chọn lịch và lịch được công ty khuyến nghị
      *
      * @param employeeId ID nhân viên
-     * @param companyId  ID công ty
      * @return danh sách lịch gợi ý
      */
-    List<WorkScheduleResponse> getSuggestedSchedules(Long employeeId, Long companyId);
+    List<WorkScheduleResponse> getSuggestedSchedules(Long employeeId);
 
     /**
      * Lấy danh sách lịch có sẵn của công ty cho một ngày cụ thể
      *
-     * @param companyId ID công ty
-     * @param date      ngày cần kiểm tra
+     * @param date ngày cần kiểm tra
      * @return danh sách lịch có sẵn
      */
-    List<WorkScheduleResponse> getAvailableSchedules(Long companyId, LocalDate date);
+    List<WorkScheduleResponse> getAvailableSchedules(LocalDate date);
 
     /**
      * Lấy danh sách yêu cầu đang chờ duyệt của công ty (phân trang)
      *
-     * @param companyId ID công ty
-     * @param pageable  thông tin phân trang
+     * @param pageable thông tin phân trang
      * @return danh sách yêu cầu đang chờ duyệt
      */
-    Page<ScheduleSelectionResponse> getPendingSelections(Long companyId, Pageable pageable);
+    Page<ScheduleSelectionResponse> getPendingSelections(Pageable pageable);
 
     /**
      * Lấy lịch sử chọn lịch của nhân viên

@@ -44,7 +44,7 @@ public class EmployeeManagerServiceImpl implements IEmployeeManagerService {
     @Override
     @Transactional(readOnly = true)
     public Page<UserResponse> getTamabeeUsers(Pageable pageable) {
-        Page<UserEntity> users = userRepository.findByCompanyIdAndDeletedFalse(0L, pageable);
+        Page<UserEntity> users = userRepository.findByDeletedFalse(pageable);
         return users.map(userMapper::toResponse);
     }
 
@@ -89,7 +89,6 @@ public class EmployeeManagerServiceImpl implements IEmployeeManagerService {
         user.setStatus(UserStatus.ACTIVE);
         user.setLanguage(request.getLanguage());
         user.setLocale(timezone);
-        user.setCompanyId(companyId);
 
         // Tạo mã giới thiệu duy nhất
         String referralCode;

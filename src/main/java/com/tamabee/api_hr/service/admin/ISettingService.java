@@ -1,10 +1,10 @@
 package com.tamabee.api_hr.service.admin;
 
-import com.tamabee.api_hr.dto.request.SettingUpdateRequest;
-import com.tamabee.api_hr.dto.response.SettingResponse;
-
 import java.math.BigDecimal;
 import java.util.List;
+
+import com.tamabee.api_hr.dto.request.SettingUpdateRequest;
+import com.tamabee.api_hr.dto.response.SettingResponse;
 
 /**
  * Service quản lý cấu hình hệ thống Tamabee
@@ -58,4 +58,11 @@ public interface ISettingService {
      * @return tỷ lệ hoa hồng (ví dụ: 0.10 = 10%)
      */
     BigDecimal getCommissionRate();
+
+    /**
+     * Lấy giá mỗi nhân viên cho gói Custom (cached)
+     *
+     * @return giá mỗi nhân viên (JPY)
+     */
+    int getCustomPricePerEmployee();
 }

@@ -1,11 +1,12 @@
 package com.tamabee.api_hr.mapper.core;
 
+import org.springframework.stereotype.Component;
+
 import com.tamabee.api_hr.dto.response.UserProfileResponse;
 import com.tamabee.api_hr.dto.response.UserResponse;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.model.request.RegisterRequest;
 import com.tamabee.api_hr.util.LocaleUtil;
-import org.springframework.stereotype.Component;
 
 @Component
 public class UserMapper {
@@ -32,13 +33,26 @@ public class UserMapper {
      * Convert UserEntity to UserResponse
      */
     public UserResponse toResponse(UserEntity entity) {
-        return toResponse(entity, null);
+        return toResponse(entity, null, null, null, null);
     }
 
     /**
      * Convert UserEntity to UserResponse với companyName
      */
     public UserResponse toResponse(UserEntity entity, String companyName) {
+        return toResponse(entity, companyName, null, null, null);
+    }
+
+    /**
+     * Convert UserEntity to UserResponse với đầy đủ thông tin
+     * 
+     * @param entity       UserEntity
+     * @param companyName  Tên công ty
+     * @param companyLogo  Logo công ty
+     * @param tenantDomain Tenant domain ("tamabee" cho Tamabee users)
+     * @param planId       Plan ID của company (null cho Tamabee users)
+     */
+    public UserResponse toResponse(UserEntity entity, String companyName, String companyLogo, String tenantDomain, Long planId) {
         if (entity == null) {
             return null;
         }
@@ -51,8 +65,12 @@ public class UserMapper {
         response.setStatus(entity.getStatus());
         response.setLocale(entity.getLocale());
         response.setLanguage(entity.getLanguage());
-        response.setCompanyId(entity.getCompanyId());
+        // companyId được tính từ tenantDomain, không lưu trong UserEntity
+        response.setCompanyId(null);
         response.setCompanyName(companyName);
+        response.setCompanyLogo(companyLogo);
+        response.setTenantDomain(tenantDomain);
+        response.setPlanId(planId);
         response.setProfileCompleteness(entity.getProfileCompleteness());
         response.setCreatedAt(entity.getCreatedAt());
         response.setUpdatedAt(entity.getUpdatedAt());

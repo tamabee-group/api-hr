@@ -169,6 +169,13 @@ public class CompanySettingsCache {
     /**
      * Xóa toàn bộ cache
      */
+    public void invalidate() {
+        clear();
+    }
+
+    /**
+     * Xóa toàn bộ cache
+     */
     public void clear() {
         entityCache.clear();
         entityQueried.clear();

@@ -1,7 +1,8 @@
 package com.tamabee.api_hr.exception;
 
-import com.tamabee.api_hr.enums.ErrorCode;
 import org.springframework.http.HttpStatus;
+
+import com.tamabee.api_hr.enums.ErrorCode;
 
 /**
  * Exception cho lỗi 404 Not Found
@@ -35,6 +36,10 @@ public class NotFoundException extends BaseException {
 
     public static NotFoundException company(Long id) {
         return new NotFoundException("Không tìm thấy công ty với id: " + id, ErrorCode.COMPANY_NOT_FOUND);
+    }
+
+    public static NotFoundException company(String tenantDomain) {
+        return new NotFoundException("Không tìm thấy công ty với tenant: " + tenantDomain, ErrorCode.COMPANY_NOT_FOUND);
     }
 
     public static NotFoundException email(String email) {

@@ -26,14 +26,12 @@ public interface AttendanceRecordRepository extends JpaRepository<AttendanceReco
                         Long employeeId, LocalDate workDate);
 
         /**
-         * Lấy danh sách chấm công của công ty trong khoảng thời gian (phân trang)
+         * Lấy danh sách chấm công trong khoảng thời gian (phân trang)
          */
         @Query("SELECT a FROM AttendanceRecordEntity a " +
-                        "WHERE a.companyId = :companyId " +
-                        "AND a.workDate BETWEEN :startDate AND :endDate " +
+                        "WHERE a.workDate BETWEEN :startDate AND :endDate " +
                         "ORDER BY a.workDate DESC, a.employeeId ASC")
-        Page<AttendanceRecordEntity> findByCompanyIdAndWorkDateBetween(
-                        @Param("companyId") Long companyId,
+        Page<AttendanceRecordEntity> findByWorkDateBetween(
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate,
                         Pageable pageable);

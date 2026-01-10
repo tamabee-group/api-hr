@@ -52,7 +52,7 @@ public class AttendanceAdjustmentServiceImpl implements IAttendanceAdjustmentSer
         @Override
         @Transactional
         public AdjustmentRequestResponse createAdjustmentRequest(
-                        Long employeeId, Long companyId, CreateAdjustmentRequest request) {
+                        Long employeeId, CreateAdjustmentRequest request) {
 
                 // Validate: phải có attendanceRecordId hoặc workDate
                 if (request.getAttendanceRecordId() == null && request.getWorkDate() == null) {
@@ -111,7 +111,6 @@ public class AttendanceAdjustmentServiceImpl implements IAttendanceAdjustmentSer
                 }
 
                 // Validate breakRecord thuộc về attendanceRecord nếu có breakRecordId
-                // BreakRecord không có soft delete
                 BreakRecordEntity breakRecord = null;
                 if (request.getBreakRecordId() != null) {
                         breakRecord = breakRecordRepository.findById(request.getBreakRecordId())
@@ -137,7 +136,6 @@ public class AttendanceAdjustmentServiceImpl implements IAttendanceAdjustmentSer
                 // Tạo yêu cầu điều chỉnh
                 AttendanceAdjustmentRequestEntity entity = new AttendanceAdjustmentRequestEntity();
                 entity.setEmployeeId(employeeId);
-                entity.setCompanyId(companyId);
                 entity.setAttendanceRecordId(request.getAttendanceRecordId());
                 entity.setWorkDate(workDate);
                 entity.setBreakRecordId(request.getBreakRecordId());
@@ -308,31 +306,30 @@ public class AttendanceAdjustmentServiceImpl implements IAttendanceAdjustmentSer
 
         @Override
         @Transactional(readOnly = true)
-        public Page<AdjustmentRequestResponse> getPendingRequests(Long companyId, Long userId, boolean isAdmin,
+        public Page<AdjustmentRequestResponse> getPendingRequests(Long userId, boolean isAdmin,
                         Pageable pageable) {
                 Page<AttendanceAdjustmentRequestEntity> requests;
                 if (isAdmin) {
-                        // Admin xem tất cả yêu cầu pending của công ty
-                        requests = adjustmentRepository.findPendingByCompanyId(companyId, pageable);
+                        // Admin xem tất cả yêu cầu pending
+                        requests = adjustmentRepository.findPending(pageable);
                 } else {
                         // Manager chỉ xem yêu cầu được gán cho mình
-                        requests = adjustmentRepository.findPendingByCompanyIdAndAssignedTo(companyId, userId,
-                                        pageable);
+                        requests = adjustmentRepository.findPendingByAssignedTo(userId, pageable);
                 }
                 return requests.map(this::mapToResponse);
         }
 
         @Override
         @Transactional(readOnly = true)
-        public Page<AdjustmentRequestResponse> getAllRequests(Long companyId, Long userId, boolean isAdmin,
+        public Page<AdjustmentRequestResponse> getAllRequests(Long userId, boolean isAdmin,
                         Pageable pageable) {
                 Page<AttendanceAdjustmentRequestEntity> requests;
                 if (isAdmin) {
-                        // Admin xem tất cả yêu cầu của công ty
-                        requests = adjustmentRepository.findByCompanyId(companyId, pageable);
+                        // Admin xem tất cả yêu cầu
+                        requests = adjustmentRepository.findAllPaged(pageable);
                 } else {
                         // Manager chỉ xem yêu cầu được gán cho mình
-                        requests = adjustmentRepository.findByCompanyIdAndAssignedTo(companyId, userId, pageable);
+                        requests = adjustmentRepository.findByAssignedTo(userId, pageable);
                 }
                 return requests.map(this::mapToResponse);
         }

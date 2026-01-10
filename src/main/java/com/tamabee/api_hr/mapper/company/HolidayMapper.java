@@ -25,7 +25,6 @@ public class HolidayMapper {
 
         return HolidayResponse.builder()
                 .id(entity.getId())
-                .companyId(entity.getCompanyId())
                 .date(entity.getDate())
                 .name(entity.getName())
                 .type(entity.getType())
@@ -39,17 +38,15 @@ public class HolidayMapper {
     /**
      * Chuyển đổi request sang entity
      *
-     * @param companyId ID công ty
-     * @param request   request tạo mới
+     * @param request request tạo mới
      * @return entity
      */
-    public HolidayEntity toEntity(Long companyId, CreateHolidayRequest request) {
+    public HolidayEntity toEntity(CreateHolidayRequest request) {
         if (request == null) {
             return null;
         }
 
         HolidayEntity entity = new HolidayEntity();
-        entity.setCompanyId(companyId);
         entity.setDate(request.getDate());
         entity.setName(request.getName());
         entity.setType(request.getType());

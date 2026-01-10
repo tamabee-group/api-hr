@@ -44,16 +44,16 @@ public class ReportServiceImpl implements IReportService {
 
         @Override
         @Transactional(readOnly = true)
-        public AttendanceSummaryReport generateAttendanceSummary(Long companyId, ReportQuery query) {
-                log.info("Generating attendance summary report for company: {}", companyId);
+        public AttendanceSummaryReport generateAttendanceSummary(ReportQuery query) {
+                log.info("Generating attendance summary report");
 
                 LocalDate startDate = query.getStartDate();
                 LocalDate endDate = query.getEndDate();
 
                 // Lấy danh sách nhân viên
-                List<UserEntity> employees = getFilteredEmployees(companyId, query);
+                List<UserEntity> employees = getFilteredEmployees(query);
                 if (employees.isEmpty()) {
-                        return buildEmptyAttendanceSummaryReport(companyId, startDate, endDate);
+                        return buildEmptyAttendanceSummaryReport(startDate, endDate);
                 }
 
                 // Tính toán cho từng nhân viên
@@ -87,7 +87,6 @@ public class ReportServiceImpl implements IReportService {
                                 : 0.0;
 
                 return AttendanceSummaryReport.builder()
-                                .companyId(companyId)
                                 .startDate(startDate)
                                 .endDate(endDate)
                                 .totalEmployees(employees.size())
@@ -104,16 +103,16 @@ public class ReportServiceImpl implements IReportService {
 
         @Override
         @Transactional(readOnly = true)
-        public OvertimeReport generateOvertimeReport(Long companyId, ReportQuery query) {
-                log.info("Generating overtime report for company: {}", companyId);
+        public OvertimeReport generateOvertimeReport(ReportQuery query) {
+                log.info("Generating overtime report");
 
                 LocalDate startDate = query.getStartDate();
                 LocalDate endDate = query.getEndDate();
 
                 // Lấy danh sách nhân viên
-                List<UserEntity> employees = getFilteredEmployees(companyId, query);
+                List<UserEntity> employees = getFilteredEmployees(query);
                 if (employees.isEmpty()) {
-                        return buildEmptyOvertimeReport(companyId, startDate, endDate);
+                        return buildEmptyOvertimeReport(startDate, endDate);
                 }
 
                 // Tính toán cho từng nhân viên
@@ -160,7 +159,6 @@ public class ReportServiceImpl implements IReportService {
                 BigDecimal totalPay = totalRegularPay.add(totalNightPay).add(totalHolidayPay).add(totalWeekendPay);
 
                 return OvertimeReport.builder()
-                                .companyId(companyId)
                                 .startDate(startDate)
                                 .endDate(endDate)
                                 .totalEmployeesWithOvertime(employeesWithOvertime)
@@ -180,16 +178,16 @@ public class ReportServiceImpl implements IReportService {
 
         @Override
         @Transactional(readOnly = true)
-        public BreakComplianceReport generateBreakComplianceReport(Long companyId, ReportQuery query) {
-                log.info("Generating break compliance report for company: {}", companyId);
+        public BreakComplianceReport generateBreakComplianceReport(ReportQuery query) {
+                log.info("Generating break compliance report");
 
                 LocalDate startDate = query.getStartDate();
                 LocalDate endDate = query.getEndDate();
 
                 // Lấy danh sách nhân viên
-                List<UserEntity> employees = getFilteredEmployees(companyId, query);
+                List<UserEntity> employees = getFilteredEmployees(query);
                 if (employees.isEmpty()) {
-                        return buildEmptyBreakComplianceReport(companyId, startDate, endDate);
+                        return buildEmptyBreakComplianceReport(startDate, endDate);
                 }
 
                 // Tính toán cho từng nhân viên
@@ -216,7 +214,6 @@ public class ReportServiceImpl implements IReportService {
                                 : 100.0;
 
                 return BreakComplianceReport.builder()
-                                .companyId(companyId)
                                 .startDate(startDate)
                                 .endDate(endDate)
                                 .totalEmployees(employees.size())
@@ -232,18 +229,18 @@ public class ReportServiceImpl implements IReportService {
 
         @Override
         @Transactional(readOnly = true)
-        public PayrollSummaryReport generatePayrollSummary(Long companyId, ReportQuery query) {
-                log.info("Generating payroll summary report for company: {}", companyId);
+        public PayrollSummaryReport generatePayrollSummary(ReportQuery query) {
+                log.info("Generating payroll summary report");
 
                 LocalDate startDate = query.getStartDate();
                 LocalDate endDate = query.getEndDate();
 
                 // Lấy các payroll periods trong khoảng thời gian
                 List<PayrollPeriodEntity> periods = payrollPeriodRepository
-                                .findByCompanyIdAndDateRange(companyId, startDate, endDate);
+                                .findByDateRange(startDate, endDate);
 
                 if (periods.isEmpty()) {
-                        return buildEmptyPayrollSummaryReport(companyId, startDate, endDate);
+                        return buildEmptyPayrollSummaryReport(startDate, endDate);
                 }
 
                 // Lấy tất cả payroll items từ các periods
@@ -271,7 +268,7 @@ public class ReportServiceImpl implements IReportService {
                 }
 
                 if (allItems.isEmpty()) {
-                        return buildEmptyPayrollSummaryReport(companyId, startDate, endDate);
+                        return buildEmptyPayrollSummaryReport(startDate, endDate);
                 }
 
                 // Tính tổng
@@ -370,7 +367,6 @@ public class ReportServiceImpl implements IReportService {
                                 : BigDecimal.ZERO;
 
                 return PayrollSummaryReport.builder()
-                                .companyId(companyId)
                                 .startDate(startDate)
                                 .endDate(endDate)
                                 .totalEmployees(totalEmployees)
@@ -388,18 +384,18 @@ public class ReportServiceImpl implements IReportService {
 
         @Override
         @Transactional(readOnly = true)
-        public CostAnalysisReport generateCostAnalysis(Long companyId, ReportQuery query) {
-                log.info("Generating cost analysis report for company: {}", companyId);
+        public CostAnalysisReport generateCostAnalysis(ReportQuery query) {
+                log.info("Generating cost analysis report");
 
                 LocalDate startDate = query.getStartDate();
                 LocalDate endDate = query.getEndDate();
 
                 // Lấy các payroll periods trong khoảng thời gian
                 List<PayrollPeriodEntity> periods = payrollPeriodRepository
-                                .findByCompanyIdAndDateRange(companyId, startDate, endDate);
+                                .findByDateRange(startDate, endDate);
 
                 if (periods.isEmpty()) {
-                        return buildEmptyCostAnalysisReport(companyId, startDate, endDate);
+                        return buildEmptyCostAnalysisReport(startDate, endDate);
                 }
 
                 // Lấy tất cả payroll items từ các periods
@@ -411,7 +407,7 @@ public class ReportServiceImpl implements IReportService {
                 }
 
                 if (allItems.isEmpty()) {
-                        return buildEmptyCostAnalysisReport(companyId, startDate, endDate);
+                        return buildEmptyCostAnalysisReport(startDate, endDate);
                 }
 
                 // Tính tổng chi phí
@@ -488,10 +484,9 @@ public class ReportServiceImpl implements IReportService {
 
                 // Phân tích theo loại hợp đồng
                 List<CostByContractType> costByContractType = calculateCostByContractType(
-                                companyId, allItems, totalLaborCost, startDate, endDate);
+                                allItems, totalLaborCost, startDate, endDate);
 
                 return CostAnalysisReport.builder()
-                                .companyId(companyId)
                                 .startDate(startDate)
                                 .endDate(endDate)
                                 .totalLaborCost(totalLaborCost)
@@ -508,13 +503,12 @@ public class ReportServiceImpl implements IReportService {
          * Tính chi phí theo loại hợp đồng
          */
         private List<CostByContractType> calculateCostByContractType(
-                        Long companyId, List<PayrollItemEntity> allItems, BigDecimal totalLaborCost,
+                        List<PayrollItemEntity> allItems, BigDecimal totalLaborCost,
                         LocalDate startDate, LocalDate endDate) {
 
                 // Lấy contracts active trong khoảng thời gian
                 List<com.tamabee.api_hr.entity.contract.EmploymentContractEntity> contracts = employmentContractRepository
-                                .findActiveContractsByCompanyIdAndDateRange(
-                                                companyId, startDate, endDate);
+                                .findActiveContractsByDateRange(startDate, endDate);
 
                 // Map employeeId -> contractType
                 Map<Long, ContractType> employeeContractType = new HashMap<>();
@@ -578,25 +572,25 @@ public class ReportServiceImpl implements IReportService {
 
         @Override
         @Transactional(readOnly = true)
-        public ShiftUtilizationReport generateShiftUtilization(Long companyId, ReportQuery query) {
-                log.info("Generating shift utilization report for company: {}", companyId);
+        public ShiftUtilizationReport generateShiftUtilization(ReportQuery query) {
+                log.info("Generating shift utilization report");
 
                 LocalDate startDate = query.getStartDate();
                 LocalDate endDate = query.getEndDate();
 
-                // Lấy tất cả shift templates của công ty
+                // Lấy tất cả shift templates
                 List<ShiftTemplateEntity> shiftTemplates = shiftTemplateRepository
-                                .findByCompanyIdAndDeletedFalse(companyId);
+                                .findByDeletedFalse();
 
                 if (shiftTemplates.isEmpty()) {
-                        return buildEmptyShiftUtilizationReport(companyId, startDate, endDate);
+                        return buildEmptyShiftUtilizationReport(startDate, endDate);
                 }
 
                 // Lấy tất cả shift assignments trong khoảng thời gian
                 List<ShiftAssignmentEntity> allAssignments = new ArrayList<>();
                 for (LocalDate date = startDate; !date.isAfter(endDate); date = date.plusDays(1)) {
                         List<ShiftAssignmentEntity> dailyAssignments = shiftAssignmentRepository
-                                        .findByCompanyIdAndWorkDate(companyId, date);
+                                        .findByWorkDate(date);
                         allAssignments.addAll(dailyAssignments);
                 }
 
@@ -635,7 +629,7 @@ public class ReportServiceImpl implements IReportService {
                                 : 0.0;
 
                 // Thống kê swap requests
-                List<ShiftSwapRequestEntity> swapRequests = getSwapRequestsInDateRange(companyId, startDate, endDate);
+                List<ShiftSwapRequestEntity> swapRequests = getSwapRequestsInDateRange(startDate, endDate);
                 int totalSwapRequests = swapRequests.size();
                 int approvedSwaps = 0;
                 int rejectedSwaps = 0;
@@ -711,7 +705,6 @@ public class ReportServiceImpl implements IReportService {
                 }
 
                 return ShiftUtilizationReport.builder()
-                                .companyId(companyId)
                                 .startDate(startDate)
                                 .endDate(endDate)
                                 .totalShiftAssignments(totalAssignments)
@@ -732,13 +725,10 @@ public class ReportServiceImpl implements IReportService {
          * Lấy swap requests trong khoảng thời gian
          */
         private List<ShiftSwapRequestEntity> getSwapRequestsInDateRange(
-                        Long companyId, LocalDate startDate, LocalDate endDate) {
-                // Lấy tất cả swap requests của công ty
+                        LocalDate startDate, LocalDate endDate) {
                 List<ShiftSwapRequestEntity> allRequests = shiftSwapRequestRepository
-                                .findByCompanyId(companyId, org.springframework.data.domain.Pageable.unpaged())
-                                .getContent();
+                                .findAll();
 
-                // Filter theo ngày tạo trong khoảng thời gian
                 return allRequests.stream()
                                 .filter(r -> {
                                         LocalDate createdDate = r.getCreatedAt().toLocalDate();
@@ -748,10 +738,10 @@ public class ReportServiceImpl implements IReportService {
         }
 
         @Override
-        public byte[] exportReport(ReportType type, Long companyId, ReportQuery query, ExportFormat format,
+        public byte[] exportReport(ReportType type, ReportQuery query, ExportFormat format,
                         String language) {
-                log.info("Exporting report type: {} for company: {} in format: {} with language: {}",
-                                type, companyId, format, language);
+                log.info("Exporting report type: {} in format: {} with language: {}",
+                                type, format, language);
 
                 // Mặc định là tiếng Việt nếu không có language
                 String lang = language != null ? language : "vi";
@@ -759,8 +749,7 @@ public class ReportServiceImpl implements IReportService {
                 try {
                         switch (type) {
                                 case ATTENDANCE_SUMMARY:
-                                        AttendanceSummaryReport attendanceReport = generateAttendanceSummary(companyId,
-                                                        query);
+                                        AttendanceSummaryReport attendanceReport = generateAttendanceSummary(query);
                                         return format == ExportFormat.CSV
                                                         ? reportExportService.exportAttendanceSummaryToCsv(
                                                                         attendanceReport, lang)
@@ -768,14 +757,13 @@ public class ReportServiceImpl implements IReportService {
                                                                         attendanceReport, lang);
 
                                 case OVERTIME:
-                                        OvertimeReport overtimeReport = generateOvertimeReport(companyId, query);
+                                        OvertimeReport overtimeReport = generateOvertimeReport(query);
                                         return format == ExportFormat.CSV
                                                         ? reportExportService.exportOvertimeToCsv(overtimeReport, lang)
                                                         : reportExportService.exportOvertimeToPdf(overtimeReport, lang);
 
                                 case BREAK_COMPLIANCE:
-                                        BreakComplianceReport breakReport = generateBreakComplianceReport(companyId,
-                                                        query);
+                                        BreakComplianceReport breakReport = generateBreakComplianceReport(query);
                                         return format == ExportFormat.CSV
                                                         ? reportExportService.exportBreakComplianceToCsv(breakReport,
                                                                         lang)
@@ -783,7 +771,7 @@ public class ReportServiceImpl implements IReportService {
                                                                         lang);
 
                                 case PAYROLL_SUMMARY:
-                                        PayrollSummaryReport payrollReport = generatePayrollSummary(companyId, query);
+                                        PayrollSummaryReport payrollReport = generatePayrollSummary(query);
                                         return format == ExportFormat.CSV
                                                         ? reportExportService.exportPayrollSummaryToCsv(payrollReport,
                                                                         lang)
@@ -791,13 +779,13 @@ public class ReportServiceImpl implements IReportService {
                                                                         lang);
 
                                 case COST_ANALYSIS:
-                                        CostAnalysisReport costReport = generateCostAnalysis(companyId, query);
+                                        CostAnalysisReport costReport = generateCostAnalysis(query);
                                         return format == ExportFormat.CSV
                                                         ? reportExportService.exportCostAnalysisToCsv(costReport, lang)
                                                         : reportExportService.exportCostAnalysisToPdf(costReport, lang);
 
                                 case SHIFT_UTILIZATION:
-                                        ShiftUtilizationReport shiftReport = generateShiftUtilization(companyId, query);
+                                        ShiftUtilizationReport shiftReport = generateShiftUtilization(query);
                                         return format == ExportFormat.CSV
                                                         ? reportExportService.exportShiftUtilizationToCsv(shiftReport,
                                                                         lang)
@@ -818,8 +806,8 @@ public class ReportServiceImpl implements IReportService {
         /**
          * Lấy danh sách nhân viên theo filter
          */
-        private List<UserEntity> getFilteredEmployees(Long companyId, ReportQuery query) {
-                List<UserEntity> employees = userRepository.findByCompanyIdAndDeletedFalse(companyId);
+        private List<UserEntity> getFilteredEmployees(ReportQuery query) {
+                List<UserEntity> employees = userRepository.findByDeletedFalse();
 
                 // Filter theo employeeIds nếu có
                 if (query.getEmployeeIds() != null && !query.getEmployeeIds().isEmpty()) {
@@ -1018,9 +1006,8 @@ public class ReportServiceImpl implements IReportService {
         // ==================== Empty Report Builders ====================
 
         private AttendanceSummaryReport buildEmptyAttendanceSummaryReport(
-                        Long companyId, LocalDate startDate, LocalDate endDate) {
+                        LocalDate startDate, LocalDate endDate) {
                 return AttendanceSummaryReport.builder()
-                                .companyId(companyId)
                                 .startDate(startDate)
                                 .endDate(endDate)
                                 .totalEmployees(0)
@@ -1036,9 +1023,8 @@ public class ReportServiceImpl implements IReportService {
         }
 
         private OvertimeReport buildEmptyOvertimeReport(
-                        Long companyId, LocalDate startDate, LocalDate endDate) {
+                        LocalDate startDate, LocalDate endDate) {
                 return OvertimeReport.builder()
-                                .companyId(companyId)
                                 .startDate(startDate)
                                 .endDate(endDate)
                                 .totalEmployeesWithOvertime(0)
@@ -1057,9 +1043,8 @@ public class ReportServiceImpl implements IReportService {
         }
 
         private BreakComplianceReport buildEmptyBreakComplianceReport(
-                        Long companyId, LocalDate startDate, LocalDate endDate) {
+                        LocalDate startDate, LocalDate endDate) {
                 return BreakComplianceReport.builder()
-                                .companyId(companyId)
                                 .startDate(startDate)
                                 .endDate(endDate)
                                 .totalEmployees(0)
@@ -1074,9 +1059,8 @@ public class ReportServiceImpl implements IReportService {
         }
 
         private PayrollSummaryReport buildEmptyPayrollSummaryReport(
-                        Long companyId, LocalDate startDate, LocalDate endDate) {
+                        LocalDate startDate, LocalDate endDate) {
                 return PayrollSummaryReport.builder()
-                                .companyId(companyId)
                                 .startDate(startDate)
                                 .endDate(endDate)
                                 .totalEmployees(0)
@@ -1093,9 +1077,8 @@ public class ReportServiceImpl implements IReportService {
         }
 
         private CostAnalysisReport buildEmptyCostAnalysisReport(
-                        Long companyId, LocalDate startDate, LocalDate endDate) {
+                        LocalDate startDate, LocalDate endDate) {
                 return CostAnalysisReport.builder()
-                                .companyId(companyId)
                                 .startDate(startDate)
                                 .endDate(endDate)
                                 .totalLaborCost(BigDecimal.ZERO)
@@ -1109,9 +1092,8 @@ public class ReportServiceImpl implements IReportService {
         }
 
         private ShiftUtilizationReport buildEmptyShiftUtilizationReport(
-                        Long companyId, LocalDate startDate, LocalDate endDate) {
+                        LocalDate startDate, LocalDate endDate) {
                 return ShiftUtilizationReport.builder()
-                                .companyId(companyId)
                                 .startDate(startDate)
                                 .endDate(endDate)
                                 .totalShiftAssignments(0)

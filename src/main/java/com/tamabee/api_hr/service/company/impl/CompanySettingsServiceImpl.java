@@ -63,32 +63,32 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
     /**
      * Invalidate cache nếu có
      */
-    private void invalidateCacheIfAvailable(Long companyId) {
+    private void invalidateCacheIfAvailable() {
         CompanySettingsCache cache = getCache();
         if (cache != null) {
-            cache.invalidate(companyId);
+            cache.invalidate();
         }
     }
 
     @Override
     @Transactional
-    public CompanySettingsResponse getSettings(Long companyId) {
-        CompanySettingEntity entity = findByCompanyId(companyId);
+    public CompanySettingsResponse getSettings() {
+        CompanySettingEntity entity = findSettings();
         return toResponse(entity);
     }
 
     @Override
     @Transactional
-    public WorkModeConfigResponse getWorkModeConfig(Long companyId) {
-        CompanySettingEntity entity = findByCompanyId(companyId);
+    public WorkModeConfigResponse getWorkModeConfig() {
+        CompanySettingEntity entity = findSettings();
         return toWorkModeConfigResponse(entity);
     }
 
     @Override
     @Transactional
-    public WorkModeConfigResponse updateWorkModeConfig(Long companyId, WorkModeConfigRequest request,
+    public WorkModeConfigResponse updateWorkModeConfig(WorkModeConfigRequest request,
             String changedBy) {
-        CompanySettingEntity entity = findByCompanyId(companyId);
+        CompanySettingEntity entity = findSettings();
         WorkMode previousMode = entity.getWorkMode();
         WorkMode newMode = request.getMode();
 
@@ -99,14 +99,14 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
         if (previousMode != newMode) {
             // Nếu switch sang FIXED_HOURS, đánh dấu tất cả schedules là inactive
             if (newMode == WorkMode.FIXED_HOURS) {
-                deactivateAllSchedules(companyId);
+                deactivateAllSchedules();
             } else {
                 // Nếu switch sang FLEXIBLE_SHIFT, reactivate schedules
-                reactivateAllSchedules(companyId);
+                reactivateAllSchedules();
             }
 
             // Tạo audit log
-            createWorkModeChangeLog(companyId, previousMode, newMode, changedBy, request.getReason());
+            createWorkModeChangeLog(previousMode, newMode, changedBy, request.getReason());
         }
 
         // Cập nhật entity
@@ -118,18 +118,18 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
         companySettingsRepository.save(entity);
 
         // Invalidate cache
-        invalidateCacheIfAvailable(companyId);
+        invalidateCacheIfAvailable();
 
-        log.info("Đã cập nhật work mode cho công ty {}: {} -> {}", companyId, previousMode, newMode);
+        log.info("Đã cập nhật work mode: {} -> {}", previousMode, newMode);
 
         return toWorkModeConfigResponse(entity);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<WorkModeChangeLogResponse> getWorkModeChangeLogs(Long companyId) {
+    public List<WorkModeChangeLogResponse> getWorkModeChangeLogs() {
         List<WorkModeChangeLogEntity> logs = workModeChangeLogRepository
-                .findByCompanyIdOrderByChangedAtDesc(companyId);
+                .findAllByOrderByChangedAtDesc();
         return logs.stream()
                 .map(this::toWorkModeChangeLogResponse)
                 .collect(Collectors.toList());
@@ -137,8 +137,8 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
 
     @Override
     @Transactional
-    public AttendanceConfig updateAttendanceConfig(Long companyId, AttendanceConfigRequest request) {
-        CompanySettingEntity entity = findByCompanyId(companyId);
+    public AttendanceConfig updateAttendanceConfig(AttendanceConfigRequest request) {
+        CompanySettingEntity entity = findSettings();
 
         // Lấy config hiện tại hoặc tạo mới
         AttendanceConfig config = deserializeConfig(entity.getAttendanceConfig(), AttendanceConfig.class);
@@ -157,15 +157,15 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
         companySettingsRepository.save(entity);
 
         // Invalidate cache
-        invalidateCacheIfAvailable(companyId);
+        invalidateCacheIfAvailable();
 
         return config;
     }
 
     @Override
     @Transactional
-    public PayrollConfig updatePayrollConfig(Long companyId, PayrollConfigRequest request) {
-        CompanySettingEntity entity = findByCompanyId(companyId);
+    public PayrollConfig updatePayrollConfig(PayrollConfigRequest request) {
+        CompanySettingEntity entity = findSettings();
 
         PayrollConfig config = deserializeConfig(entity.getPayrollConfig(), PayrollConfig.class);
         if (config == null) {
@@ -178,15 +178,15 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
         companySettingsRepository.save(entity);
 
         // Invalidate cache
-        invalidateCacheIfAvailable(companyId);
+        invalidateCacheIfAvailable();
 
         return config;
     }
 
     @Override
     @Transactional
-    public OvertimeConfig updateOvertimeConfig(Long companyId, OvertimeConfigRequest request) {
-        CompanySettingEntity entity = findByCompanyId(companyId);
+    public OvertimeConfig updateOvertimeConfig(OvertimeConfigRequest request) {
+        CompanySettingEntity entity = findSettings();
 
         OvertimeConfig config = deserializeConfig(entity.getOvertimeConfig(), OvertimeConfig.class);
         if (config == null) {
@@ -202,15 +202,15 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
         companySettingsRepository.save(entity);
 
         // Invalidate cache
-        invalidateCacheIfAvailable(companyId);
+        invalidateCacheIfAvailable();
 
         return config;
     }
 
     @Override
     @Transactional
-    public AllowanceConfig updateAllowanceConfig(Long companyId, AllowanceConfigRequest request) {
-        CompanySettingEntity entity = findByCompanyId(companyId);
+    public AllowanceConfig updateAllowanceConfig(AllowanceConfigRequest request) {
+        CompanySettingEntity entity = findSettings();
 
         AllowanceConfig config = deserializeConfig(entity.getAllowanceConfig(), AllowanceConfig.class);
         if (config == null) {
@@ -225,15 +225,15 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
         companySettingsRepository.save(entity);
 
         // Invalidate cache
-        invalidateCacheIfAvailable(companyId);
+        invalidateCacheIfAvailable();
 
         return config;
     }
 
     @Override
     @Transactional
-    public DeductionConfig updateDeductionConfig(Long companyId, DeductionConfigRequest request) {
-        CompanySettingEntity entity = findByCompanyId(companyId);
+    public DeductionConfig updateDeductionConfig(DeductionConfigRequest request) {
+        CompanySettingEntity entity = findSettings();
 
         DeductionConfig config = deserializeConfig(entity.getDeductionConfig(), DeductionConfig.class);
         if (config == null) {
@@ -246,22 +246,21 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
         companySettingsRepository.save(entity);
 
         // Invalidate cache
-        invalidateCacheIfAvailable(companyId);
+        invalidateCacheIfAvailable();
 
         return config;
     }
 
     @Override
     @Transactional
-    public void initializeDefaultSettings(Long companyId) {
+    public void initializeDefaultSettings() {
         // Kiểm tra đã tồn tại chưa
-        if (companySettingsRepository.existsByCompanyIdAndDeletedFalse(companyId)) {
+        if (companySettingsRepository.existsByDeletedFalse()) {
             throw new ConflictException("Cấu hình công ty đã tồn tại", ErrorCode.SETTINGS_ALREADY_EXISTS);
         }
 
         // Tạo entity mới với default configs
         CompanySettingEntity entity = new CompanySettingEntity();
-        entity.setCompanyId(companyId);
         entity.setAttendanceConfig(serializeConfig(AttendanceConfig.builder().build()));
         entity.setPayrollConfig(serializeConfig(PayrollConfig.builder().build()));
         entity.setOvertimeConfig(serializeConfig(OvertimeConfig.builder().build()));
@@ -269,61 +268,61 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
         entity.setDeductionConfig(serializeConfig(DeductionConfig.builder().build()));
 
         companySettingsRepository.save(entity);
-        log.info("Đã khởi tạo cấu hình mặc định cho công ty: {}", companyId);
+        log.info("Đã khởi tạo cấu hình mặc định cho tenant");
     }
 
     @Override
     @Transactional
-    public AttendanceConfig getAttendanceConfig(Long companyId) {
-        CompanySettingEntity entity = findByCompanyId(companyId);
+    public AttendanceConfig getAttendanceConfig() {
+        CompanySettingEntity entity = findSettings();
         AttendanceConfig config = deserializeConfig(entity.getAttendanceConfig(), AttendanceConfig.class);
         return config != null ? config : AttendanceConfig.builder().build();
     }
 
     @Override
     @Transactional
-    public PayrollConfig getPayrollConfig(Long companyId) {
-        CompanySettingEntity entity = findByCompanyId(companyId);
+    public PayrollConfig getPayrollConfig() {
+        CompanySettingEntity entity = findSettings();
         PayrollConfig config = deserializeConfig(entity.getPayrollConfig(), PayrollConfig.class);
         return config != null ? config : PayrollConfig.builder().build();
     }
 
     @Override
     @Transactional
-    public OvertimeConfig getOvertimeConfig(Long companyId) {
-        CompanySettingEntity entity = findByCompanyId(companyId);
+    public OvertimeConfig getOvertimeConfig() {
+        CompanySettingEntity entity = findSettings();
         OvertimeConfig config = deserializeConfig(entity.getOvertimeConfig(), OvertimeConfig.class);
         return config != null ? config : OvertimeConfig.builder().build();
     }
 
     @Override
     @Transactional
-    public AllowanceConfig getAllowanceConfig(Long companyId) {
-        CompanySettingEntity entity = findByCompanyId(companyId);
+    public AllowanceConfig getAllowanceConfig() {
+        CompanySettingEntity entity = findSettings();
         AllowanceConfig config = deserializeConfig(entity.getAllowanceConfig(), AllowanceConfig.class);
         return config != null ? config : AllowanceConfig.builder().build();
     }
 
     @Override
     @Transactional
-    public DeductionConfig getDeductionConfig(Long companyId) {
-        CompanySettingEntity entity = findByCompanyId(companyId);
+    public DeductionConfig getDeductionConfig() {
+        CompanySettingEntity entity = findSettings();
         DeductionConfig config = deserializeConfig(entity.getDeductionConfig(), DeductionConfig.class);
         return config != null ? config : DeductionConfig.builder().build();
     }
 
     @Override
     @Transactional
-    public BreakConfig getBreakConfig(Long companyId) {
-        CompanySettingEntity entity = findByCompanyId(companyId);
+    public BreakConfig getBreakConfig() {
+        CompanySettingEntity entity = findSettings();
         BreakConfig config = deserializeConfig(entity.getBreakConfig(), BreakConfig.class);
         return config != null ? config : BreakConfig.builder().build();
     }
 
     @Override
     @Transactional
-    public BreakConfig updateBreakConfig(Long companyId, BreakConfigRequest request) {
-        CompanySettingEntity entity = findByCompanyId(companyId);
+    public BreakConfig updateBreakConfig(BreakConfigRequest request) {
+        CompanySettingEntity entity = findSettings();
 
         BreakConfig config = deserializeConfig(entity.getBreakConfig(), BreakConfig.class);
         if (config == null) {
@@ -339,7 +338,7 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
         companySettingsRepository.save(entity);
 
         // Invalidate cache
-        invalidateCacheIfAvailable(companyId);
+        invalidateCacheIfAvailable();
 
         return config;
     }
@@ -347,20 +346,19 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
     // ==================== Private helper methods ====================
 
     /**
-     * Tìm settings theo companyId, tự động tạo nếu chưa có
+     * Tìm settings của tenant hiện tại, tự động tạo nếu chưa có
      */
-    private CompanySettingEntity findByCompanyId(Long companyId) {
-        return companySettingsRepository.findByCompanyIdAndDeletedFalse(companyId)
-                .orElseGet(() -> createDefaultSettings(companyId));
+    private CompanySettingEntity findSettings() {
+        return companySettingsRepository.findFirstByDeletedFalse()
+                .orElseGet(this::createDefaultSettings);
     }
 
     /**
-     * Tạo default settings cho công ty mới
+     * Tạo default settings cho tenant mới
      */
-    private CompanySettingEntity createDefaultSettings(Long companyId) {
-        log.info("Tạo default settings cho công ty {}", companyId);
+    private CompanySettingEntity createDefaultSettings() {
+        log.info("Tạo default settings cho tenant");
         CompanySettingEntity entity = new CompanySettingEntity();
-        entity.setCompanyId(companyId);
 
         // Tạo default configs
         AttendanceConfig attendanceConfig = AttendanceConfig.builder()
@@ -423,7 +421,7 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
     private CompanySettingsResponse toResponse(CompanySettingEntity entity) {
         // Lấy thông tin work mode change log gần nhất
         List<WorkModeChangeLogEntity> logs = workModeChangeLogRepository
-                .findByCompanyIdOrderByChangedAtDesc(entity.getCompanyId());
+                .findAllByOrderByChangedAtDesc();
         LocalDateTime lastModeChangeAt = logs.isEmpty() ? null : logs.get(0).getChangedAt();
         String lastModeChangeBy = logs.isEmpty() ? null : logs.get(0).getChangedBy();
 
@@ -438,7 +436,6 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
 
         return CompanySettingsResponse.builder()
                 .id(entity.getId())
-                .companyId(entity.getCompanyId())
                 .workModeConfig(workModeConfig)
                 .attendanceConfig(deserializeConfig(entity.getAttendanceConfig(), AttendanceConfig.class))
                 .breakConfig(deserializeConfig(entity.getBreakConfig(), BreakConfig.class))
@@ -457,7 +454,7 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
     private WorkModeConfigResponse toWorkModeConfigResponse(CompanySettingEntity entity) {
         // Lấy thông tin work mode change log gần nhất
         List<WorkModeChangeLogEntity> logs = workModeChangeLogRepository
-                .findByCompanyIdOrderByChangedAtDesc(entity.getCompanyId());
+                .findAllByOrderByChangedAtDesc();
         LocalDateTime lastModeChangeAt = logs.isEmpty() ? null : logs.get(0).getChangedAt();
         String lastModeChangeBy = logs.isEmpty() ? null : logs.get(0).getChangedBy();
 
@@ -477,7 +474,6 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
     private WorkModeChangeLogResponse toWorkModeChangeLogResponse(WorkModeChangeLogEntity entity) {
         return WorkModeChangeLogResponse.builder()
                 .id(entity.getId())
-                .companyId(entity.getCompanyId())
                 .previousMode(entity.getPreviousMode())
                 .newMode(entity.getNewMode())
                 .changedBy(entity.getChangedBy())
@@ -505,48 +501,44 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
     }
 
     /**
-     * Đánh dấu tất cả schedules của công ty là inactive
+     * Đánh dấu tất cả schedules là inactive
      * Được gọi khi switch sang FIXED_HOURS mode
      */
-    private void deactivateAllSchedules(Long companyId) {
-        workScheduleRepository.findByCompanyIdAndDeletedFalse(companyId,
-                org.springframework.data.domain.Pageable.unpaged())
+    private void deactivateAllSchedules() {
+        workScheduleRepository.findByDeletedFalse(org.springframework.data.domain.Pageable.unpaged())
                 .forEach(schedule -> {
                     schedule.setIsActive(false);
                     workScheduleRepository.save(schedule);
                 });
-        log.info("Đã đánh dấu tất cả schedules của công ty {} là inactive", companyId);
+        log.info("Đã đánh dấu tất cả schedules là inactive");
     }
 
     /**
-     * Reactivate tất cả schedules của công ty
+     * Reactivate tất cả schedules
      * Được gọi khi switch sang FLEXIBLE_SHIFT mode
      */
-    private void reactivateAllSchedules(Long companyId) {
-        workScheduleRepository.findByCompanyIdAndDeletedFalse(companyId,
-                org.springframework.data.domain.Pageable.unpaged())
+    private void reactivateAllSchedules() {
+        workScheduleRepository.findByDeletedFalse(org.springframework.data.domain.Pageable.unpaged())
                 .forEach(schedule -> {
                     schedule.setIsActive(true);
                     workScheduleRepository.save(schedule);
                 });
-        log.info("Đã reactivate tất cả schedules của công ty {}", companyId);
+        log.info("Đã reactivate tất cả schedules");
     }
 
     /**
      * Tạo audit log khi work mode thay đổi
      */
-    private void createWorkModeChangeLog(Long companyId, WorkMode previousMode, WorkMode newMode,
+    private void createWorkModeChangeLog(WorkMode previousMode, WorkMode newMode,
             String changedBy, String reason) {
         WorkModeChangeLogEntity logEntity = new WorkModeChangeLogEntity();
-        logEntity.setCompanyId(companyId);
         logEntity.setPreviousMode(previousMode);
         logEntity.setNewMode(newMode);
         logEntity.setChangedBy(changedBy);
         logEntity.setChangedAt(LocalDateTime.now());
         logEntity.setReason(reason);
         workModeChangeLogRepository.save(logEntity);
-        log.info("Đã tạo audit log cho thay đổi work mode: {} -> {} (công ty {})",
-                previousMode, newMode, companyId);
+        log.info("Đã tạo audit log cho thay đổi work mode: {} -> {}", previousMode, newMode);
     }
 
     /**

@@ -17,12 +17,11 @@ public interface IPayrollPeriodService {
     /**
      * Tạo kỳ lương mới với status DRAFT
      *
-     * @param companyId ID công ty
      * @param request   Thông tin kỳ lương
      * @param createdBy ID người tạo
      * @return Thông tin kỳ lương đã tạo
      */
-    PayrollPeriodResponse createPayrollPeriod(Long companyId, PayrollPeriodRequest request, Long createdBy);
+    PayrollPeriodResponse createPayrollPeriod(PayrollPeriodRequest request, Long createdBy);
 
     /**
      * Tính lương cho kỳ - generate payroll items cho tất cả nhân viên active
@@ -43,11 +42,10 @@ public interface IPayrollPeriodService {
     /**
      * Lấy danh sách kỳ lương của công ty (phân trang)
      *
-     * @param companyId ID công ty
-     * @param pageable  Thông tin phân trang
+     * @param pageable Thông tin phân trang
      * @return Danh sách kỳ lương
      */
-    Page<PayrollPeriodResponse> getPayrollPeriods(Long companyId, Pageable pageable);
+    Page<PayrollPeriodResponse> getPayrollPeriods(Pageable pageable);
 
     /**
      * Điều chỉnh payroll item - lưu số tiền và lý do điều chỉnh

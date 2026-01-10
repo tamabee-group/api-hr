@@ -43,7 +43,6 @@ public class EmployeeAttendanceAdjustmentController {
                 UserEntity currentUser = getCurrentUser();
                 AdjustmentRequestResponse response = adjustmentService.createAdjustmentRequest(
                                 currentUser.getId(),
-                                currentUser.getCompanyId(),
                                 request);
                 return ResponseEntity.status(HttpStatus.CREATED)
                                 .body(BaseResponse.created(response, "Tạo yêu cầu điều chỉnh thành công"));

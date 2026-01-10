@@ -54,15 +54,10 @@ public class ScheduleSelectionServiceImpl implements IScheduleSelectionService {
 
         @Override
         @Transactional
-        public ScheduleSelectionResponse selectSchedule(Long employeeId, Long companyId,
+        public ScheduleSelectionResponse selectSchedule(Long employeeId,
                         SelectScheduleRequest request) {
-                // Kiểm tra lịch làm việc tồn tại và thuộc công ty
+                // Kiểm tra lịch làm việc tồn tại (không cần check companyId trong tenant DB)
                 WorkScheduleEntity schedule = findScheduleById(request.getScheduleId());
-                if (!schedule.getCompanyId().equals(companyId)) {
-                        throw new BadRequestException(
-                                        "Lịch làm việc không thuộc công ty này",
-                                        ErrorCode.ACCESS_DENIED);
-                }
 
                 // Kiểm tra đã có yêu cầu đang chờ duyệt chưa
                 if (selectionRepository.existsPendingByEmployeeId(employeeId)) {
@@ -82,7 +77,6 @@ public class ScheduleSelectionServiceImpl implements IScheduleSelectionService {
                 // Tạo yêu cầu chọn lịch
                 ScheduleSelectionEntity entity = new ScheduleSelectionEntity();
                 entity.setEmployeeId(employeeId);
-                entity.setCompanyId(companyId);
                 entity.setScheduleId(request.getScheduleId());
                 entity.setEffectiveFrom(request.getEffectiveFrom());
                 entity.setEffectiveTo(request.getEffectiveTo());
@@ -191,7 +185,7 @@ public class ScheduleSelectionServiceImpl implements IScheduleSelectionService {
 
         @Override
         @Transactional(readOnly = true)
-        public List<WorkScheduleResponse> getSuggestedSchedules(Long employeeId, Long companyId) {
+        public List<WorkScheduleResponse> getSuggestedSchedules(Long employeeId) {
                 Set<Long> suggestedScheduleIds = new HashSet<>();
 
                 // 1. Lấy các lịch đã được nhân viên chọn và được duyệt trước đó
@@ -199,14 +193,14 @@ public class ScheduleSelectionServiceImpl implements IScheduleSelectionService {
                                 .findApprovedScheduleIdsByEmployeeId(employeeId);
                 suggestedScheduleIds.addAll(pastApprovedScheduleIds);
 
-                // 2. Lấy lịch mặc định của công ty (khuyến nghị)
-                workScheduleRepository.findDefaultByCompanyId(companyId)
+                // 2. Lấy lịch mặc định
+                workScheduleRepository.findDefaultSchedule()
                                 .ifPresent(schedule -> suggestedScheduleIds.add(schedule.getId()));
 
-                // 3. Nếu chưa có gợi ý nào, lấy tất cả lịch của công ty
+                // 3. Nếu chưa có gợi ý nào, lấy tất cả lịch
                 if (suggestedScheduleIds.isEmpty()) {
                         Page<WorkScheduleEntity> allSchedules = workScheduleRepository
-                                        .findByCompanyIdAndDeletedFalse(companyId, PageRequest.of(0, 10));
+                                        .findByDeletedFalse(PageRequest.of(0, 10));
                         allSchedules.forEach(schedule -> suggestedScheduleIds.add(schedule.getId()));
                 }
 
@@ -223,10 +217,10 @@ public class ScheduleSelectionServiceImpl implements IScheduleSelectionService {
 
         @Override
         @Transactional(readOnly = true)
-        public List<WorkScheduleResponse> getAvailableSchedules(Long companyId, LocalDate date) {
-                // Lấy tất cả lịch của công ty
+        public List<WorkScheduleResponse> getAvailableSchedules(LocalDate date) {
+                // Lấy tất cả lịch
                 Page<WorkScheduleEntity> schedules = workScheduleRepository
-                                .findByCompanyIdAndDeletedFalse(companyId, PageRequest.of(0, 100));
+                                .findByDeletedFalse(PageRequest.of(0, 100));
 
                 return schedules.stream()
                                 .map(workScheduleMapper::toResponse)
@@ -235,8 +229,8 @@ public class ScheduleSelectionServiceImpl implements IScheduleSelectionService {
 
         @Override
         @Transactional(readOnly = true)
-        public Page<ScheduleSelectionResponse> getPendingSelections(Long companyId, Pageable pageable) {
-                return selectionRepository.findPendingByCompanyId(companyId, pageable)
+        public Page<ScheduleSelectionResponse> getPendingSelections(Pageable pageable) {
+                return selectionRepository.findPending(pageable)
                                 .map(this::mapToResponse);
         }
 

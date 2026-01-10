@@ -1,6 +1,8 @@
 package com.tamabee.api_hr.repository;
 
 import com.tamabee.api_hr.entity.user.UserEntity;
+import com.tamabee.api_hr.enums.UserRole;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
@@ -26,23 +28,23 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
 
     boolean existsByProfileReferralCodeAndDeletedFalse(String referralCode);
 
-    // Fetch profile cùng với user để tránh lazy loading issue
-    @EntityGraph(attributePaths = { "profile" })
-    Page<UserEntity> findByCompanyIdAndDeletedFalse(Long companyId, Pageable pageable);
-
-    // Lấy tất cả nhân viên của công ty (không phân trang)
-    @EntityGraph(attributePaths = { "profile" })
-    List<UserEntity> findByCompanyIdAndDeletedFalse(Long companyId);
-
     // Tìm user theo ID (chưa bị xóa)
     Optional<UserEntity> findByIdAndDeletedFalse(Long id);
 
-    long countByCompanyIdAndDeletedFalse(Long companyId);
-
-    // Lấy danh sách user theo companyId và roles (dùng cho lấy approvers)
+    // Multi-tenant: Lấy tất cả users trong tenant hiện tại (có phân trang)
     @EntityGraph(attributePaths = { "profile" })
-    List<UserEntity> findByCompanyIdAndRoleInAndDeletedFalse(Long companyId,
-            List<com.tamabee.api_hr.enums.UserRole> roles);
+    Page<UserEntity> findByDeletedFalse(Pageable pageable);
+
+    // Multi-tenant: Lấy tất cả users trong tenant hiện tại (không phân trang)
+    @EntityGraph(attributePaths = { "profile" })
+    List<UserEntity> findByDeletedFalse();
+
+    // Multi-tenant: Đếm users trong tenant hiện tại
+    long countByDeletedFalse();
+
+    // Multi-tenant: Lấy danh sách user theo roles (dùng cho lấy approvers)
+    @EntityGraph(attributePaths = { "profile" })
+    List<UserEntity> findByRoleInAndDeletedFalse(List<UserRole> roles);
 
     // Legacy methods (không filter deleted - dùng cho internal)
     Optional<UserEntity> findByEmail(String email);

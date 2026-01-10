@@ -20,11 +20,10 @@ public interface IHolidayService {
     /**
      * Tạo ngày nghỉ lễ mới
      *
-     * @param companyId ID công ty
-     * @param request   thông tin ngày nghỉ
+     * @param request thông tin ngày nghỉ
      * @return ngày nghỉ đã tạo
      */
-    HolidayResponse createHoliday(Long companyId, CreateHolidayRequest request);
+    HolidayResponse createHoliday(CreateHolidayRequest request);
 
     /**
      * Cập nhật ngày nghỉ lễ
@@ -55,22 +54,20 @@ public interface IHolidayService {
     /**
      * Lấy danh sách ngày nghỉ của công ty (phân trang, filter theo năm)
      *
-     * @param companyId ID công ty
-     * @param year      năm cần filter (null = tất cả)
-     * @param pageable  thông tin phân trang
+     * @param year     năm cần filter (null = tất cả)
+     * @param pageable thông tin phân trang
      * @return danh sách ngày nghỉ
      */
-    Page<HolidayResponse> getHolidays(Long companyId, Integer year, Pageable pageable);
+    Page<HolidayResponse> getHolidays(Integer year, Pageable pageable);
 
     /**
      * Lấy danh sách ngày nghỉ của công ty trong khoảng thời gian
      *
-     * @param companyId ID công ty
      * @param startDate ngày bắt đầu
      * @param endDate   ngày kết thúc
      * @return danh sách ngày nghỉ
      */
-    List<HolidayResponse> getHolidaysByDateRange(Long companyId, LocalDate startDate, LocalDate endDate);
+    List<HolidayResponse> getHolidaysByDateRange(LocalDate startDate, LocalDate endDate);
 
     /**
      * Lấy danh sách ngày lễ quốc gia trong khoảng thời gian

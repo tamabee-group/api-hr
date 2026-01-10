@@ -45,7 +45,6 @@ public class PayrollMapper {
 
         PayrollRecordEntity entity = new PayrollRecordEntity();
         entity.setEmployeeId(employeeId);
-        entity.setCompanyId(companyId);
         entity.setYear(period.getYear());
         entity.setMonth(period.getMonthValue());
         entity.setSalaryType(result.getSalaryType());
@@ -159,7 +158,6 @@ public class PayrollMapper {
                 .employeeId(entity.getEmployeeId())
                 .employeeName(employeeName)
                 .employeeCode(employeeCode)
-                .companyId(entity.getCompanyId())
                 .year(entity.getYear())
                 .month(entity.getMonth())
                 .period(formatPeriod(entity.getYear(), entity.getMonth()))

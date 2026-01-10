@@ -51,9 +51,9 @@ public class WorkScheduleServiceImpl implements IWorkScheduleService {
 
     @Override
     @Transactional
-    public WorkScheduleResponse createSchedule(Long companyId, CreateWorkScheduleRequest request) {
+    public WorkScheduleResponse createSchedule(CreateWorkScheduleRequest request) {
         // Kiểm tra tên đã tồn tại chưa
-        if (workScheduleRepository.existsByCompanyIdAndNameAndDeletedFalse(companyId, request.getName())) {
+        if (workScheduleRepository.existsByNameAndDeletedFalse(request.getName())) {
             throw new ConflictException("Tên lịch làm việc đã tồn tại", ErrorCode.SCHEDULE_NAME_EXISTS);
         }
 
@@ -61,15 +61,15 @@ public class WorkScheduleServiceImpl implements IWorkScheduleService {
         validateScheduleData(request.getType(), request.getScheduleData());
 
         // Tạo entity
-        WorkScheduleEntity entity = workScheduleMapper.toEntity(companyId, request);
+        WorkScheduleEntity entity = workScheduleMapper.toEntity(request);
 
         // Nếu đánh dấu là default, bỏ default của các lịch khác
         if (Boolean.TRUE.equals(request.getIsDefault())) {
-            clearDefaultSchedule(companyId);
+            clearDefaultSchedule();
         }
 
         entity = workScheduleRepository.save(entity);
-        log.info("Đã tạo lịch làm việc: {} cho công ty: {}", entity.getName(), companyId);
+        log.info("Đã tạo lịch làm việc: {}", entity.getName());
 
         return workScheduleMapper.toResponse(entity);
     }
@@ -81,8 +81,7 @@ public class WorkScheduleServiceImpl implements IWorkScheduleService {
 
         // Kiểm tra tên trùng (nếu đổi tên)
         if (request.getName() != null && !request.getName().equals(entity.getName())) {
-            if (workScheduleRepository.existsByCompanyIdAndNameAndDeletedFalse(entity.getCompanyId(),
-                    request.getName())) {
+            if (workScheduleRepository.existsByNameAndDeletedFalse(request.getName())) {
                 throw new ConflictException("Tên lịch làm việc đã tồn tại", ErrorCode.SCHEDULE_NAME_EXISTS);
             }
         }
@@ -95,7 +94,7 @@ public class WorkScheduleServiceImpl implements IWorkScheduleService {
 
         // Nếu đánh dấu là default, bỏ default của các lịch khác
         if (Boolean.TRUE.equals(request.getIsDefault()) && !Boolean.TRUE.equals(entity.getIsDefault())) {
-            clearDefaultSchedule(entity.getCompanyId());
+            clearDefaultSchedule();
         }
 
         workScheduleMapper.updateEntity(entity, request);
@@ -126,8 +125,8 @@ public class WorkScheduleServiceImpl implements IWorkScheduleService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<WorkScheduleResponse> getSchedules(Long companyId, Pageable pageable) {
-        return workScheduleRepository.findByCompanyIdAndDeletedFalse(companyId, pageable)
+    public Page<WorkScheduleResponse> getSchedules(Pageable pageable) {
+        return workScheduleRepository.findByDeletedFalse(pageable)
                 .map(workScheduleMapper::toResponse);
     }
 
@@ -140,8 +139,8 @@ public class WorkScheduleServiceImpl implements IWorkScheduleService {
 
     @Override
     @Transactional(readOnly = true)
-    public WorkScheduleResponse getDefaultSchedule(Long companyId) {
-        return workScheduleRepository.findDefaultByCompanyId(companyId)
+    public WorkScheduleResponse getDefaultSchedule() {
+        return workScheduleRepository.findDefault()
                 .map(workScheduleMapper::toResponse)
                 .orElse(null);
     }
@@ -150,7 +149,7 @@ public class WorkScheduleServiceImpl implements IWorkScheduleService {
 
     @Override
     @Transactional(readOnly = true)
-    public WorkScheduleResponse getEffectiveSchedule(Long employeeId, Long companyId, LocalDate date) {
+    public WorkScheduleResponse getEffectiveSchedule(Long employeeId, LocalDate date) {
         // Tìm assignment hiệu lực của nhân viên
         List<WorkScheduleAssignmentEntity> assignments = assignmentRepository
                 .findByEmployeeIdAndEffectiveDate(employeeId, date);
@@ -163,8 +162,7 @@ public class WorkScheduleServiceImpl implements IWorkScheduleService {
                     .orElse(null);
         }
 
-        // Fallback về lịch mặc định của công ty
-        return workScheduleRepository.findDefaultByCompanyId(companyId)
+        return workScheduleRepository.findDefault()
                 .map(workScheduleMapper::toResponse)
                 .orElse(null);
     }
@@ -290,10 +288,10 @@ public class WorkScheduleServiceImpl implements IWorkScheduleService {
     }
 
     /**
-     * Bỏ đánh dấu default của tất cả lịch trong công ty
+     * Bỏ đánh dấu default của tất cả lịch
      */
-    private void clearDefaultSchedule(Long companyId) {
-        workScheduleRepository.findDefaultByCompanyId(companyId)
+    private void clearDefaultSchedule() {
+        workScheduleRepository.findDefault()
                 .ifPresent(schedule -> {
                     schedule.setIsDefault(false);
                     workScheduleRepository.save(schedule);

@@ -40,9 +40,6 @@ public class UserEntity extends BaseEntity {
     @Column(nullable = false)
     private String language;
 
-    @Column(nullable = false)
-    private Long companyId = 0L;
-
     // Tenant domain cho multi-tenant routing
     @Column(name = "tenant_domain")
     private String tenantDomain;

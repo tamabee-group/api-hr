@@ -66,18 +66,18 @@ public class PayrollServiceImpl implements IPayrollService {
 
     @Override
     @Transactional(readOnly = true)
-    public PayrollPreviewResponse previewPayroll(Long companyId, YearMonth period) {
-        log.info("Preview lương công ty {} kỳ {}", companyId, period);
+    public PayrollPreviewResponse previewPayroll(YearMonth period) {
+        log.info("Preview lương kỳ {}", period);
 
-        // Lấy danh sách nhân viên của công ty
-        List<UserEntity> employees = userRepository.findByCompanyIdAndDeletedFalse(companyId);
+        // Lấy danh sách nhân viên
+        List<UserEntity> employees = userRepository.findByDeletedFalse();
 
         // Lấy cấu hình
-        PayrollConfig payrollConfig = companySettingsService.getPayrollConfig(companyId);
-        OvertimeConfig overtimeConfig = companySettingsService.getOvertimeConfig(companyId);
-        AllowanceConfig allowanceConfig = companySettingsService.getAllowanceConfig(companyId);
-        DeductionConfig deductionConfig = companySettingsService.getDeductionConfig(companyId);
-        BreakConfig breakConfig = companySettingsService.getBreakConfig(companyId);
+        PayrollConfig payrollConfig = companySettingsService.getPayrollConfig();
+        OvertimeConfig overtimeConfig = companySettingsService.getOvertimeConfig();
+        AllowanceConfig allowanceConfig = companySettingsService.getAllowanceConfig();
+        DeductionConfig deductionConfig = companySettingsService.getDeductionConfig();
+        BreakConfig breakConfig = companySettingsService.getBreakConfig();
 
         List<PayrollRecordResponse> records = new ArrayList<>();
         BigDecimal totalBaseSalary = BigDecimal.ZERO;
@@ -89,7 +89,7 @@ public class PayrollServiceImpl implements IPayrollService {
 
         for (UserEntity employee : employees) {
             PayrollRecordResponse record = calculateEmployeePayroll(
-                    employee, companyId, period,
+                    employee, period,
                     payrollConfig, overtimeConfig, allowanceConfig, deductionConfig, breakConfig);
 
             if (record != null) {
@@ -104,7 +104,6 @@ public class PayrollServiceImpl implements IPayrollService {
         }
 
         return PayrollPreviewResponse.builder()
-                .companyId(companyId)
                 .year(period.getYear())
                 .month(period.getMonthValue())
                 .period(formatPeriod(period))
@@ -121,31 +120,31 @@ public class PayrollServiceImpl implements IPayrollService {
 
     @Override
     @Transactional(readOnly = true)
-    public PayrollRecordResponse previewEmployeePayroll(Long employeeId, Long companyId, YearMonth period) {
+    public PayrollRecordResponse previewEmployeePayroll(Long employeeId, YearMonth period) {
         log.info("Preview lương nhân viên {} kỳ {}", employeeId, period);
 
         UserEntity employee = userRepository.findByIdAndDeletedFalse(employeeId)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy nhân viên", ErrorCode.USER_NOT_FOUND));
 
-        PayrollConfig payrollConfig = companySettingsService.getPayrollConfig(companyId);
-        OvertimeConfig overtimeConfig = companySettingsService.getOvertimeConfig(companyId);
-        AllowanceConfig allowanceConfig = companySettingsService.getAllowanceConfig(companyId);
-        DeductionConfig deductionConfig = companySettingsService.getDeductionConfig(companyId);
-        BreakConfig breakConfig = companySettingsService.getBreakConfig(companyId);
+        PayrollConfig payrollConfig = companySettingsService.getPayrollConfig();
+        OvertimeConfig overtimeConfig = companySettingsService.getOvertimeConfig();
+        AllowanceConfig allowanceConfig = companySettingsService.getAllowanceConfig();
+        DeductionConfig deductionConfig = companySettingsService.getDeductionConfig();
+        BreakConfig breakConfig = companySettingsService.getBreakConfig();
 
         return calculateEmployeePayroll(
-                employee, companyId, period,
+                employee, period,
                 payrollConfig, overtimeConfig, allowanceConfig, deductionConfig, breakConfig);
     }
 
     @Override
     @Transactional
-    public PayrollPeriodSummaryResponse finalizePayroll(Long companyId, YearMonth period, Long finalizedBy) {
-        log.info("Finalize lương công ty {} kỳ {} bởi {}", companyId, period, finalizedBy);
+    public PayrollPeriodSummaryResponse finalizePayroll(YearMonth period, Long finalizedBy) {
+        log.info("Finalize lương kỳ {} bởi {}", period, finalizedBy);
 
         // Kiểm tra đã finalize chưa
         List<PayrollRecordEntity> existingRecords = payrollRecordRepository
-                .findAllByCompanyIdAndYearAndMonth(companyId, period.getYear(), period.getMonthValue());
+                .findAllByYearAndMonth(period.getYear(), period.getMonthValue());
 
         boolean alreadyFinalized = existingRecords.stream()
                 .anyMatch(r -> r.getStatus() == PayrollStatus.FINALIZED || r.getStatus() == PayrollStatus.PAID);
@@ -155,14 +154,14 @@ public class PayrollServiceImpl implements IPayrollService {
         }
 
         // Lấy danh sách nhân viên
-        List<UserEntity> employees = userRepository.findByCompanyIdAndDeletedFalse(companyId);
+        List<UserEntity> employees = userRepository.findByDeletedFalse();
 
         // Lấy cấu hình
-        PayrollConfig payrollConfig = companySettingsService.getPayrollConfig(companyId);
-        OvertimeConfig overtimeConfig = companySettingsService.getOvertimeConfig(companyId);
-        AllowanceConfig allowanceConfig = companySettingsService.getAllowanceConfig(companyId);
-        DeductionConfig deductionConfig = companySettingsService.getDeductionConfig(companyId);
-        BreakConfig breakConfig = companySettingsService.getBreakConfig(companyId);
+        PayrollConfig payrollConfig = companySettingsService.getPayrollConfig();
+        OvertimeConfig overtimeConfig = companySettingsService.getOvertimeConfig();
+        AllowanceConfig allowanceConfig = companySettingsService.getAllowanceConfig();
+        DeductionConfig deductionConfig = companySettingsService.getDeductionConfig();
+        BreakConfig breakConfig = companySettingsService.getBreakConfig();
 
         LocalDateTime now = LocalDateTime.now();
         List<PayrollRecordEntity> savedRecords = new ArrayList<>();
@@ -170,7 +169,7 @@ public class PayrollServiceImpl implements IPayrollService {
         for (UserEntity employee : employees) {
             // Tính toán lương
             PayrollRecordEntity record = calculateAndCreatePayrollRecord(
-                    employee, companyId, period,
+                    employee, period,
                     payrollConfig, overtimeConfig, allowanceConfig, deductionConfig, breakConfig);
 
             if (record != null) {
@@ -184,21 +183,21 @@ public class PayrollServiceImpl implements IPayrollService {
             }
         }
 
-        log.info("Đã finalize {} bản ghi lương cho công ty {} kỳ {}", savedRecords.size(), companyId, period);
+        log.info("Đã finalize {} bản ghi lương kỳ {}", savedRecords.size(), period);
 
-        return buildPeriodSummary(companyId, period, savedRecords);
+        return buildPeriodSummary(period, savedRecords);
     }
 
     // ==================== Payment Processing ====================
 
     @Override
     @Transactional
-    public void markAsPaid(Long companyId, YearMonth period) {
-        log.info("Đánh dấu đã thanh toán lương công ty {} kỳ {}", companyId, period);
+    public void markAsPaid(YearMonth period) {
+        log.info("Đánh dấu đã thanh toán lương kỳ {}", period);
 
         List<PayrollRecordEntity> records = payrollRecordRepository
-                .findByCompanyIdAndYearAndMonthAndStatus(
-                        companyId, period.getYear(), period.getMonthValue(), PayrollStatus.FINALIZED);
+                .findByYearAndMonthAndStatus(
+                        period.getYear(), period.getMonthValue(), PayrollStatus.FINALIZED);
 
         if (records.isEmpty()) {
             throw new BadRequestException("Không có bản ghi lương để thanh toán", ErrorCode.PAYROLL_NOT_FINALIZED);
@@ -257,11 +256,11 @@ public class PayrollServiceImpl implements IPayrollService {
 
     @Override
     @Transactional
-    public void sendSalaryNotifications(Long companyId, YearMonth period) {
-        log.info("Gửi thông báo lương công ty {} kỳ {}", companyId, period);
+    public void sendSalaryNotifications(YearMonth period) {
+        log.info("Gửi thông báo lương kỳ {}", period);
 
         List<PayrollRecordEntity> records = payrollRecordRepository
-                .findPendingNotifications(companyId, period.getYear(), period.getMonthValue());
+                .findPendingNotifications(period.getYear(), period.getMonthValue());
 
         for (PayrollRecordEntity record : records) {
             sendSalaryNotification(record.getId());
@@ -300,18 +299,18 @@ public class PayrollServiceImpl implements IPayrollService {
 
     @Override
     @Transactional(readOnly = true)
-    public PayrollPeriodSummaryResponse getPayrollPeriodSummary(Long companyId, YearMonth period) {
+    public PayrollPeriodSummaryResponse getPayrollPeriodSummary(YearMonth period) {
         List<PayrollRecordEntity> records = payrollRecordRepository
-                .findAllByCompanyIdAndYearAndMonth(companyId, period.getYear(), period.getMonthValue());
+                .findAllByYearAndMonth(period.getYear(), period.getMonthValue());
 
-        return buildPeriodSummary(companyId, period, records);
+        return buildPeriodSummary(period, records);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<PayrollRecordResponse> getPayrollRecords(Long companyId, YearMonth period, Pageable pageable) {
+    public Page<PayrollRecordResponse> getPayrollRecords(YearMonth period, Pageable pageable) {
         return payrollRecordRepository
-                .findByCompanyIdAndYearAndMonth(companyId, period.getYear(), period.getMonthValue(), pageable)
+                .findByYearAndMonth(period.getYear(), period.getMonthValue(), pageable)
                 .map(this::toResponse);
     }
 
@@ -336,11 +335,11 @@ public class PayrollServiceImpl implements IPayrollService {
 
     @Override
     @Transactional(readOnly = true)
-    public byte[] exportPayrollCsv(Long companyId, YearMonth period) {
-        log.info("Export CSV lương công ty {} kỳ {}", companyId, period);
+    public byte[] exportPayrollCsv(YearMonth period) {
+        log.info("Export CSV lương kỳ {}", period);
 
         List<PayrollRecordEntity> records = payrollRecordRepository
-                .findAllByCompanyIdAndYearAndMonth(companyId, period.getYear(), period.getMonthValue());
+                .findAllByYearAndMonth(period.getYear(), period.getMonthValue());
 
         StringBuilder csv = new StringBuilder();
         // Header
@@ -368,8 +367,8 @@ public class PayrollServiceImpl implements IPayrollService {
 
     @Override
     @Transactional(readOnly = true)
-    public byte[] exportPayrollPdf(Long companyId, YearMonth period) {
-        log.info("Export PDF lương công ty {} kỳ {}", companyId, period);
+    public byte[] exportPayrollPdf(YearMonth period) {
+        log.info("Export PDF lương kỳ {}", period);
 
         // PDF export cần thư viện như iText hoặc Apache PDFBox
         // Hiện tại trả về thông báo chưa hỗ trợ
@@ -390,9 +389,11 @@ public class PayrollServiceImpl implements IPayrollService {
         UserEntity employee = userRepository.findByIdAndDeletedFalse(record.getEmployeeId())
                 .orElseThrow(() -> NotFoundException.user(record.getEmployeeId()));
 
-        // Lấy thông tin công ty
-        CompanyEntity company = companyRepository.findById(record.getCompanyId())
+        // Lấy thông tin công ty từ tenant context
+        CompanyEntity company = companyRepository.findAll()
+                .stream()
                 .filter(c -> !c.getDeleted())
+                .findFirst()
                 .orElse(null);
 
         // Convert to response
@@ -410,7 +411,7 @@ public class PayrollServiceImpl implements IPayrollService {
      * Tích hợp break deduction và overtime calculation
      */
     private PayrollRecordResponse calculateEmployeePayroll(
-            UserEntity employee, Long companyId, YearMonth period,
+            UserEntity employee, YearMonth period,
             PayrollConfig payrollConfig, OvertimeConfig overtimeConfig,
             AllowanceConfig allowanceConfig, DeductionConfig deductionConfig,
             BreakConfig breakConfig) {
@@ -450,7 +451,7 @@ public class PayrollServiceImpl implements IPayrollService {
         String employeeName = getEmployeeName(employeeId);
         String employeeCode = getEmployeeCode(employeeId);
 
-        return buildPayrollResponseWithBreak(employeeId, companyId, period, result, attendanceSummary,
+        return buildPayrollResponseWithBreak(employeeId, period, result, attendanceSummary,
                 employeeName, employeeCode, breakConfig, breakDeductionAmount);
     }
 
@@ -459,7 +460,7 @@ public class PayrollServiceImpl implements IPayrollService {
      * Tích hợp break deduction và overtime calculation
      */
     private PayrollRecordEntity calculateAndCreatePayrollRecord(
-            UserEntity employee, Long companyId, YearMonth period,
+            UserEntity employee, YearMonth period,
             PayrollConfig payrollConfig, OvertimeConfig overtimeConfig,
             AllowanceConfig allowanceConfig, DeductionConfig deductionConfig,
             BreakConfig breakConfig) {
@@ -495,7 +496,7 @@ public class PayrollServiceImpl implements IPayrollService {
                 attendanceSummary.getTotalBreakMinutes(), salaryInfo, payrollConfig, breakConfig);
 
         // Tạo entity với break info
-        return buildPayrollEntityWithBreak(employeeId, companyId, period, result, attendanceSummary,
+        return buildPayrollEntityWithBreak(employeeId, period, result, attendanceSummary,
                 breakConfig, breakDeductionAmount);
     }
 
@@ -631,7 +632,7 @@ public class PayrollServiceImpl implements IPayrollService {
                         .date(date)
                         .regularMinutes(regularMinutes)
                         .nightMinutes(nightMinutes)
-                        .isHoliday(isHoliday(record.getCompanyId(), date))
+                        .isHoliday(isHoliday(date))
                         .isWeekend(isWeekend)
                         .build());
             }
@@ -711,13 +712,13 @@ public class PayrollServiceImpl implements IPayrollService {
      * Build PayrollRecordResponse với break info
      */
     private PayrollRecordResponse buildPayrollResponseWithBreak(
-            Long employeeId, Long companyId, YearMonth period,
+            Long employeeId, YearMonth period,
             PayrollResult result, AttendanceSummary attendance,
             String employeeName, String employeeCode,
             BreakConfig breakConfig, BigDecimal breakDeductionAmount) {
 
         PayrollRecordResponse response = buildPayrollResponse(
-                employeeId, companyId, period, result, attendance, employeeName, employeeCode);
+                employeeId, period, result, attendance, employeeName, employeeCode);
 
         // Thêm break info
         if (response != null && breakConfig != null) {
@@ -733,12 +734,12 @@ public class PayrollServiceImpl implements IPayrollService {
      * Build PayrollRecordEntity với break info
      */
     private PayrollRecordEntity buildPayrollEntityWithBreak(
-            Long employeeId, Long companyId, YearMonth period,
+            Long employeeId, YearMonth period,
             PayrollResult result, AttendanceSummary attendance,
             BreakConfig breakConfig, BigDecimal breakDeductionAmount) {
 
         PayrollRecordEntity entity = buildPayrollEntity(
-                employeeId, companyId, period, result, attendance);
+                employeeId, period, result, attendance);
 
         // Thêm break info
         if (entity != null && breakConfig != null) {
@@ -754,7 +755,7 @@ public class PayrollServiceImpl implements IPayrollService {
      * Build PayrollRecordResponse từ kết quả tính toán
      */
     private PayrollRecordResponse buildPayrollResponse(
-            Long employeeId, Long companyId, YearMonth period,
+            Long employeeId, YearMonth period,
             PayrollResult result, AttendanceSummary attendance,
             String employeeName, String employeeCode) {
 
@@ -764,7 +765,6 @@ public class PayrollServiceImpl implements IPayrollService {
                 .employeeId(employeeId)
                 .employeeName(employeeName)
                 .employeeCode(employeeCode)
-                .companyId(companyId)
                 .year(period.getYear())
                 .month(period.getMonthValue())
                 .period(formatPeriod(period))
@@ -795,12 +795,11 @@ public class PayrollServiceImpl implements IPayrollService {
      * Build PayrollRecordEntity từ kết quả tính toán
      */
     private PayrollRecordEntity buildPayrollEntity(
-            Long employeeId, Long companyId, YearMonth period,
+            Long employeeId, YearMonth period,
             PayrollResult result, AttendanceSummary attendance) {
 
         PayrollRecordEntity entity = new PayrollRecordEntity();
         entity.setEmployeeId(employeeId);
-        entity.setCompanyId(companyId);
         entity.setYear(period.getYear());
         entity.setMonth(period.getMonthValue());
         entity.setSalaryType(result.getSalaryType() != null ? result.getSalaryType() : SalaryType.MONTHLY);
@@ -852,7 +851,7 @@ public class PayrollServiceImpl implements IPayrollService {
      * Build period summary từ danh sách records
      */
     private PayrollPeriodSummaryResponse buildPeriodSummary(
-            Long companyId, YearMonth period, List<PayrollRecordEntity> records) {
+            YearMonth period, List<PayrollRecordEntity> records) {
 
         BigDecimal totalBaseSalary = BigDecimal.ZERO;
         BigDecimal totalOvertimePay = BigDecimal.ZERO;
@@ -910,7 +909,6 @@ public class PayrollServiceImpl implements IPayrollService {
         String finalizedByName = finalizedBy != null ? getEmployeeName(finalizedBy) : null;
 
         return PayrollPeriodSummaryResponse.builder()
-                .companyId(companyId)
                 .year(period.getYear())
                 .month(period.getMonthValue())
                 .period(formatPeriod(period))
@@ -1027,9 +1025,9 @@ public class PayrollServiceImpl implements IPayrollService {
     }
 
     /**
-     * Kiểm tra ngày có phải ngày nghỉ lễ không (công ty hoặc quốc gia)
+     * Kiểm tra ngày có phải ngày nghỉ lễ không
      */
-    private boolean isHoliday(Long companyId, LocalDate date) {
-        return holidayRepository.isHoliday(companyId, date);
+    private boolean isHoliday(LocalDate date) {
+        return holidayRepository.isHoliday(date);
     }
 }

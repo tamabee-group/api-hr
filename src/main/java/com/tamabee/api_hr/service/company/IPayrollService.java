@@ -20,42 +20,38 @@ public interface IPayrollService {
      * Preview lương của công ty cho một kỳ (chưa finalize)
      * Tính toán lương cho tất cả nhân viên dựa trên attendance records
      *
-     * @param companyId ID công ty
-     * @param period    kỳ lương (tháng)
+     * @param period kỳ lương (tháng)
      * @return preview lương với chi tiết từng nhân viên
      */
-    PayrollPreviewResponse previewPayroll(Long companyId, YearMonth period);
+    PayrollPreviewResponse previewPayroll(YearMonth period);
 
     /**
      * Preview lương của một nhân viên cho một kỳ
      *
      * @param employeeId ID nhân viên
-     * @param companyId  ID công ty
      * @param period     kỳ lương (tháng)
      * @return preview lương của nhân viên
      */
-    PayrollRecordResponse previewEmployeePayroll(Long employeeId, Long companyId, YearMonth period);
+    PayrollRecordResponse previewEmployeePayroll(Long employeeId, YearMonth period);
 
     /**
      * Finalize lương của công ty cho một kỳ
      * Sau khi finalize, các bản ghi lương không thể sửa đổi
      *
-     * @param companyId   ID công ty
      * @param period      kỳ lương (tháng)
      * @param finalizedBy ID người finalize
      * @return tổng hợp lương đã finalize
      */
-    PayrollPeriodSummaryResponse finalizePayroll(Long companyId, YearMonth period, Long finalizedBy);
+    PayrollPeriodSummaryResponse finalizePayroll(YearMonth period, Long finalizedBy);
 
     // ==================== Payment Processing ====================
 
     /**
      * Đánh dấu tất cả bản ghi lương của công ty trong kỳ là đã thanh toán
      *
-     * @param companyId ID công ty
-     * @param period    kỳ lương (tháng)
+     * @param period kỳ lương (tháng)
      */
-    void markAsPaid(Long companyId, YearMonth period);
+    void markAsPaid(YearMonth period);
 
     /**
      * Đánh dấu một bản ghi lương là đã thanh toán
@@ -78,10 +74,9 @@ public interface IPayrollService {
      * Gửi thông báo lương cho tất cả nhân viên trong kỳ
      * Chỉ gửi cho các bản ghi đã finalize và chưa gửi thông báo
      *
-     * @param companyId ID công ty
-     * @param period    kỳ lương (tháng)
+     * @param period kỳ lương (tháng)
      */
-    void sendSalaryNotifications(Long companyId, YearMonth period);
+    void sendSalaryNotifications(YearMonth period);
 
     /**
      * Gửi thông báo lương cho một nhân viên
@@ -103,21 +98,19 @@ public interface IPayrollService {
     /**
      * Lấy tổng hợp lương của công ty theo kỳ
      *
-     * @param companyId ID công ty
-     * @param period    kỳ lương (tháng)
+     * @param period kỳ lương (tháng)
      * @return tổng hợp lương
      */
-    PayrollPeriodSummaryResponse getPayrollPeriodSummary(Long companyId, YearMonth period);
+    PayrollPeriodSummaryResponse getPayrollPeriodSummary(YearMonth period);
 
     /**
      * Lấy danh sách bản ghi lương của công ty theo kỳ (phân trang)
      *
-     * @param companyId ID công ty
-     * @param period    kỳ lương (tháng)
-     * @param pageable  thông tin phân trang
+     * @param period   kỳ lương (tháng)
+     * @param pageable thông tin phân trang
      * @return danh sách bản ghi lương
      */
-    Page<PayrollRecordResponse> getPayrollRecords(Long companyId, YearMonth period, Pageable pageable);
+    Page<PayrollRecordResponse> getPayrollRecords(YearMonth period, Pageable pageable);
 
     /**
      * Lấy bản ghi lương của nhân viên theo kỳ
@@ -142,20 +135,18 @@ public interface IPayrollService {
     /**
      * Export danh sách lương ra file CSV
      *
-     * @param companyId ID công ty
-     * @param period    kỳ lương (tháng)
+     * @param period kỳ lương (tháng)
      * @return nội dung file CSV dưới dạng byte array
      */
-    byte[] exportPayrollCsv(Long companyId, YearMonth period);
+    byte[] exportPayrollCsv(YearMonth period);
 
     /**
      * Export danh sách lương ra file PDF
      *
-     * @param companyId ID công ty
-     * @param period    kỳ lương (tháng)
+     * @param period kỳ lương (tháng)
      * @return nội dung file PDF dưới dạng byte array
      */
-    byte[] exportPayrollPdf(Long companyId, YearMonth period);
+    byte[] exportPayrollPdf(YearMonth period);
 
     /**
      * Tạo payslip PDF cho một nhân viên

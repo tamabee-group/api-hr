@@ -19,55 +19,49 @@ public interface ICompanyEmployeeService {
     /**
      * Lấy danh sách nhân viên của công ty (phân trang)
      * 
-     * @param companyId ID công ty
-     * @param pageable  thông tin phân trang
+     * @param pageable thông tin phân trang
      * @return danh sách nhân viên
      */
-    Page<UserResponse> getCompanyEmployees(Long companyId, Pageable pageable);
+    Page<UserResponse> getCompanyEmployees(Pageable pageable);
 
     /**
      * Lấy thông tin chi tiết nhân viên
      * 
-     * @param companyId  ID công ty
      * @param employeeId ID nhân viên
      * @return thông tin nhân viên
      */
-    UserResponse getCompanyEmployee(Long companyId, Long employeeId);
+    UserResponse getCompanyEmployee(Long employeeId);
 
     /**
      * Tạo nhân viên mới cho công ty
      * 
-     * @param companyId ID công ty
-     * @param request   thông tin nhân viên
+     * @param request thông tin nhân viên
      * @return nhân viên đã tạo
      */
-    UserResponse createCompanyEmployee(Long companyId, CreateCompanyEmployeeRequest request);
+    UserResponse createCompanyEmployee(CreateCompanyEmployeeRequest request);
 
     /**
      * Cập nhật thông tin nhân viên
      * 
-     * @param companyId  ID công ty
      * @param employeeId ID nhân viên
      * @param request    thông tin cập nhật
      * @return nhân viên đã cập nhật
      */
-    UserResponse updateCompanyEmployee(Long companyId, Long employeeId, UpdateUserProfileRequest request);
+    UserResponse updateCompanyEmployee(Long employeeId, UpdateUserProfileRequest request);
 
     /**
      * Upload avatar cho nhân viên
      * 
-     * @param companyId  ID công ty
      * @param employeeId ID nhân viên
      * @param file       file ảnh
      * @return URL ảnh đã upload
      */
-    String uploadEmployeeAvatar(Long companyId, Long employeeId, MultipartFile file);
+    String uploadEmployeeAvatar(Long employeeId, MultipartFile file);
 
     /**
      * Lấy danh sách người có quyền duyệt (admin và manager)
      * 
-     * @param companyId ID công ty
      * @return danh sách người duyệt
      */
-    List<ApproverResponse> getApprovers(Long companyId);
+    List<ApproverResponse> getApprovers();
 }

@@ -4,23 +4,20 @@ import com.tamabee.api_hr.dto.request.CreateCompanyEmployeeRequest;
 import com.tamabee.api_hr.dto.request.UpdateUserProfileRequest;
 import com.tamabee.api_hr.dto.response.ApproverResponse;
 import com.tamabee.api_hr.dto.response.UserResponse;
-import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.entity.user.UserProfileEntity;
 import com.tamabee.api_hr.enums.UserRole;
 import com.tamabee.api_hr.enums.UserStatus;
 import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.ConflictException;
-import com.tamabee.api_hr.exception.ForbiddenException;
 import com.tamabee.api_hr.exception.NotFoundException;
+import com.tamabee.api_hr.filter.TenantContext;
 import com.tamabee.api_hr.mapper.core.UserMapper;
-import com.tamabee.api_hr.repository.CompanyRepository;
 import com.tamabee.api_hr.repository.UserRepository;
 import com.tamabee.api_hr.service.company.ICompanyEmployeeService;
 import com.tamabee.api_hr.service.core.IEmailService;
 import com.tamabee.api_hr.service.core.IUploadService;
 import com.tamabee.api_hr.util.EmployeeCodeGenerator;
-import com.tamabee.api_hr.util.LocaleUtil;
 import com.tamabee.api_hr.util.ReferralCodeGenerator;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
@@ -50,7 +47,6 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
             UserRole.EMPLOYEE_COMPANY);
 
     private final UserRepository userRepository;
-    private final CompanyRepository companyRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final IEmailService emailService;
@@ -58,29 +54,22 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<UserResponse> getCompanyEmployees(Long companyId, Pageable pageable) {
-        // Kiểm tra công ty tồn tại
-        validateCompanyExists(companyId);
-
-        Page<UserEntity> employees = userRepository.findByCompanyIdAndDeletedFalse(companyId, pageable);
+    public Page<UserResponse> getCompanyEmployees(Pageable pageable) {
+        Page<UserEntity> employees = userRepository.findByDeletedFalse(pageable);
         return employees.map(userMapper::toResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public UserResponse getCompanyEmployee(Long companyId, Long employeeId) {
-        UserEntity employee = findEmployeeByIdAndCompany(employeeId, companyId);
+    public UserResponse getCompanyEmployee(Long employeeId) {
+        UserEntity employee = findEmployeeById(employeeId);
         return userMapper.toResponse(employee);
     }
 
     @Override
     @Transactional
-    public UserResponse createCompanyEmployee(Long companyId, CreateCompanyEmployeeRequest request) {
-        // Kiểm tra công ty tồn tại
-        CompanyEntity company = companyRepository.findById(companyId)
-                .orElseThrow(() -> NotFoundException.company(companyId));
-
-        // Kiểm tra email đã tồn tại
+    public UserResponse createCompanyEmployee(CreateCompanyEmployeeRequest request) {
+        // Kiểm tra email đã tồn tại trong tenant hiện tại
         if (userRepository.existsByEmailAndDeletedFalse(request.getEmail())) {
             throw ConflictException.emailExists(request.getEmail());
         }
@@ -91,8 +80,8 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
         // Tạo mật khẩu tạm thời
         String temporaryPassword = UUID.randomUUID().toString().substring(0, 8);
 
-        // Lấy timezone từ locale của công ty
-        String timezone = LocaleUtil.toTimezone(company.getLocale());
+        // Lấy tenant hiện tại
+        String currentTenant = TenantContext.getCurrentTenant();
 
         // Tạo user entity
         UserEntity employee = new UserEntity();
@@ -101,8 +90,8 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
         employee.setRole(request.getRole());
         employee.setStatus(UserStatus.ACTIVE);
         employee.setLanguage(request.getLanguage());
-        employee.setLocale(timezone);
-        employee.setCompanyId(companyId);
+        employee.setLocale(request.getLanguage()); // Dùng language làm locale
+        employee.setTenantDomain(currentTenant);
 
         // Tạo mã giới thiệu duy nhất
         String referralCode = generateUniqueReferralCode();
@@ -120,8 +109,8 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
 
         employee.setProfile(profile);
 
-        // Tạo mã nhân viên duy nhất từ companyId và ngày sinh
-        String employeeCode = EmployeeCodeGenerator.generateUnique(companyId, request.getDateOfBirth(), userRepository);
+        // Tạo mã nhân viên duy nhất từ ngày sinh
+        String employeeCode = EmployeeCodeGenerator.generateUnique(0L, request.getDateOfBirth(), userRepository);
         employee.setEmployeeCode(employeeCode);
 
         // Tính toán % hoàn thiện profile
@@ -142,8 +131,8 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
 
     @Override
     @Transactional
-    public UserResponse updateCompanyEmployee(Long companyId, Long employeeId, UpdateUserProfileRequest request) {
-        UserEntity employee = findEmployeeByIdAndCompany(employeeId, companyId);
+    public UserResponse updateCompanyEmployee(Long employeeId, UpdateUserProfileRequest request) {
+        UserEntity employee = findEmployeeById(employeeId);
 
         // Cập nhật thông tin user
         if (request.getEmail() != null) {
@@ -173,8 +162,8 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
 
     @Override
     @Transactional
-    public String uploadEmployeeAvatar(Long companyId, Long employeeId, MultipartFile file) {
-        UserEntity employee = findEmployeeByIdAndCompany(employeeId, companyId);
+    public String uploadEmployeeAvatar(Long employeeId, MultipartFile file) {
+        UserEntity employee = findEmployeeById(employeeId);
 
         // Xóa ảnh cũ nếu có
         if (employee.getProfile() != null && employee.getProfile().getAvatar() != null) {
@@ -197,10 +186,10 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
 
     @Override
     @Transactional(readOnly = true)
-    public List<ApproverResponse> getApprovers(Long companyId) {
-        // Lấy danh sách admin và manager của công ty
+    public List<ApproverResponse> getApprovers() {
+        // Lấy danh sách admin và manager trong tenant hiện tại
         List<UserRole> approverRoles = Arrays.asList(UserRole.ADMIN_COMPANY, UserRole.MANAGER_COMPANY);
-        List<UserEntity> approvers = userRepository.findByCompanyIdAndRoleInAndDeletedFalse(companyId, approverRoles);
+        List<UserEntity> approvers = userRepository.findByRoleInAndDeletedFalse(approverRoles);
 
         return approvers.stream()
                 .map(user -> ApproverResponse.builder()
@@ -214,15 +203,6 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
     // ==================== Private helper methods ====================
 
     /**
-     * Kiểm tra công ty tồn tại
-     */
-    private void validateCompanyExists(Long companyId) {
-        if (!companyRepository.existsById(companyId)) {
-            throw NotFoundException.company(companyId);
-        }
-    }
-
-    /**
      * Kiểm tra role hợp lệ cho nhân viên công ty
      */
     private void validateCompanyRole(UserRole role) {
@@ -232,18 +212,11 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
     }
 
     /**
-     * Tìm nhân viên theo ID và kiểm tra thuộc công ty
+     * Tìm nhân viên theo ID trong tenant hiện tại
      */
-    private UserEntity findEmployeeByIdAndCompany(Long employeeId, Long companyId) {
-        UserEntity employee = userRepository.findById(employeeId)
+    private UserEntity findEmployeeById(Long employeeId) {
+        return userRepository.findByIdAndDeletedFalse(employeeId)
                 .orElseThrow(() -> NotFoundException.user(employeeId));
-
-        // Kiểm tra nhân viên thuộc công ty
-        if (!companyId.equals(employee.getCompanyId())) {
-            throw ForbiddenException.accessDenied();
-        }
-
-        return employee;
     }
 
     /**

@@ -18,12 +18,10 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "employment_contracts", indexes = {
         @Index(name = "idx_contract_employee_id", columnList = "employeeId"),
-        @Index(name = "idx_contract_company_id", columnList = "companyId"),
         @Index(name = "idx_contract_deleted", columnList = "deleted"),
         @Index(name = "idx_contract_status", columnList = "status"),
         @Index(name = "idx_contract_end_date", columnList = "endDate"),
-        @Index(name = "idx_contract_employee_status", columnList = "employeeId, status"),
-        @Index(name = "idx_contract_company_status", columnList = "companyId, status")
+        @Index(name = "idx_contract_employee_status", columnList = "employeeId, status")
 })
 public class EmploymentContractEntity extends BaseEntity {
 
@@ -34,10 +32,6 @@ public class EmploymentContractEntity extends BaseEntity {
     // ID nhân viên
     @Column(nullable = false)
     private Long employeeId;
-
-    // ID công ty
-    @Column(nullable = false)
-    private Long companyId;
 
     // Loại hợp đồng
     @Enumerated(EnumType.STRING)

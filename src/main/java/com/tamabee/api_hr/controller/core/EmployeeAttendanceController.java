@@ -113,7 +113,6 @@ public class EmployeeAttendanceController {
         UserEntity currentUser = getCurrentUser();
         AttendanceSummaryResponse summary = attendanceService.getAttendanceSummary(
                 currentUser.getId(),
-                currentUser.getCompanyId(),
                 period);
         return ResponseEntity.ok(BaseResponse.success(summary, "Lấy tổng hợp chấm công thành công"));
     }
@@ -145,7 +144,7 @@ public class EmployeeAttendanceController {
             request = new CheckInRequest();
         }
         AttendanceRecordResponse response = attendanceService.checkIn(
-                currentUser.getId(), currentUser.getCompanyId(), request);
+                currentUser.getId(), request);
         return ResponseEntity.ok(BaseResponse.success(response, "Check-in thành công"));
     }
 
@@ -163,7 +162,7 @@ public class EmployeeAttendanceController {
             request = new CheckOutRequest();
         }
         AttendanceRecordResponse response = attendanceService.checkOut(
-                currentUser.getId(), currentUser.getCompanyId(), request);
+                currentUser.getId(), request);
         return ResponseEntity.ok(BaseResponse.success(response, "Check-out thành công"));
     }
 

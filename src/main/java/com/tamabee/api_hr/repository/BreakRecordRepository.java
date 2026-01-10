@@ -37,14 +37,12 @@ public interface BreakRecordRepository extends JpaRepository<BreakRecordEntity, 
                         @Param("workDate") LocalDate workDate);
 
         /**
-         * Lấy danh sách bản ghi giải lao của công ty trong khoảng thời gian
+         * Lấy danh sách bản ghi giải lao trong khoảng thời gian
          */
         @Query("SELECT b FROM BreakRecordEntity b " +
-                        "WHERE b.companyId = :companyId " +
-                        "AND b.workDate BETWEEN :startDate AND :endDate " +
+                        "WHERE b.workDate BETWEEN :startDate AND :endDate " +
                         "ORDER BY b.workDate DESC, b.employeeId ASC, b.breakStart ASC")
-        List<BreakRecordEntity> findByCompanyIdAndWorkDateBetween(
-                        @Param("companyId") Long companyId,
+        List<BreakRecordEntity> findByWorkDateBetween(
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate);
 

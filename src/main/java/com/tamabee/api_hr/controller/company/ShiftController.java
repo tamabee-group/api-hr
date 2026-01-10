@@ -51,9 +51,8 @@ public class ShiftController {
     public ResponseEntity<BaseResponse<Page<ShiftTemplateResponse>>> getShiftTemplates(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Long companyId = getCurrentUserCompanyId();
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "name"));
-        Page<ShiftTemplateResponse> templates = shiftService.getShiftTemplates(companyId, pageable);
+        Page<ShiftTemplateResponse> templates = shiftService.getShiftTemplates(pageable);
         return ResponseEntity.ok(BaseResponse.success(templates, "Lấy danh sách mẫu ca làm việc thành công"));
     }
 
@@ -63,9 +62,8 @@ public class ShiftController {
      */
     @GetMapping("/templates/all")
     public ResponseEntity<BaseResponse<Page<ShiftTemplateResponse>>> getAllShiftTemplates() {
-        Long companyId = getCurrentUserCompanyId();
         Pageable pageable = PageRequest.of(0, 1000, Sort.by(Sort.Direction.ASC, "name"));
-        Page<ShiftTemplateResponse> templates = shiftService.getShiftTemplates(companyId, pageable);
+        Page<ShiftTemplateResponse> templates = shiftService.getShiftTemplates(pageable);
         return ResponseEntity.ok(BaseResponse.success(templates, "Lấy danh sách mẫu ca làm việc thành công"));
     }
 
@@ -76,8 +74,7 @@ public class ShiftController {
     @PostMapping("/templates")
     public ResponseEntity<BaseResponse<ShiftTemplateResponse>> createShiftTemplate(
             @Valid @RequestBody ShiftTemplateRequest request) {
-        Long companyId = getCurrentUserCompanyId();
-        ShiftTemplateResponse response = shiftService.createShiftTemplate(companyId, request);
+        ShiftTemplateResponse response = shiftService.createShiftTemplate(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.created(response, "Tạo mẫu ca làm việc thành công"));
     }
@@ -119,8 +116,6 @@ public class ShiftController {
             @RequestParam(required = false) ShiftAssignmentStatus status,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Long companyId = getCurrentUserCompanyId();
-
         ShiftAssignmentQuery query = new ShiftAssignmentQuery();
         query.setEmployeeId(employeeId);
         query.setShiftTemplateId(shiftTemplateId);
@@ -129,7 +124,7 @@ public class ShiftController {
         query.setStatus(status);
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "workDate"));
-        Page<ShiftAssignmentResponse> assignments = shiftService.getShiftAssignments(companyId, query, pageable);
+        Page<ShiftAssignmentResponse> assignments = shiftService.getShiftAssignments(query, pageable);
         return ResponseEntity.ok(BaseResponse.success(assignments, "Lấy danh sách phân ca thành công"));
     }
 
@@ -140,8 +135,7 @@ public class ShiftController {
     @PostMapping("/assignments")
     public ResponseEntity<BaseResponse<ShiftAssignmentResponse>> assignShift(
             @Valid @RequestBody ShiftAssignmentRequest request) {
-        Long companyId = getCurrentUserCompanyId();
-        ShiftAssignmentResponse response = shiftService.assignShift(companyId, request);
+        ShiftAssignmentResponse response = shiftService.assignShift(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.created(response, "Phân ca thành công"));
     }
@@ -153,8 +147,7 @@ public class ShiftController {
     @PostMapping("/assignments/batch")
     public ResponseEntity<BaseResponse<BatchAssignmentResult>> batchAssignShift(
             @Valid @RequestBody BatchShiftAssignmentRequest request) {
-        Long companyId = getCurrentUserCompanyId();
-        BatchAssignmentResult result = shiftService.batchAssignShift(companyId, request);
+        BatchAssignmentResult result = shiftService.batchAssignShift(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.created(result, "Phân ca hàng loạt thành công"));
     }
@@ -184,8 +177,6 @@ public class ShiftController {
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate createdTo,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Long companyId = getCurrentUserCompanyId();
-
         SwapRequestQuery query = new SwapRequestQuery();
         query.setRequesterId(requesterId);
         query.setTargetEmployeeId(targetEmployeeId);
@@ -194,7 +185,7 @@ public class ShiftController {
         query.setCreatedTo(createdTo);
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<ShiftSwapRequestResponse> swapRequests = shiftService.getSwapRequests(companyId, query, pageable);
+        Page<ShiftSwapRequestResponse> swapRequests = shiftService.getSwapRequests(query, pageable);
         return ResponseEntity.ok(BaseResponse.success(swapRequests, "Lấy danh sách yêu cầu đổi ca thành công"));
     }
 
@@ -206,9 +197,8 @@ public class ShiftController {
     @PreAuthorize(RoleConstants.HAS_ALL_COMPANY_ACCESS)
     public ResponseEntity<BaseResponse<ShiftSwapRequestResponse>> requestSwap(
             @Valid @RequestBody ShiftSwapRequest request) {
-        Long companyId = getCurrentUserCompanyId();
         Long employeeId = getCurrentUserId();
-        ShiftSwapRequestResponse response = shiftService.requestSwap(companyId, employeeId, request);
+        ShiftSwapRequestResponse response = shiftService.requestSwap(employeeId, request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.created(response, "Tạo yêu cầu đổi ca thành công"));
     }
@@ -235,17 +225,6 @@ public class ShiftController {
         Long approverId = getCurrentUserId();
         ShiftSwapRequestResponse response = shiftService.rejectSwap(id, approverId, reason);
         return ResponseEntity.ok(BaseResponse.success(response, "Từ chối yêu cầu đổi ca thành công"));
-    }
-
-    /**
-     * Lấy companyId của user đang đăng nhập
-     */
-    private Long getCurrentUserCompanyId() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
-                .orElseThrow(() -> NotFoundException.user(email));
-        return user.getCompanyId();
     }
 
     /**

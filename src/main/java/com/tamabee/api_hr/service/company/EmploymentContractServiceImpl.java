@@ -51,10 +51,10 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
         }
 
         // Tạo entity mới
-        EmploymentContractEntity entity = contractMapper.toEntity(request, employeeId, employee.getCompanyId());
+        EmploymentContractEntity entity = contractMapper.toEntity(request, employeeId);
 
-        // Generate contract number: HD-{companyId}-{year}-{sequence}
-        String contractNumber = generateContractNumber(employee.getCompanyId());
+        // Generate contract number: HD-{year}-{sequence}
+        String contractNumber = generateContractNumber();
         entity.setContractNumber(contractNumber);
 
         // Lưu vào database
@@ -64,13 +64,13 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
     }
 
     /**
-     * Generate số hợp đồng tự động: HD-{companyId}-{year}-{sequence}
-     * Ví dụ: HD-1-2026-0001
+     * Generate số hợp đồng tự động: HD-{year}-{sequence}
+     * Ví dụ: HD-2026-0001
      */
-    private String generateContractNumber(Long companyId) {
+    private String generateContractNumber() {
         int currentYear = LocalDate.now().getYear();
-        long count = contractRepository.countByCompanyIdAndYear(companyId, currentYear);
-        return String.format("HD-%d-%d-%04d", companyId, currentYear, count + 1);
+        long count = contractRepository.countByYear(currentYear);
+        return String.format("HD-%d-%04d", currentYear, count + 1);
     }
 
     @Override
@@ -177,12 +177,12 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ContractResponse> getExpiringContracts(Long companyId, int daysUntilExpiry, Pageable pageable) {
+    public Page<ContractResponse> getExpiringContracts(int daysUntilExpiry, Pageable pageable) {
         LocalDate today = LocalDate.now();
         LocalDate expiryDate = today.plusDays(daysUntilExpiry);
 
         Page<EmploymentContractEntity> contracts = contractRepository
-                .findExpiringContracts(companyId, today, expiryDate, pageable);
+                .findExpiringContracts(today, expiryDate, pageable);
 
         return contracts.map(contract -> {
             UserEntity employee = userRepository.findById(contract.getEmployeeId()).orElse(null);
@@ -192,18 +192,16 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ContractResponse> getContracts(Long companyId, ContractQuery query, Pageable pageable) {
+    public Page<ContractResponse> getContracts(ContractQuery query, Pageable pageable) {
         Page<EmploymentContractEntity> contracts;
 
         // Filter theo status nếu có
         if (query != null && query.getStatus() != null) {
-            contracts = contractRepository.findByCompanyIdAndStatusAndDeletedFalse(
-                    companyId, query.getStatus(), pageable);
+            contracts = contractRepository.findByStatusAndDeletedFalse(query.getStatus(), pageable);
         } else if (query != null && query.getContractType() != null) {
-            contracts = contractRepository.findByCompanyIdAndContractTypeAndDeletedFalse(
-                    companyId, query.getContractType(), pageable);
+            contracts = contractRepository.findByContractTypeAndDeletedFalse(query.getContractType(), pageable);
         } else {
-            contracts = contractRepository.findByCompanyIdAndDeletedFalse(companyId, pageable);
+            contracts = contractRepository.findByDeletedFalse(pageable);
         }
 
         return contracts.map(contract -> {

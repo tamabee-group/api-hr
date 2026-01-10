@@ -36,7 +36,7 @@ public class EmployeeAllowanceServiceImpl implements IEmployeeAllowanceService {
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy nhân viên", ErrorCode.USER_NOT_FOUND));
 
         // Tạo entity từ request
-        EmployeeAllowanceEntity entity = allowanceMapper.toEntity(request, employeeId, employee.getCompanyId());
+        EmployeeAllowanceEntity entity = allowanceMapper.toEntity(request, employeeId);
 
         // Lưu vào database
         entity = allowanceRepository.save(entity);

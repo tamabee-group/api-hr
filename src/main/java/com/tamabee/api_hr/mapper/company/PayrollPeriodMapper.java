@@ -32,13 +32,12 @@ public class PayrollPeriodMapper {
     /**
      * Chuyển đổi từ Request DTO sang Entity
      */
-    public PayrollPeriodEntity toEntity(PayrollPeriodRequest request, Long companyId, Long createdBy) {
+    public PayrollPeriodEntity toEntity(PayrollPeriodRequest request, Long createdBy) {
         if (request == null) {
             return null;
         }
 
         PayrollPeriodEntity entity = new PayrollPeriodEntity();
-        entity.setCompanyId(companyId);
         entity.setYear(request.getYear());
         entity.setMonth(request.getMonth());
         entity.setStatus(PayrollPeriodStatus.DRAFT);
@@ -79,7 +78,6 @@ public class PayrollPeriodMapper {
 
         return PayrollPeriodResponse.builder()
                 .id(entity.getId())
-                .companyId(entity.getCompanyId())
                 .periodStart(entity.getPeriodStart())
                 .periodEnd(entity.getPeriodEnd())
                 .year(entity.getYear())
@@ -149,7 +147,6 @@ public class PayrollPeriodMapper {
 
         return PayrollPeriodDetailResponse.builder()
                 .id(entity.getId())
-                .companyId(entity.getCompanyId())
                 .periodStart(entity.getPeriodStart())
                 .periodEnd(entity.getPeriodEnd())
                 .year(entity.getYear())
@@ -209,7 +206,6 @@ public class PayrollPeriodMapper {
                 .employeeId(entity.getEmployeeId())
                 .employeeName(employeeName)
                 .employeeCode(employeeCode)
-                .companyId(entity.getCompanyId())
                 .salaryType(entity.getSalaryType())
                 .baseSalary(entity.getBaseSalary())
                 .calculatedBaseSalary(entity.getCalculatedBaseSalary())

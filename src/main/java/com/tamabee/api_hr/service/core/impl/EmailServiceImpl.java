@@ -1,18 +1,20 @@
 package com.tamabee.api_hr.service.core.impl;
 
-import com.tamabee.api_hr.service.core.IEmailService;
-import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.stereotype.Service;
-
 import java.math.BigDecimal;
 import java.text.NumberFormat;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.Locale;
+
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.stereotype.Service;
+
+import com.tamabee.api_hr.service.core.IEmailService;
+
+import jakarta.mail.internet.MimeMessage;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
@@ -59,8 +61,8 @@ public class EmailServiceImpl implements IEmailService {
             String template = loadTemplate("deposit-approved", language);
             String content = template
                     .replace("{companyName}", companyName)
-                    .replace("{amount}", formatCurrency(amount, language))
-                    .replace("{balance}", formatCurrency(balance, language))
+                    .replace("{amount}", formatCurrency(amount))
+                    .replace("{balance}", formatCurrency(balance))
                     .replace("{date}", formatDate(LocalDateTime.now(), language));
 
             helper.setText(content, true);
@@ -86,8 +88,8 @@ public class EmailServiceImpl implements IEmailService {
             String content = template
                     .replace("{companyName}", companyName)
                     .replace("{planName}", planName != null ? planName : "N/A")
-                    .replace("{amount}", formatCurrency(amount, language))
-                    .replace("{balance}", formatCurrency(balance, language))
+                    .replace("{amount}", formatCurrency(amount))
+                    .replace("{balance}", formatCurrency(balance))
                     .replace("{date}", formatDate(LocalDateTime.now(), language));
 
             helper.setText(content, true);
@@ -113,8 +115,8 @@ public class EmailServiceImpl implements IEmailService {
             String content = template
                     .replace("{companyName}", companyName)
                     .replace("{planName}", planName != null ? planName : "N/A")
-                    .replace("{amount}", formatCurrency(amount, language))
-                    .replace("{balance}", formatCurrency(balance, language));
+                    .replace("{amount}", formatCurrency(amount))
+                    .replace("{balance}", formatCurrency(balance));
 
             helper.setText(content, true);
             mailSender.send(mimeMessage);
@@ -176,17 +178,12 @@ public class EmailServiceImpl implements IEmailService {
         };
     }
 
-    private String formatCurrency(BigDecimal amount, String language) {
+    private String formatCurrency(BigDecimal amount) {
         if (amount == null)
             return "0";
 
-        Locale locale = switch (language) {
-            case "vi" -> new Locale("vi", "VN");
-            case "ja" -> Locale.JAPAN;
-            default -> Locale.US;
-        };
-
-        NumberFormat formatter = NumberFormat.getCurrencyInstance(locale);
+        // Luôn format theo JPY vì tiền trong hệ thống là JPY
+        NumberFormat formatter = NumberFormat.getCurrencyInstance(Locale.JAPAN);
         return formatter.format(amount);
     }
 

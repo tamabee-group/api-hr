@@ -45,9 +45,8 @@ public class PayrollPeriodController {
     public ResponseEntity<BaseResponse<Page<PayrollPeriodResponse>>> getPayrollPeriods(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Long companyId = getCurrentUserCompanyId();
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "year", "month"));
-        Page<PayrollPeriodResponse> periods = payrollPeriodService.getPayrollPeriods(companyId, pageable);
+        Page<PayrollPeriodResponse> periods = payrollPeriodService.getPayrollPeriods(pageable);
         return ResponseEntity.ok(BaseResponse.success(periods, "Lấy danh sách kỳ lương thành công"));
     }
 
@@ -68,9 +67,8 @@ public class PayrollPeriodController {
     @PostMapping
     public ResponseEntity<BaseResponse<PayrollPeriodResponse>> createPayrollPeriod(
             @Valid @RequestBody PayrollPeriodRequest request) {
-        Long companyId = getCurrentUserCompanyId();
         Long createdBy = getCurrentUserId();
-        PayrollPeriodResponse response = payrollPeriodService.createPayrollPeriod(companyId, request, createdBy);
+        PayrollPeriodResponse response = payrollPeriodService.createPayrollPeriod(request, createdBy);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.created(response, "Tạo kỳ lương thành công"));
     }
@@ -134,17 +132,6 @@ public class PayrollPeriodController {
         }
         PayrollPeriodResponse response = payrollPeriodService.markAsPaid(id, request);
         return ResponseEntity.ok(BaseResponse.success(response, "Đánh dấu đã thanh toán thành công"));
-    }
-
-    /**
-     * Lấy companyId của user đang đăng nhập
-     */
-    private Long getCurrentUserCompanyId() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
-                .orElseThrow(() -> NotFoundException.user(email));
-        return user.getCompanyId();
     }
 
     /**

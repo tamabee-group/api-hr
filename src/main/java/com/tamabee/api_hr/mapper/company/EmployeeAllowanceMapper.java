@@ -17,17 +17,15 @@ public class EmployeeAllowanceMapper {
      *
      * @param request    Request DTO
      * @param employeeId ID nhân viên
-     * @param companyId  ID công ty
      * @return Entity
      */
-    public EmployeeAllowanceEntity toEntity(AllowanceAssignmentRequest request, Long employeeId, Long companyId) {
+    public EmployeeAllowanceEntity toEntity(AllowanceAssignmentRequest request, Long employeeId) {
         if (request == null) {
             return null;
         }
 
         EmployeeAllowanceEntity entity = new EmployeeAllowanceEntity();
         entity.setEmployeeId(employeeId);
-        entity.setCompanyId(companyId);
         entity.setAllowanceCode(request.getAllowanceCode());
         entity.setAllowanceName(request.getAllowanceName());
         entity.setAllowanceType(request.getAllowanceType());
@@ -55,7 +53,6 @@ public class EmployeeAllowanceMapper {
         EmployeeAllowanceResponse response = new EmployeeAllowanceResponse();
         response.setId(entity.getId());
         response.setEmployeeId(entity.getEmployeeId());
-        response.setCompanyId(entity.getCompanyId());
         response.setAllowanceCode(entity.getAllowanceCode());
         response.setAllowanceName(entity.getAllowanceName());
         response.setAllowanceType(entity.getAllowanceType());

@@ -19,7 +19,7 @@ public interface IShiftService {
     /**
      * Tạo mẫu ca làm việc mới.
      */
-    ShiftTemplateResponse createShiftTemplate(Long companyId, ShiftTemplateRequest request);
+    ShiftTemplateResponse createShiftTemplate(ShiftTemplateRequest request);
 
     /**
      * Cập nhật mẫu ca làm việc.
@@ -34,19 +34,19 @@ public interface IShiftService {
     /**
      * Lấy danh sách mẫu ca làm việc của công ty.
      */
-    Page<ShiftTemplateResponse> getShiftTemplates(Long companyId, Pageable pageable);
+    Page<ShiftTemplateResponse> getShiftTemplates(Pageable pageable);
 
     // ==================== Shift Assignment ====================
 
     /**
      * Phân ca cho nhân viên.
      */
-    ShiftAssignmentResponse assignShift(Long companyId, ShiftAssignmentRequest request);
+    ShiftAssignmentResponse assignShift(ShiftAssignmentRequest request);
 
     /**
      * Phân ca cho nhiều nhân viên cùng lúc.
      */
-    BatchAssignmentResult batchAssignShift(Long companyId, BatchShiftAssignmentRequest request);
+    BatchAssignmentResult batchAssignShift(BatchShiftAssignmentRequest request);
 
     /**
      * Hủy phân ca.
@@ -56,14 +56,14 @@ public interface IShiftService {
     /**
      * Lấy danh sách phân ca với filter.
      */
-    Page<ShiftAssignmentResponse> getShiftAssignments(Long companyId, ShiftAssignmentQuery query, Pageable pageable);
+    Page<ShiftAssignmentResponse> getShiftAssignments(ShiftAssignmentQuery query, Pageable pageable);
 
     // ==================== Shift Swap ====================
 
     /**
      * Tạo yêu cầu đổi ca.
      */
-    ShiftSwapRequestResponse requestSwap(Long companyId, Long employeeId, ShiftSwapRequest request);
+    ShiftSwapRequestResponse requestSwap(Long employeeId, ShiftSwapRequest request);
 
     /**
      * Duyệt yêu cầu đổi ca.
@@ -78,5 +78,5 @@ public interface IShiftService {
     /**
      * Lấy danh sách yêu cầu đổi ca với filter.
      */
-    Page<ShiftSwapRequestResponse> getSwapRequests(Long companyId, SwapRequestQuery query, Pageable pageable);
+    Page<ShiftSwapRequestResponse> getSwapRequests(SwapRequestQuery query, Pageable pageable);
 }

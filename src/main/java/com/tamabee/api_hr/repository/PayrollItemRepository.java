@@ -83,16 +83,6 @@ public interface PayrollItemRepository extends JpaRepository<PayrollItemEntity, 
         List<PayrollItemEntity> findAdjustedItemsByPeriodId(@Param("payrollPeriodId") Long payrollPeriodId);
 
         /**
-         * Lấy payroll items của công ty trong period
-         */
-        @Query("SELECT pi FROM PayrollItemEntity pi " +
-                        "WHERE pi.companyId = :companyId " +
-                        "AND pi.payrollPeriodId = :payrollPeriodId")
-        List<PayrollItemEntity> findByCompanyIdAndPeriodId(
-                        @Param("companyId") Long companyId,
-                        @Param("payrollPeriodId") Long payrollPeriodId);
-
-        /**
          * Xóa tất cả payroll items của một period (dùng khi recalculate)
          */
         @Query("DELETE FROM PayrollItemEntity pi WHERE pi.payrollPeriodId = :payrollPeriodId")

@@ -1,21 +1,26 @@
 package com.tamabee.api_hr.controller.company;
 
+import java.time.LocalDateTime;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
 import com.tamabee.api_hr.dto.request.TransactionFilterRequest;
 import com.tamabee.api_hr.dto.response.WalletResponse;
 import com.tamabee.api_hr.dto.response.WalletTransactionResponse;
 import com.tamabee.api_hr.enums.RoleConstants;
 import com.tamabee.api_hr.enums.TransactionType;
 import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.service.admin.IWalletService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import com.tamabee.api_hr.service.company.ICompanyWalletService;
 
-import java.time.LocalDateTime;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Controller quản lý ví tiền cho Company
@@ -27,7 +32,7 @@ import java.time.LocalDateTime;
 @PreAuthorize(RoleConstants.HAS_COMPANY_ACCESS)
 public class CompanyWalletController {
 
-    private final IWalletService walletService;
+    private final ICompanyWalletService companyWalletService;
 
     /**
      * Lấy thông tin ví của company hiện tại
@@ -35,7 +40,7 @@ public class CompanyWalletController {
      */
     @GetMapping
     public ResponseEntity<BaseResponse<WalletResponse>> getMyWallet() {
-        WalletResponse wallet = walletService.getMyWallet();
+        WalletResponse wallet = companyWalletService.getMyWallet();
         return ResponseEntity.ok(BaseResponse.success(wallet));
     }
 
@@ -64,7 +69,7 @@ public class CompanyWalletController {
         filter.setToDate(toDate);
 
         Pageable pageable = PageRequest.of(page, size);
-        Page<WalletTransactionResponse> transactions = walletService.getMyTransactions(filter, pageable);
+        Page<WalletTransactionResponse> transactions = companyWalletService.getMyTransactions(filter, pageable);
 
         return ResponseEntity.ok(BaseResponse.success(transactions));
     }

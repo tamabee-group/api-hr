@@ -20,6 +20,7 @@ import com.tamabee.api_hr.repository.UserRepository;
 import com.tamabee.api_hr.service.admin.IDepositRequestService;
 import com.tamabee.api_hr.service.admin.IWalletService;
 import com.tamabee.api_hr.service.core.IEmailService;
+import com.tamabee.api_hr.util.SecurityUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
@@ -46,6 +47,7 @@ public class DepositRequestServiceImpl implements IDepositRequestService {
     private final DepositRequestMapper depositRequestMapper;
     private final IWalletService walletService;
     private final IEmailService emailService;
+    private final SecurityUtil securityUtil;
 
     // ==================== Company Operations ====================
 
@@ -64,7 +66,7 @@ public class DepositRequestServiceImpl implements IDepositRequestService {
 
         // Lấy thông tin user hiện tại từ JWT
         UserEntity currentUser = getCurrentUser();
-        Long companyId = currentUser.getCompanyId();
+        Long companyId = securityUtil.getCurrentUserCompanyId();
         String requestedBy = currentUser.getEmployeeCode();
 
         // Tạo entity
@@ -218,7 +220,7 @@ public class DepositRequestServiceImpl implements IDepositRequestService {
      * Lấy companyId của user hiện tại từ JWT token
      */
     private Long getCurrentUserCompanyId() {
-        return getCurrentUser().getCompanyId();
+        return securityUtil.getCurrentUserCompanyId();
     }
 
     /**

@@ -1,5 +1,14 @@
 package com.tamabee.api_hr.service.admin.impl;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.tamabee.api_hr.dto.request.RefundRequest;
 import com.tamabee.api_hr.dto.request.TransactionFilterRequest;
 import com.tamabee.api_hr.dto.response.WalletOverviewResponse;
@@ -14,7 +23,6 @@ import com.tamabee.api_hr.entity.wallet.WalletTransactionEntity;
 import com.tamabee.api_hr.enums.TransactionType;
 import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.exception.UnauthorizedException;
 import com.tamabee.api_hr.mapper.admin.WalletMapper;
 import com.tamabee.api_hr.mapper.admin.WalletTransactionMapper;
 import com.tamabee.api_hr.repository.CompanyRepository;
@@ -23,15 +31,9 @@ import com.tamabee.api_hr.repository.UserRepository;
 import com.tamabee.api_hr.repository.WalletRepository;
 import com.tamabee.api_hr.repository.WalletTransactionRepository;
 import com.tamabee.api_hr.service.admin.IWalletService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.tamabee.api_hr.util.SecurityUtil;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Service quản lý ví tiền của công ty
@@ -48,6 +50,7 @@ public class WalletServiceImpl implements IWalletService {
     private final UserRepository userRepository;
     private final WalletMapper walletMapper;
     private final WalletTransactionMapper walletTransactionMapper;
+    private final SecurityUtil securityUtil;
 
     // ==================== View Operations ====================
 
@@ -57,8 +60,11 @@ public class WalletServiceImpl implements IWalletService {
         WalletEntity wallet = walletRepository.findByCompanyId(companyId)
                 .orElseThrow(() -> NotFoundException.wallet(companyId));
 
-        String planName = getPlanName(companyId);
-        return walletMapper.toResponse(wallet, planName);
+        PlanEntity plan = getPlanFromCompanyId(companyId);
+        String planNameVi = plan != null ? plan.getNameVi() : null;
+        String planNameEn = plan != null ? plan.getNameEn() : null;
+        String planNameJa = plan != null ? plan.getNameJa() : null;
+        return walletMapper.toResponse(wallet, planNameVi, planNameEn, planNameJa);
     }
 
     @Override
@@ -164,14 +170,17 @@ public class WalletServiceImpl implements IWalletService {
             CompanyEntity company = companyRepository.findById(wallet.getCompanyId()).orElse(null);
             String companyName = company != null ? company.getName() : "Unknown";
 
-            // Lấy tên plan
-            String planName = getPlanNameFromCompany(company);
+            // Lấy plan names theo các locale
+            PlanEntity plan = getPlanFromCompany(company);
+            String planNameVi = plan != null ? plan.getNameVi() : null;
+            String planNameEn = plan != null ? plan.getNameEn() : null;
+            String planNameJa = plan != null ? plan.getNameJa() : null;
 
             // Lấy tổng deposits và billings
             BigDecimal totalDeposits = walletTransactionRepository.sumDepositsByWalletId(wallet.getId());
             BigDecimal totalBillings = walletTransactionRepository.sumBillingsByWalletId(wallet.getId());
 
-            return walletMapper.toOverviewResponse(wallet, companyName, planName, totalDeposits, totalBillings);
+            return walletMapper.toOverviewResponse(wallet, companyName, planNameVi, planNameEn, planNameJa, totalDeposits, totalBillings);
         });
     }
 
@@ -281,16 +290,7 @@ public class WalletServiceImpl implements IWalletService {
      * Lấy companyId của user hiện tại từ JWT token
      */
     private Long getCurrentUserCompanyId() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw UnauthorizedException.notAuthenticated();
-        }
-
-        String email = authentication.getName();
-        UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
-                .orElseThrow(() -> NotFoundException.user(email));
-
-        return user.getCompanyId();
+        return securityUtil.getCurrentUserCompanyId();
     }
 
     /**
@@ -313,24 +313,21 @@ public class WalletServiceImpl implements IWalletService {
     }
 
     /**
-     * Lấy tên plan từ company entity
+     * Lấy plan entity từ company entity
      */
-    private String getPlanNameFromCompany(CompanyEntity company) {
+    private PlanEntity getPlanFromCompany(CompanyEntity company) {
         if (company == null || company.getPlanId() == null) {
             return null;
         }
-
-        return planRepository.findByIdAndDeletedFalse(company.getPlanId())
-                .map(PlanEntity::getNameVi)
-                .orElse(null);
+        return planRepository.findByIdAndDeletedFalse(company.getPlanId()).orElse(null);
     }
 
     /**
-     * Lấy tên plan của company
+     * Lấy plan entity từ companyId
      */
-    private String getPlanName(Long companyId) {
+    private PlanEntity getPlanFromCompanyId(Long companyId) {
         CompanyEntity company = companyRepository.findById(companyId).orElse(null);
-        return getPlanNameFromCompany(company);
+        return getPlanFromCompany(company);
     }
 
     /**

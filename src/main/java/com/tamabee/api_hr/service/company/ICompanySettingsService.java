@@ -1,160 +1,111 @@
 package com.tamabee.api_hr.service.company;
 
-import com.tamabee.api_hr.dto.config.*;
-import com.tamabee.api_hr.dto.request.*;
+import java.util.List;
+
+import com.tamabee.api_hr.dto.config.AllowanceConfig;
+import com.tamabee.api_hr.dto.config.AttendanceConfig;
+import com.tamabee.api_hr.dto.config.BreakConfig;
+import com.tamabee.api_hr.dto.config.DeductionConfig;
+import com.tamabee.api_hr.dto.config.OvertimeConfig;
+import com.tamabee.api_hr.dto.config.PayrollConfig;
+import com.tamabee.api_hr.dto.request.AllowanceConfigRequest;
+import com.tamabee.api_hr.dto.request.AttendanceConfigRequest;
+import com.tamabee.api_hr.dto.request.BreakConfigRequest;
+import com.tamabee.api_hr.dto.request.DeductionConfigRequest;
+import com.tamabee.api_hr.dto.request.OvertimeConfigRequest;
+import com.tamabee.api_hr.dto.request.PayrollConfigRequest;
+import com.tamabee.api_hr.dto.request.WorkModeConfigRequest;
 import com.tamabee.api_hr.dto.response.CompanySettingsResponse;
 import com.tamabee.api_hr.dto.response.WorkModeChangeLogResponse;
 import com.tamabee.api_hr.dto.response.WorkModeConfigResponse;
 
-import java.util.List;
-
 /**
  * Service quản lý cấu hình chấm công và tính lương của công ty.
- * Mỗi công ty có 1 bộ settings duy nhất với các config được lưu dưới dạng JSON.
  */
 public interface ICompanySettingsService {
 
     /**
-     * Lấy toàn bộ settings của công ty
-     *
-     * @param companyId ID công ty
-     * @return settings của công ty
+     * Lấy toàn bộ settings của tenant hiện tại
      */
-    CompanySettingsResponse getSettings(Long companyId);
+    CompanySettingsResponse getSettings();
 
     /**
-     * Lấy cấu hình work mode của công ty
-     *
-     * @param companyId ID công ty
-     * @return cấu hình work mode
+     * Lấy cấu hình work mode
      */
-    WorkModeConfigResponse getWorkModeConfig(Long companyId);
+    WorkModeConfigResponse getWorkModeConfig();
 
     /**
-     * Cập nhật cấu hình work mode của công ty
-     *
-     * @param companyId ID công ty
-     * @param request   cấu hình mới
-     * @param changedBy người thực hiện thay đổi
-     * @return cấu hình đã cập nhật
+     * Cập nhật cấu hình work mode
      */
-    WorkModeConfigResponse updateWorkModeConfig(Long companyId, WorkModeConfigRequest request, String changedBy);
+    WorkModeConfigResponse updateWorkModeConfig(WorkModeConfigRequest request, String changedBy);
 
     /**
-     * Lấy lịch sử thay đổi work mode của công ty
-     *
-     * @param companyId ID công ty
-     * @return danh sách audit log
+     * Lấy lịch sử thay đổi work mode
      */
-    List<WorkModeChangeLogResponse> getWorkModeChangeLogs(Long companyId);
+    List<WorkModeChangeLogResponse> getWorkModeChangeLogs();
 
     /**
      * Cập nhật cấu hình chấm công
-     *
-     * @param companyId ID công ty
-     * @param request   cấu hình mới
-     * @return cấu hình đã cập nhật
      */
-    AttendanceConfig updateAttendanceConfig(Long companyId, AttendanceConfigRequest request);
+    AttendanceConfig updateAttendanceConfig(AttendanceConfigRequest request);
 
     /**
      * Cập nhật cấu hình tính lương
-     *
-     * @param companyId ID công ty
-     * @param request   cấu hình mới
-     * @return cấu hình đã cập nhật
      */
-    PayrollConfig updatePayrollConfig(Long companyId, PayrollConfigRequest request);
+    PayrollConfig updatePayrollConfig(PayrollConfigRequest request);
 
     /**
      * Cập nhật cấu hình tăng ca
-     *
-     * @param companyId ID công ty
-     * @param request   cấu hình mới
-     * @return cấu hình đã cập nhật
      */
-    OvertimeConfig updateOvertimeConfig(Long companyId, OvertimeConfigRequest request);
+    OvertimeConfig updateOvertimeConfig(OvertimeConfigRequest request);
 
     /**
      * Cập nhật cấu hình phụ cấp
-     *
-     * @param companyId ID công ty
-     * @param request   cấu hình mới
-     * @return cấu hình đã cập nhật
      */
-    AllowanceConfig updateAllowanceConfig(Long companyId, AllowanceConfigRequest request);
+    AllowanceConfig updateAllowanceConfig(AllowanceConfigRequest request);
 
     /**
      * Cập nhật cấu hình khấu trừ
-     *
-     * @param companyId ID công ty
-     * @param request   cấu hình mới
-     * @return cấu hình đã cập nhật
      */
-    DeductionConfig updateDeductionConfig(Long companyId, DeductionConfigRequest request);
+    DeductionConfig updateDeductionConfig(DeductionConfigRequest request);
 
     /**
-     * Khởi tạo settings mặc định cho công ty mới.
-     * Được gọi khi tạo công ty mới.
-     *
-     * @param companyId ID công ty
+     * Khởi tạo settings mặc định cho tenant mới
      */
-    void initializeDefaultSettings(Long companyId);
+    void initializeDefaultSettings();
 
     /**
-     * Lấy cấu hình chấm công của công ty
-     *
-     * @param companyId ID công ty
-     * @return cấu hình chấm công
+     * Lấy cấu hình chấm công
      */
-    AttendanceConfig getAttendanceConfig(Long companyId);
+    AttendanceConfig getAttendanceConfig();
 
     /**
-     * Lấy cấu hình tính lương của công ty
-     *
-     * @param companyId ID công ty
-     * @return cấu hình tính lương
+     * Lấy cấu hình tính lương
      */
-    PayrollConfig getPayrollConfig(Long companyId);
+    PayrollConfig getPayrollConfig();
 
     /**
-     * Lấy cấu hình tăng ca của công ty
-     *
-     * @param companyId ID công ty
-     * @return cấu hình tăng ca
+     * Lấy cấu hình tăng ca
      */
-    OvertimeConfig getOvertimeConfig(Long companyId);
+    OvertimeConfig getOvertimeConfig();
 
     /**
-     * Lấy cấu hình phụ cấp của công ty
-     *
-     * @param companyId ID công ty
-     * @return cấu hình phụ cấp
+     * Lấy cấu hình phụ cấp
      */
-    AllowanceConfig getAllowanceConfig(Long companyId);
+    AllowanceConfig getAllowanceConfig();
 
     /**
-     * Lấy cấu hình khấu trừ của công ty
-     *
-     * @param companyId ID công ty
-     * @return cấu hình khấu trừ
+     * Lấy cấu hình khấu trừ
      */
-    DeductionConfig getDeductionConfig(Long companyId);
+    DeductionConfig getDeductionConfig();
 
     /**
-     * Lấy cấu hình giờ giải lao của công ty
-     *
-     * @param companyId ID công ty
-     * @return cấu hình giờ giải lao
+     * Lấy cấu hình giờ giải lao
      */
-    BreakConfig getBreakConfig(Long companyId);
+    BreakConfig getBreakConfig();
 
     /**
      * Cập nhật cấu hình giờ giải lao
-     *
-     * @param companyId ID công ty
-     * @param request   cấu hình mới
-     * @return cấu hình đã cập nhật
      */
-    BreakConfig updateBreakConfig(Long companyId, BreakConfigRequest request);
+    BreakConfig updateBreakConfig(BreakConfigRequest request);
 }

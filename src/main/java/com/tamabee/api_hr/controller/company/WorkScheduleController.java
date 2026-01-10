@@ -45,9 +45,8 @@ public class WorkScheduleController {
     public ResponseEntity<BaseResponse<Page<WorkScheduleResponse>>> getSchedules(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Long companyId = getCurrentUserCompanyId();
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<WorkScheduleResponse> schedules = workScheduleService.getSchedules(companyId, pageable);
+        Page<WorkScheduleResponse> schedules = workScheduleService.getSchedules(pageable);
         return ResponseEntity.ok(BaseResponse.success(schedules, "Lấy danh sách lịch làm việc thành công"));
     }
 
@@ -67,8 +66,7 @@ public class WorkScheduleController {
     @PreAuthorize(RoleConstants.HAS_ADMIN_COMPANY)
     public ResponseEntity<BaseResponse<WorkScheduleResponse>> createSchedule(
             @Valid @RequestBody CreateWorkScheduleRequest request) {
-        Long companyId = getCurrentUserCompanyId();
-        WorkScheduleResponse schedule = workScheduleService.createSchedule(companyId, request);
+        WorkScheduleResponse schedule = workScheduleService.createSchedule(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.created(schedule, "Tạo lịch làm việc thành công"));
     }
@@ -119,16 +117,5 @@ public class WorkScheduleController {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
         Page<WorkScheduleAssignmentResponse> assignments = workScheduleService.getAssignmentsBySchedule(id, pageable);
         return ResponseEntity.ok(BaseResponse.success(assignments, "Lấy danh sách assignment thành công"));
-    }
-
-    /**
-     * Lấy companyId của user đang đăng nhập
-     */
-    private Long getCurrentUserCompanyId() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
-                .orElseThrow(() -> NotFoundException.user(email));
-        return user.getCompanyId();
     }
 }

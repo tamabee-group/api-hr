@@ -18,16 +18,10 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "payroll_periods", indexes = {
-        @Index(name = "idx_payroll_period_company_id", columnList = "companyId"),
         @Index(name = "idx_payroll_period_status", columnList = "status"),
-        @Index(name = "idx_payroll_period_year_month", columnList = "companyId, year, month"),
-        @Index(name = "idx_payroll_period_company_status", columnList = "companyId, status")
+        @Index(name = "idx_payroll_period_year_month", columnList = "year, month")
 })
 public class PayrollPeriodEntity extends BaseEntity {
-
-    // ID công ty
-    @Column(nullable = false)
-    private Long companyId;
 
     // Ngày bắt đầu kỳ lương
     @Column(nullable = false)

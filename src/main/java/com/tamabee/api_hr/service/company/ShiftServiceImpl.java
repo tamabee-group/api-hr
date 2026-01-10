@@ -47,8 +47,8 @@ public class ShiftServiceImpl implements IShiftService {
 
     @Override
     @Transactional
-    public ShiftTemplateResponse createShiftTemplate(Long companyId, ShiftTemplateRequest request) {
-        ShiftTemplateEntity entity = shiftMapper.toEntity(request, companyId);
+    public ShiftTemplateResponse createShiftTemplate(ShiftTemplateRequest request) {
+        ShiftTemplateEntity entity = shiftMapper.toEntity(request);
         entity = shiftTemplateRepository.save(entity);
         return shiftMapper.toResponse(entity);
     }
@@ -83,9 +83,8 @@ public class ShiftServiceImpl implements IShiftService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ShiftTemplateResponse> getShiftTemplates(Long companyId, Pageable pageable) {
-        Page<ShiftTemplateEntity> entities = shiftTemplateRepository
-                .findByCompanyIdAndDeletedFalse(companyId, pageable);
+    public Page<ShiftTemplateResponse> getShiftTemplates(Pageable pageable) {
+        Page<ShiftTemplateEntity> entities = shiftTemplateRepository.findByDeletedFalse(pageable);
         return entities.map(shiftMapper::toResponse);
     }
 
@@ -93,7 +92,7 @@ public class ShiftServiceImpl implements IShiftService {
 
     @Override
     @Transactional
-    public ShiftAssignmentResponse assignShift(Long companyId, ShiftAssignmentRequest request) {
+    public ShiftAssignmentResponse assignShift(ShiftAssignmentRequest request) {
         // Validate shift template exists
         ShiftTemplateEntity shiftTemplate = shiftTemplateRepository
                 .findByIdAndDeletedFalse(request.getShiftTemplateId())
@@ -112,7 +111,7 @@ public class ShiftServiceImpl implements IShiftService {
             throw new ConflictException(ErrorCode.SHIFT_OVERLAP_EXISTS);
         }
 
-        ShiftAssignmentEntity entity = shiftMapper.toEntity(request, companyId);
+        ShiftAssignmentEntity entity = shiftMapper.toEntity(request);
         entity = shiftAssignmentRepository.save(entity);
 
         return shiftMapper.toResponse(entity, employee, shiftTemplate, null);
@@ -120,7 +119,7 @@ public class ShiftServiceImpl implements IShiftService {
 
     @Override
     @Transactional
-    public BatchAssignmentResult batchAssignShift(Long companyId, BatchShiftAssignmentRequest request) {
+    public BatchAssignmentResult batchAssignShift(BatchShiftAssignmentRequest request) {
         // Validate shift template exists
         ShiftTemplateEntity shiftTemplate = shiftTemplateRepository
                 .findByIdAndDeletedFalse(request.getShiftTemplateId())
@@ -161,7 +160,7 @@ public class ShiftServiceImpl implements IShiftService {
                 assignRequest.setShiftTemplateId(request.getShiftTemplateId());
                 assignRequest.setWorkDate(request.getWorkDate());
 
-                ShiftAssignmentEntity entity = shiftMapper.toEntity(assignRequest, companyId);
+                ShiftAssignmentEntity entity = shiftMapper.toEntity(assignRequest);
                 entity = shiftAssignmentRepository.save(entity);
 
                 successfulAssignments.add(shiftMapper.toResponse(entity, employee, shiftTemplate, null));
@@ -194,10 +193,9 @@ public class ShiftServiceImpl implements IShiftService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ShiftAssignmentResponse> getShiftAssignments(Long companyId,
-            ShiftAssignmentQuery query,
+    public Page<ShiftAssignmentResponse> getShiftAssignments(ShiftAssignmentQuery query,
             Pageable pageable) {
-        Specification<ShiftAssignmentEntity> spec = buildShiftAssignmentSpec(companyId, query);
+        Specification<ShiftAssignmentEntity> spec = buildShiftAssignmentSpec(query);
         Page<ShiftAssignmentEntity> entities = shiftAssignmentRepository.findAll(spec, pageable);
 
         return entities.map(entity -> {
@@ -211,13 +209,9 @@ public class ShiftServiceImpl implements IShiftService {
         });
     }
 
-    private Specification<ShiftAssignmentEntity> buildShiftAssignmentSpec(Long companyId,
-            ShiftAssignmentQuery query) {
+    private Specification<ShiftAssignmentEntity> buildShiftAssignmentSpec(ShiftAssignmentQuery query) {
         return (root, criteriaQuery, cb) -> {
             var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
-
-            // ShiftAssignment không có soft delete nên không cần filter deleted
-            predicates.add(cb.equal(root.get("companyId"), companyId));
 
             if (query.getEmployeeId() != null) {
                 predicates.add(cb.equal(root.get("employeeId"), query.getEmployeeId()));
@@ -243,7 +237,7 @@ public class ShiftServiceImpl implements IShiftService {
 
     @Override
     @Transactional
-    public ShiftSwapRequestResponse requestSwap(Long companyId, Long employeeId, ShiftSwapRequest request) {
+    public ShiftSwapRequestResponse requestSwap(Long employeeId, ShiftSwapRequest request) {
         // Validate assignments exist - ShiftAssignment không có soft delete
         ShiftAssignmentEntity requesterAssignment = shiftAssignmentRepository
                 .findById(request.getRequesterAssignmentId())
@@ -263,7 +257,7 @@ public class ShiftServiceImpl implements IShiftService {
             throw new ConflictException(ErrorCode.SHIFT_SWAP_NOT_ALLOWED);
         }
 
-        ShiftSwapRequestEntity entity = shiftMapper.toEntity(request, companyId, employeeId);
+        ShiftSwapRequestEntity entity = shiftMapper.toEntity(request, employeeId);
         entity = shiftSwapRequestRepository.save(entity);
 
         return buildSwapRequestResponse(entity);
@@ -335,21 +329,16 @@ public class ShiftServiceImpl implements IShiftService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<ShiftSwapRequestResponse> getSwapRequests(Long companyId,
-            SwapRequestQuery query,
+    public Page<ShiftSwapRequestResponse> getSwapRequests(SwapRequestQuery query,
             Pageable pageable) {
-        Specification<ShiftSwapRequestEntity> spec = buildSwapRequestSpec(companyId, query);
+        Specification<ShiftSwapRequestEntity> spec = buildSwapRequestSpec(query);
         Page<ShiftSwapRequestEntity> entities = shiftSwapRequestRepository.findAll(spec, pageable);
         return entities.map(this::buildSwapRequestResponse);
     }
 
-    private Specification<ShiftSwapRequestEntity> buildSwapRequestSpec(Long companyId,
-            SwapRequestQuery query) {
+    private Specification<ShiftSwapRequestEntity> buildSwapRequestSpec(SwapRequestQuery query) {
         return (root, criteriaQuery, cb) -> {
             var predicates = new java.util.ArrayList<jakarta.persistence.criteria.Predicate>();
-
-            // ShiftSwapRequest không có soft delete nên không cần filter deleted
-            predicates.add(cb.equal(root.get("companyId"), companyId));
 
             if (query.getRequesterId() != null) {
                 predicates.add(cb.equal(root.get("requesterId"), query.getRequesterId()));

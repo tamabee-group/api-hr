@@ -17,19 +17,16 @@ import org.hibernate.type.SqlTypes;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "work_schedules", indexes = {
-        @Index(name = "idx_work_schedules_company_id", columnList = "companyId"),
         @Index(name = "idx_work_schedules_deleted", columnList = "deleted"),
-        @Index(name = "idx_work_schedules_is_default", columnList = "companyId, isDefault")
+        @Index(name = "idx_work_schedules_type", columnList = "type"),
+        @Index(name = "idx_work_schedules_is_default", columnList = "isDefault"),
+        @Index(name = "idx_work_schedules_is_active", columnList = "isActive")
 })
 public class WorkScheduleEntity extends BaseEntity {
 
     // Soft delete flag
     @Column(nullable = false)
     private Boolean deleted = false;
-
-    // ID công ty
-    @Column(nullable = false)
-    private Long companyId;
 
     // Tên lịch làm việc
     @Column(nullable = false)

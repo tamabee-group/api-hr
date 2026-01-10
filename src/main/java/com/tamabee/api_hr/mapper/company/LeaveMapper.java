@@ -33,7 +33,6 @@ public class LeaveMapper {
                 .id(entity.getId())
                 .employeeId(entity.getEmployeeId())
                 .employeeName(employeeName)
-                .companyId(entity.getCompanyId())
                 .leaveType(entity.getLeaveType())
                 .startDate(entity.getStartDate())
                 .endDate(entity.getEndDate())
@@ -57,14 +56,13 @@ public class LeaveMapper {
      * @param request    request tạo mới
      * @return entity
      */
-    public LeaveRequestEntity toEntity(Long employeeId, Long companyId, CreateLeaveRequest request) {
+    public LeaveRequestEntity toEntity(Long employeeId, CreateLeaveRequest request) {
         if (request == null) {
             return null;
         }
 
         LeaveRequestEntity entity = new LeaveRequestEntity();
         entity.setEmployeeId(employeeId);
-        entity.setCompanyId(companyId);
         entity.setLeaveType(request.getLeaveType());
         entity.setStartDate(request.getStartDate());
         entity.setEndDate(request.getEndDate());

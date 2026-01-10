@@ -1,9 +1,9 @@
 package com.tamabee.api_hr.dto.response;
 
-import lombok.Data;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import lombok.Data;
 
 /**
  * Response DTO cho thông tin ví của công ty
@@ -23,8 +23,10 @@ public class WalletResponse {
 
     private LocalDateTime freeTrialEndDate;
 
-    // Tên gói dịch vụ hiện tại
-    private String planName;
+    // Tên gói dịch vụ theo các ngôn ngữ
+    private String planNameVi;
+    private String planNameEn;
+    private String planNameJa;
 
     // Đang trong thời gian miễn phí
     private Boolean isFreeTrialActive;

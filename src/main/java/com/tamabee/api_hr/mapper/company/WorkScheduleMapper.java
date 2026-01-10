@@ -27,13 +27,12 @@ public class WorkScheduleMapper {
     /**
      * Chuyển CreateWorkScheduleRequest thành Entity
      */
-    public WorkScheduleEntity toEntity(Long companyId, CreateWorkScheduleRequest request) {
+    public WorkScheduleEntity toEntity(CreateWorkScheduleRequest request) {
         if (request == null) {
             return null;
         }
 
         WorkScheduleEntity entity = new WorkScheduleEntity();
-        entity.setCompanyId(companyId);
         entity.setName(request.getName());
         entity.setType(request.getType());
         entity.setIsDefault(request.getIsDefault() != null ? request.getIsDefault() : false);
@@ -81,7 +80,6 @@ public class WorkScheduleMapper {
 
         return WorkScheduleResponse.builder()
                 .id(entity.getId())
-                .companyId(entity.getCompanyId())
                 .name(entity.getName())
                 .type(entity.getType())
                 .isDefault(entity.getIsDefault())

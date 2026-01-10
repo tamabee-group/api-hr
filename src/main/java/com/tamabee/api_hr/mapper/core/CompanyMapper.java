@@ -1,12 +1,15 @@
 package com.tamabee.api_hr.mapper.core;
 
+import org.springframework.stereotype.Component;
+
+import static com.tamabee.api_hr.constants.PlanConstants.FREE_PLAN_ID;
 import com.tamabee.api_hr.dto.response.CompanyResponse;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.model.request.RegisterRequest;
 import com.tamabee.api_hr.repository.UserRepository;
+
 import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 
 @Component
 @RequiredArgsConstructor
@@ -17,6 +20,7 @@ public class CompanyMapper {
     /**
      * Chuyển đổi RegisterRequest sang CompanyEntity
      * Lưu ý: referredByEmployee được set từ referralCode
+     * Company mới đăng ký sẽ tự động được gán Free Plan (planId = 0)
      */
     public CompanyEntity toEntity(RegisterRequest request) {
         if (request == null) {
@@ -34,6 +38,10 @@ public class CompanyMapper {
         entity.setLocale(request.getLocale());
         entity.setLanguage(request.getLanguage());
         entity.setTenantDomain(request.getTenantDomain());
+
+        // Tự động gán Free Plan khi đăng ký
+        // Free Plan cho phép dùng full tính năng trong thời gian trial
+        entity.setPlanId(FREE_PLAN_ID);
 
         // Tìm nhân viên tư vấn từ mã giới thiệu
         if (request.getReferralCode() != null && !request.getReferralCode().isEmpty()) {

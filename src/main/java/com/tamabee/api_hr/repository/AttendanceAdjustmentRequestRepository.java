@@ -9,46 +9,38 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
+import java.time.LocalDate;
 import java.util.List;
 
 /**
  * Repository quản lý yêu cầu điều chỉnh chấm công.
- * Entity này KHÔNG có soft delete - xóa thẳng.
  */
 @Repository
 public interface AttendanceAdjustmentRequestRepository extends JpaRepository<AttendanceAdjustmentRequestEntity, Long> {
 
         /**
-         * Lấy danh sách yêu cầu đang chờ duyệt của công ty (phân trang)
+         * Lấy danh sách yêu cầu đang chờ duyệt (phân trang)
          */
         @Query("SELECT a FROM AttendanceAdjustmentRequestEntity a " +
-                        "WHERE a.companyId = :companyId " +
-                        "AND a.status = 'PENDING' " +
+                        "WHERE a.status = 'PENDING' " +
                         "ORDER BY a.createdAt DESC")
-        Page<AttendanceAdjustmentRequestEntity> findPendingByCompanyId(
-                        @Param("companyId") Long companyId,
-                        Pageable pageable);
+        Page<AttendanceAdjustmentRequestEntity> findPending(Pageable pageable);
 
         /**
-         * Lấy tất cả yêu cầu của công ty (phân trang)
+         * Lấy tất cả yêu cầu (phân trang)
          */
         @Query("SELECT a FROM AttendanceAdjustmentRequestEntity a " +
-                        "WHERE a.companyId = :companyId " +
                         "ORDER BY a.createdAt DESC")
-        Page<AttendanceAdjustmentRequestEntity> findByCompanyId(
-                        @Param("companyId") Long companyId,
-                        Pageable pageable);
+        Page<AttendanceAdjustmentRequestEntity> findAllPaged(Pageable pageable);
 
         /**
          * Lấy danh sách yêu cầu đang chờ duyệt được gán cho người dùng cụ thể
          */
         @Query("SELECT a FROM AttendanceAdjustmentRequestEntity a " +
-                        "WHERE a.companyId = :companyId " +
-                        "AND a.assignedTo = :assignedTo " +
+                        "WHERE a.assignedTo = :assignedTo " +
                         "AND a.status = 'PENDING' " +
                         "ORDER BY a.createdAt DESC")
-        Page<AttendanceAdjustmentRequestEntity> findPendingByCompanyIdAndAssignedTo(
-                        @Param("companyId") Long companyId,
+        Page<AttendanceAdjustmentRequestEntity> findPendingByAssignedTo(
                         @Param("assignedTo") Long assignedTo,
                         Pageable pageable);
 
@@ -56,11 +48,9 @@ public interface AttendanceAdjustmentRequestRepository extends JpaRepository<Att
          * Lấy tất cả yêu cầu được gán cho người dùng cụ thể
          */
         @Query("SELECT a FROM AttendanceAdjustmentRequestEntity a " +
-                        "WHERE a.companyId = :companyId " +
-                        "AND a.assignedTo = :assignedTo " +
+                        "WHERE a.assignedTo = :assignedTo " +
                         "ORDER BY a.createdAt DESC")
-        Page<AttendanceAdjustmentRequestEntity> findByCompanyIdAndAssignedTo(
-                        @Param("companyId") Long companyId,
+        Page<AttendanceAdjustmentRequestEntity> findByAssignedTo(
                         @Param("assignedTo") Long assignedTo,
                         Pageable pageable);
 
@@ -84,24 +74,21 @@ public interface AttendanceAdjustmentRequestRepository extends JpaRepository<Att
                         @Param("attendanceRecordId") Long attendanceRecordId);
 
         /**
-         * Lấy danh sách yêu cầu theo trạng thái của công ty (phân trang)
+         * Lấy danh sách yêu cầu theo trạng thái (phân trang)
          */
         @Query("SELECT a FROM AttendanceAdjustmentRequestEntity a " +
-                        "WHERE a.companyId = :companyId " +
-                        "AND a.status = :status " +
+                        "WHERE a.status = :status " +
                         "ORDER BY a.createdAt DESC")
-        Page<AttendanceAdjustmentRequestEntity> findByCompanyIdAndStatus(
-                        @Param("companyId") Long companyId,
+        Page<AttendanceAdjustmentRequestEntity> findByStatus(
                         @Param("status") AdjustmentStatus status,
                         Pageable pageable);
 
         /**
-         * Đếm số yêu cầu đang chờ duyệt của công ty
+         * Đếm số yêu cầu đang chờ duyệt
          */
         @Query("SELECT COUNT(a) FROM AttendanceAdjustmentRequestEntity a " +
-                        "WHERE a.companyId = :companyId " +
-                        "AND a.status = 'PENDING'")
-        long countPendingByCompanyId(@Param("companyId") Long companyId);
+                        "WHERE a.status = 'PENDING'")
+        long countPending();
 
         /**
          * Kiểm tra nhân viên có yêu cầu đang chờ duyệt cho bản ghi chấm công không
@@ -112,8 +99,7 @@ public interface AttendanceAdjustmentRequestRepository extends JpaRepository<Att
         boolean existsPendingByAttendanceRecordId(@Param("attendanceRecordId") Long attendanceRecordId);
 
         /**
-         * Kiểm tra nhân viên có yêu cầu đang chờ duyệt cho ngày làm việc không (khi
-         * không có attendanceRecordId)
+         * Kiểm tra nhân viên có yêu cầu đang chờ duyệt cho ngày làm việc không
          */
         @Query("SELECT COUNT(a) > 0 FROM AttendanceAdjustmentRequestEntity a " +
                         "WHERE a.employeeId = :employeeId " +
@@ -121,7 +107,7 @@ public interface AttendanceAdjustmentRequestRepository extends JpaRepository<Att
                         "AND a.status = 'PENDING'")
         boolean existsPendingByEmployeeIdAndWorkDate(
                         @Param("employeeId") Long employeeId,
-                        @Param("workDate") java.time.LocalDate workDate);
+                        @Param("workDate") LocalDate workDate);
 
         /**
          * Lấy danh sách yêu cầu điều chỉnh của nhân viên theo ngày làm việc
@@ -132,5 +118,5 @@ public interface AttendanceAdjustmentRequestRepository extends JpaRepository<Att
                         "ORDER BY a.createdAt DESC")
         List<AttendanceAdjustmentRequestEntity> findByEmployeeIdAndWorkDate(
                         @Param("employeeId") Long employeeId,
-                        @Param("workDate") java.time.LocalDate workDate);
+                        @Param("workDate") LocalDate workDate);
 }

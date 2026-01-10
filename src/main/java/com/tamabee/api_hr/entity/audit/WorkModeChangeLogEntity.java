@@ -16,14 +16,9 @@ import java.time.LocalDateTime;
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "work_mode_change_logs", indexes = {
-        @Index(name = "idx_work_mode_change_logs_company_id", columnList = "companyId"),
         @Index(name = "idx_work_mode_change_logs_changed_at", columnList = "changedAt")
 })
 public class WorkModeChangeLogEntity extends BaseEntity {
-
-    // ID công ty
-    @Column(nullable = false)
-    private Long companyId;
 
     // Chế độ làm việc trước khi thay đổi
     @Enumerated(EnumType.STRING)

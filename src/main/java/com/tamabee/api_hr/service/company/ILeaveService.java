@@ -21,11 +21,10 @@ public interface ILeaveService {
      * Tạo yêu cầu nghỉ phép mới
      *
      * @param employeeId ID nhân viên
-     * @param companyId  ID công ty
      * @param request    thông tin yêu cầu nghỉ phép
      * @return yêu cầu nghỉ phép đã tạo
      */
-    LeaveRequestResponse createLeaveRequest(Long employeeId, Long companyId, CreateLeaveRequest request);
+    LeaveRequestResponse createLeaveRequest(Long employeeId, CreateLeaveRequest request);
 
     /**
      * Hủy yêu cầu nghỉ phép (chỉ khi đang PENDING)
@@ -70,20 +69,18 @@ public interface ILeaveService {
     /**
      * Lấy danh sách yêu cầu đang chờ duyệt của công ty (phân trang)
      *
-     * @param companyId ID công ty
-     * @param pageable  thông tin phân trang
+     * @param pageable thông tin phân trang
      * @return danh sách yêu cầu đang chờ duyệt
      */
-    Page<LeaveRequestResponse> getPendingLeaveRequests(Long companyId, Pageable pageable);
+    Page<LeaveRequestResponse> getPendingLeaveRequests(Pageable pageable);
 
     /**
      * Lấy tất cả yêu cầu nghỉ phép của công ty (phân trang)
      *
-     * @param companyId ID công ty
-     * @param pageable  thông tin phân trang
+     * @param pageable thông tin phân trang
      * @return danh sách tất cả yêu cầu
      */
-    Page<LeaveRequestResponse> getAllLeaveRequests(Long companyId, Pageable pageable);
+    Page<LeaveRequestResponse> getAllLeaveRequests(Pageable pageable);
 
     /**
      * Lấy danh sách yêu cầu của nhân viên (phân trang)

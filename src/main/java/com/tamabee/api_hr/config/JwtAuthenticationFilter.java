@@ -1,9 +1,6 @@
 package com.tamabee.api_hr.config;
 
-import com.tamabee.api_hr.entity.company.CompanyEntity;
-import com.tamabee.api_hr.entity.user.UserEntity;
-import com.tamabee.api_hr.repository.CompanyRepository;
-import com.tamabee.api_hr.repository.UserRepository;
+import com.tamabee.api_hr.filter.TenantContext;
 import com.tamabee.api_hr.util.JwtUtil;
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
@@ -22,24 +19,22 @@ import org.springframework.web.filter.OncePerRequestFilter;
 import java.io.IOException;
 import java.util.Collections;
 import java.util.Map;
-import java.util.Optional;
 
 @Component
 @RequiredArgsConstructor
 @Slf4j
 public class JwtAuthenticationFilter extends OncePerRequestFilter {
 
-    private static final String TAMABEE_TENANT = "tamabee";
-
     private final JwtUtil jwtUtil;
-    private final UserRepository userRepository;
-    private final CompanyRepository companyRepository;
 
     @Override
     protected void doFilterInternal(HttpServletRequest request, HttpServletResponse response, FilterChain filterChain)
             throws ServletException, IOException {
 
-        String token = getTokenFromCookie(request);
+        String path = request.getRequestURI();
+        String token = getToken(request);
+        System.out.println(">>> JwtAuthenticationFilter: path=" + path + ", token present=" + (token != null));
+        log.info("Processing request: {}, token present: {}", path, token != null);
 
         if (token != null) {
             Map<String, Object> claims = jwtUtil.validateToken(token);
@@ -49,11 +44,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String role = (String) claims.get("role");
                 String tenantDomain = (String) claims.get("tenantDomain");
 
-                // Validate tenantDomain trong JWT match với user's company
-                if (!validateTenantDomain(email, tenantDomain)) {
-                    log.warn("Tenant domain mismatch for user: {}", email);
-                    filterChain.doFilter(request, response);
-                    return;
+                log.info("JWT claims - email: {}, role: {}, tenantDomain: {}", email, role, tenantDomain);
+
+                // Set TenantContext từ JWT cho tất cả authenticated requests (trừ master
+                // endpoints)
+                boolean isMaster = isMasterEndpoint(request);
+                log.info("Is master endpoint: {}", isMaster);
+
+                if (!isMaster && tenantDomain != null && !tenantDomain.isEmpty()) {
+                    TenantContext.setCurrentTenant(tenantDomain);
+                    log.info("Set tenant context from JWT: {} for user: {}", tenantDomain, email);
                 }
 
                 // Tạo authority từ role (Spring Security yêu cầu prefix ROLE_)
@@ -65,6 +65,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 authentication.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
 
                 SecurityContextHolder.getContext().setAuthentication(authentication);
+            } else {
+                log.warn("JWT validation failed for token");
             }
         }
 
@@ -72,48 +74,38 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Validate tenantDomain trong JWT match với user's company.
-     * - Tamabee users (companyId = 0): tenantDomain phải là "tamabee"
-     * - Company users: tenantDomain phải match với company.tenantDomain
+     * Kiểm tra có phải endpoint query master DB.
+     * Các endpoint này không cần tenant context.
+     * Lưu ý: /api/auth/me cần tenant context vì query users table
      */
-    private boolean validateTenantDomain(String email, String tenantDomain) {
-        if (tenantDomain == null || tenantDomain.isEmpty()) {
-            log.debug("No tenantDomain in JWT for user: {}", email);
+    private boolean isMasterEndpoint(HttpServletRequest request) {
+        String path = request.getRequestURI();
+
+        // /api/auth/me cần tenant context
+        if (path.equals("/api/auth/me")) {
             return false;
         }
 
-        Optional<UserEntity> userOpt = userRepository.findByEmailAndDeletedFalse(email);
-        if (userOpt.isEmpty()) {
-            log.debug("User not found: {}", email);
-            return false;
+        return path.startsWith("/api/plans/") ||
+                path.startsWith("/api/admin/") ||
+                path.startsWith("/api/public/") ||
+                path.startsWith("/swagger") ||
+                path.startsWith("/v3/api-docs") ||
+                path.startsWith("/actuator/");
+    }
+
+    /**
+     * Lấy token từ Authorization header hoặc cookie
+     */
+    private String getToken(HttpServletRequest request) {
+        // Ưu tiên Authorization header
+        String authHeader = request.getHeader("Authorization");
+        if (authHeader != null && authHeader.startsWith("Bearer ")) {
+            return authHeader.substring(7);
         }
 
-        UserEntity user = userOpt.get();
-        Long companyId = user.getCompanyId();
-
-        // Tamabee users (companyId = 0 hoặc null)
-        if (companyId == null || companyId == 0) {
-            boolean valid = TAMABEE_TENANT.equals(tenantDomain);
-            if (!valid) {
-                log.warn("Tamabee user {} has invalid tenantDomain: {}", email, tenantDomain);
-            }
-            return valid;
-        }
-
-        // Company users: validate với company.tenantDomain
-        Optional<CompanyEntity> companyOpt = companyRepository.findByIdAndDeletedFalse(companyId);
-        if (companyOpt.isEmpty()) {
-            log.warn("Company not found for user: {}, companyId: {}", email, companyId);
-            return false;
-        }
-
-        String expectedTenantDomain = companyOpt.get().getTenantDomain();
-        boolean valid = tenantDomain.equals(expectedTenantDomain);
-        if (!valid) {
-            log.warn("Tenant domain mismatch for user {}: expected={}, actual={}",
-                    email, expectedTenantDomain, tenantDomain);
-        }
-        return valid;
+        // Fallback to cookie
+        return getTokenFromCookie(request);
     }
 
     private String getTokenFromCookie(HttpServletRequest request) {

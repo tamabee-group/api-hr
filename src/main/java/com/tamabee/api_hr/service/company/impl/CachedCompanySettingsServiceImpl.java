@@ -268,7 +268,7 @@ public class CachedCompanySettingsServiceImpl implements ICachedCompanySettingsS
 
         // Load từ database
         CompanySettingEntity entity = companySettingsRepository
-                .findByCompanyIdAndDeletedFalse(companyId)
+                .findFirstByDeletedFalse()
                 .orElse(null);
 
         if (entity == null) {

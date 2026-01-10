@@ -17,14 +17,13 @@ public class EmployeeSalaryMapper {
     /**
      * Chuyển đổi từ Request DTO sang Entity
      */
-    public EmployeeSalaryEntity toEntity(SalaryConfigRequest request, Long employeeId, Long companyId) {
+    public EmployeeSalaryEntity toEntity(SalaryConfigRequest request, Long employeeId) {
         if (request == null) {
             return null;
         }
 
         EmployeeSalaryEntity entity = new EmployeeSalaryEntity();
         entity.setEmployeeId(employeeId);
-        entity.setCompanyId(companyId);
         entity.setSalaryType(request.getSalaryType());
         entity.setMonthlySalary(request.getMonthlySalary());
         entity.setDailyRate(request.getDailyRate());
@@ -57,7 +56,6 @@ public class EmployeeSalaryMapper {
                 .id(entity.getId())
                 .employeeId(entity.getEmployeeId())
                 .employeeName(employeeName)
-                .companyId(entity.getCompanyId())
                 .salaryType(entity.getSalaryType())
                 .monthlySalary(entity.getMonthlySalary())
                 .dailyRate(entity.getDailyRate())

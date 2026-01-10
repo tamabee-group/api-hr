@@ -14,13 +14,22 @@ INSERT INTO tamabee_settings (setting_key, setting_value, description, value_typ
     ('BANK_ACCOUNT_NAME', 'タマビー株式会社', 'Tên chủ tài khoản', 'STRING', false, NOW(), NOW());
 
 -- Default plans (JPY)
+-- Plan 0: Miễn phí (số tháng dựa vào FREE_TRIAL_MONTHS trong tamabee_settings)
+-- Plan 1-3: Gói trả phí
+-- Plan 4: Custom (liên hệ)
 INSERT INTO plans (id, name_vi, name_en, name_ja, description_vi, description_en, description_ja, monthly_price, max_employees, is_active, deleted, created_at, updated_at) VALUES
+    (0, 'Gói Miễn phí', 'Free Plan', 'フリープラン', 'Dùng thử miễn phí', 'Free trial', '無料トライアル', 0, 5, true, false, NOW(), NOW()),
     (1, 'Gói Cơ bản', 'Basic Plan', 'ベーシックプラン', 'Phù hợp cho doanh nghiệp nhỏ', 'Suitable for small businesses', '中小企業向け', 5000, 10, true, false, NOW(), NOW()),
     (2, 'Gói Tiêu chuẩn', 'Standard Plan', 'スタンダードプラン', 'Phù hợp cho doanh nghiệp vừa', 'Suitable for medium businesses', '中堅企業向け', 10000, 50, true, false, NOW(), NOW()),
-    (3, 'Gói Doanh nghiệp', 'Enterprise Plan', 'エンタープライズプラン', 'Phù hợp cho doanh nghiệp lớn', 'Suitable for large businesses', '大企業向け', 20000, 200, true, false, NOW(), NOW());
+    (3, 'Gói Doanh nghiệp', 'Enterprise Plan', 'エンタープライズプラン', 'Phù hợp cho doanh nghiệp lớn', 'Suitable for large businesses', '大企業向け', 20000, 200, true, false, NOW(), NOW()),
+    (4, 'Gói Tùy chỉnh', 'Custom Plan', 'カスタムプラン', 'Liên hệ để được tư vấn', 'Contact us for custom solutions', 'カスタムソリューションについてはお問い合わせください', 0, 0, true, false, NOW(), NOW());
 
 -- Plan features
 INSERT INTO plan_features (plan_id, feature_vi, feature_en, feature_ja, sort_order, is_highlighted, deleted, created_at, updated_at) VALUES
+    -- Free Plan
+    (0, 'Quản lý tối đa 5 nhân viên', 'Manage up to 5 employees', '最大5名の従業員管理', 1, true, false, NOW(), NOW()),
+    (0, 'Chấm công cơ bản', 'Basic attendance', '基本勤怠管理', 2, false, false, NOW(), NOW()),
+    (0, 'Hỗ trợ email', 'Email support', 'メールサポート', 3, false, false, NOW(), NOW()),
     -- Basic Plan
     (1, 'Quản lý tối đa 10 nhân viên', 'Manage up to 10 employees', '最大10名の従業員管理', 1, true, false, NOW(), NOW()),
     (1, 'Báo cáo cơ bản', 'Basic reports', '基本レポート', 2, false, false, NOW(), NOW()),
@@ -33,7 +42,12 @@ INSERT INTO plan_features (plan_id, feature_vi, feature_en, feature_ja, sort_ord
     (3, 'Quản lý tối đa 200 nhân viên', 'Manage up to 200 employees', '最大200名の従業員管理', 1, true, false, NOW(), NOW()),
     (3, 'Báo cáo tùy chỉnh', 'Custom reports', 'カスタムレポート', 2, false, false, NOW(), NOW()),
     (3, 'Hỗ trợ ưu tiên', 'Priority support', '優先サポート', 3, true, false, NOW(), NOW()),
-    (3, 'API tích hợp', 'API integration', 'API連携', 4, false, false, NOW(), NOW());
+    (3, 'API tích hợp', 'API integration', 'API連携', 4, false, false, NOW(), NOW()),
+    -- Custom Plan
+    (4, 'Số nhân viên không giới hạn', 'Unlimited employees', '従業員数無制限', 1, true, false, NOW(), NOW()),
+    (4, 'Tất cả tính năng', 'All features included', '全機能利用可能', 2, true, false, NOW(), NOW()),
+    (4, 'Hỗ trợ chuyên biệt', 'Dedicated support', '専任サポート', 3, true, false, NOW(), NOW()),
+    (4, 'Tùy chỉnh theo yêu cầu', 'Custom development', 'カスタム開発', 4, false, false, NOW(), NOW());
 
 -- Reset sequences
 SELECT setval('plans_id_seq', (SELECT MAX(id) FROM plans));
@@ -42,6 +56,8 @@ SELECT setval('plans_id_seq', (SELECT MAX(id) FROM plans));
 -- PLAN FEATURE CODES - Mapping Plan với Feature Code
 -- =====================================================
 INSERT INTO plan_feature_codes (plan_id, feature_code, created_at, deleted) VALUES
+    -- Plan 0 (Free): ATTENDANCE only
+    (0, 'ATTENDANCE', NOW(), FALSE),
     -- Plan 1 (Basic): ATTENDANCE only
     (1, 'ATTENDANCE', NOW(), FALSE),
     -- Plan 2 (Standard): ATTENDANCE, PAYROLL, OVERTIME, LEAVE_MANAGEMENT
@@ -49,7 +65,7 @@ INSERT INTO plan_feature_codes (plan_id, feature_code, created_at, deleted) VALU
     (2, 'PAYROLL', NOW(), FALSE),
     (2, 'OVERTIME', NOW(), FALSE),
     (2, 'LEAVE_MANAGEMENT', NOW(), FALSE),
-    -- Plan 3 (Premium): All features
+    -- Plan 3 (Enterprise): All features
     (3, 'ATTENDANCE', NOW(), FALSE),
     (3, 'PAYROLL', NOW(), FALSE),
     (3, 'OVERTIME', NOW(), FALSE),
@@ -57,4 +73,13 @@ INSERT INTO plan_feature_codes (plan_id, feature_code, created_at, deleted) VALU
     (3, 'GEO_LOCATION', NOW(), FALSE),
     (3, 'DEVICE_REGISTRATION', NOW(), FALSE),
     (3, 'REPORTS', NOW(), FALSE),
-    (3, 'FLEXIBLE_SCHEDULE', NOW(), FALSE);
+    (3, 'FLEXIBLE_SCHEDULE', NOW(), FALSE),
+    -- Plan 4 (Custom): All features
+    (4, 'ATTENDANCE', NOW(), FALSE),
+    (4, 'PAYROLL', NOW(), FALSE),
+    (4, 'OVERTIME', NOW(), FALSE),
+    (4, 'LEAVE_MANAGEMENT', NOW(), FALSE),
+    (4, 'GEO_LOCATION', NOW(), FALSE),
+    (4, 'DEVICE_REGISTRATION', NOW(), FALSE),
+    (4, 'REPORTS', NOW(), FALSE),
+    (4, 'FLEXIBLE_SCHEDULE', NOW(), FALSE);

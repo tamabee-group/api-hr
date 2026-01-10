@@ -12,7 +12,6 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDate;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Repository quản lý yêu cầu nghỉ phép.
@@ -21,15 +20,12 @@ import java.util.Optional;
 public interface LeaveRequestRepository extends JpaRepository<LeaveRequestEntity, Long> {
 
         /**
-         * Lấy danh sách yêu cầu đang chờ duyệt của công ty (phân trang)
+         * Lấy danh sách yêu cầu đang chờ duyệt (phân trang)
          */
         @Query("SELECT l FROM LeaveRequestEntity l " +
-                        "WHERE l.companyId = :companyId " +
-                        "AND l.status = 'PENDING' " +
+                        "WHERE l.status = 'PENDING' " +
                         "ORDER BY l.createdAt DESC")
-        Page<LeaveRequestEntity> findPendingByCompanyId(
-                        @Param("companyId") Long companyId,
-                        Pageable pageable);
+        Page<LeaveRequestEntity> findPending(Pageable pageable);
 
         /**
          * Lấy danh sách yêu cầu của nhân viên (phân trang)
@@ -42,26 +38,14 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequestEntity
                         Pageable pageable);
 
         /**
-         * Lấy danh sách yêu cầu theo trạng thái của công ty (phân trang)
+         * Lấy danh sách yêu cầu theo trạng thái (phân trang)
          */
-        @Query("SELECT l FROM LeaveRequestEntity l " +
-                        "WHERE l.companyId = :companyId " +
-                        "AND l.status = :status " +
-                        "ORDER BY l.createdAt DESC")
-        Page<LeaveRequestEntity> findByCompanyIdAndStatus(
-                        @Param("companyId") Long companyId,
-                        @Param("status") LeaveStatus status,
-                        Pageable pageable);
+        Page<LeaveRequestEntity> findByStatus(LeaveStatus status, Pageable pageable);
 
         /**
-         * Lấy tất cả yêu cầu của công ty (phân trang)
+         * Lấy tất cả yêu cầu (phân trang)
          */
-        @Query("SELECT l FROM LeaveRequestEntity l " +
-                        "WHERE l.companyId = :companyId " +
-                        "ORDER BY l.createdAt DESC")
-        Page<LeaveRequestEntity> findByCompanyId(
-                        @Param("companyId") Long companyId,
-                        Pageable pageable);
+        Page<LeaveRequestEntity> findAll(Pageable pageable);
 
         /**
          * Lấy danh sách nghỉ phép đã duyệt của nhân viên trong khoảng thời gian
@@ -88,12 +72,9 @@ public interface LeaveRequestRepository extends JpaRepository<LeaveRequestEntity
         boolean isOnLeave(@Param("employeeId") Long employeeId, @Param("date") LocalDate date);
 
         /**
-         * Đếm số yêu cầu đang chờ duyệt của công ty
+         * Đếm số yêu cầu đang chờ duyệt
          */
-        @Query("SELECT COUNT(l) FROM LeaveRequestEntity l " +
-                        "WHERE l.companyId = :companyId " +
-                        "AND l.status = 'PENDING'")
-        long countPendingByCompanyId(@Param("companyId") Long companyId);
+        long countByStatus(LeaveStatus status);
 
         /**
          * Tính tổng số ngày nghỉ đã duyệt của nhân viên theo loại trong năm

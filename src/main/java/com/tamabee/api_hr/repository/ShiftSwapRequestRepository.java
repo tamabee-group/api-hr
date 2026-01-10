@@ -14,35 +14,21 @@ import java.util.List;
 
 /**
  * Repository quản lý yêu cầu đổi ca làm việc.
- * Entity này KHÔNG có soft delete - xóa thẳng.
  */
 @Repository
 public interface ShiftSwapRequestRepository
                 extends JpaRepository<ShiftSwapRequestEntity, Long>, JpaSpecificationExecutor<ShiftSwapRequestEntity> {
 
         /**
-         * Lấy danh sách swap requests của công ty theo status (phân trang)
+         * Lấy danh sách swap requests theo status (phân trang)
          */
-        @Query("SELECT ssr FROM ShiftSwapRequestEntity ssr " +
-                        "JOIN ShiftAssignmentEntity sa ON ssr.requesterAssignmentId = sa.id " +
-                        "WHERE sa.companyId = :companyId " +
-                        "AND ssr.status = :status " +
-                        "ORDER BY ssr.createdAt DESC")
-        Page<ShiftSwapRequestEntity> findByCompanyIdAndStatus(
-                        @Param("companyId") Long companyId,
-                        @Param("status") SwapRequestStatus status,
-                        Pageable pageable);
+        Page<ShiftSwapRequestEntity> findByStatus(SwapRequestStatus status, Pageable pageable);
 
         /**
-         * Lấy danh sách swap requests của công ty (tất cả status, phân trang)
+         * Lấy tất cả swap requests (phân trang)
          */
-        @Query("SELECT ssr FROM ShiftSwapRequestEntity ssr " +
-                        "JOIN ShiftAssignmentEntity sa ON ssr.requesterAssignmentId = sa.id " +
-                        "WHERE sa.companyId = :companyId " +
-                        "ORDER BY ssr.createdAt DESC")
-        Page<ShiftSwapRequestEntity> findByCompanyId(
-                        @Param("companyId") Long companyId,
-                        Pageable pageable);
+        @Query("SELECT ssr FROM ShiftSwapRequestEntity ssr ORDER BY ssr.createdAt DESC")
+        Page<ShiftSwapRequestEntity> findAllPaged(Pageable pageable);
 
         /**
          * Lấy danh sách swap requests của requester
@@ -73,14 +59,12 @@ public interface ShiftSwapRequestRepository
         List<ShiftSwapRequestEntity> findByEmployeeId(@Param("employeeId") Long employeeId);
 
         /**
-         * Lấy danh sách swap requests pending của công ty
+         * Lấy danh sách swap requests pending
          */
         @Query("SELECT ssr FROM ShiftSwapRequestEntity ssr " +
-                        "JOIN ShiftAssignmentEntity sa ON ssr.requesterAssignmentId = sa.id " +
-                        "WHERE sa.companyId = :companyId " +
-                        "AND ssr.status = 'PENDING' " +
+                        "WHERE ssr.status = 'PENDING' " +
                         "ORDER BY ssr.createdAt ASC")
-        List<ShiftSwapRequestEntity> findPendingRequestsByCompanyId(@Param("companyId") Long companyId);
+        List<ShiftSwapRequestEntity> findPendingRequests();
 
         /**
          * Kiểm tra có swap request pending cho assignment không

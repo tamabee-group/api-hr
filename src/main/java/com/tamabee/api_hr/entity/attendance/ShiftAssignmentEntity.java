@@ -17,20 +17,14 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "shift_assignments", indexes = {
         @Index(name = "idx_shift_assign_employee_id", columnList = "employeeId"),
-        @Index(name = "idx_shift_assign_company_id", columnList = "companyId"),
         @Index(name = "idx_shift_assign_work_date", columnList = "workDate"),
-        @Index(name = "idx_shift_assign_employee_date", columnList = "employeeId, workDate"),
-        @Index(name = "idx_shift_assign_company_date", columnList = "companyId, workDate")
+        @Index(name = "idx_shift_assign_employee_date", columnList = "employeeId, workDate")
 })
 public class ShiftAssignmentEntity extends BaseEntity {
 
     // ID nhân viên
     @Column(nullable = false)
     private Long employeeId;
-
-    // ID công ty
-    @Column(nullable = false)
-    private Long companyId;
 
     // ID mẫu ca làm việc
     @Column(nullable = false)

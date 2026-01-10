@@ -13,41 +13,40 @@ public interface IReportService {
     /**
      * Tạo báo cáo tổng hợp chấm công
      */
-    AttendanceSummaryReport generateAttendanceSummary(Long companyId, ReportQuery query);
+    AttendanceSummaryReport generateAttendanceSummary(ReportQuery query);
 
     /**
      * Tạo báo cáo làm thêm giờ
      */
-    OvertimeReport generateOvertimeReport(Long companyId, ReportQuery query);
+    OvertimeReport generateOvertimeReport(ReportQuery query);
 
     /**
      * Tạo báo cáo tuân thủ nghỉ giải lao
      */
-    BreakComplianceReport generateBreakComplianceReport(Long companyId, ReportQuery query);
+    BreakComplianceReport generateBreakComplianceReport(ReportQuery query);
 
     /**
      * Tạo báo cáo tổng hợp lương
      */
-    PayrollSummaryReport generatePayrollSummary(Long companyId, ReportQuery query);
+    PayrollSummaryReport generatePayrollSummary(ReportQuery query);
 
     /**
      * Tạo báo cáo phân tích chi phí
      */
-    CostAnalysisReport generateCostAnalysis(Long companyId, ReportQuery query);
+    CostAnalysisReport generateCostAnalysis(ReportQuery query);
 
     /**
      * Tạo báo cáo sử dụng ca làm việc
      */
-    ShiftUtilizationReport generateShiftUtilization(Long companyId, ReportQuery query);
+    ShiftUtilizationReport generateShiftUtilization(ReportQuery query);
 
     /**
      * Xuất báo cáo theo định dạng (CSV, PDF) với ngôn ngữ
      * 
-     * @param type      loại báo cáo
-     * @param companyId ID công ty
-     * @param query     điều kiện truy vấn
-     * @param format    định dạng xuất (CSV, PDF)
-     * @param language  ngôn ngữ (vi, ja, en)
+     * @param type     loại báo cáo
+     * @param query    điều kiện truy vấn
+     * @param format   định dạng xuất (CSV, PDF)
+     * @param language ngôn ngữ (vi, ja, en)
      */
-    byte[] exportReport(ReportType type, Long companyId, ReportQuery query, ExportFormat format, String language);
+    byte[] exportReport(ReportType type, ReportQuery query, ExportFormat format, String language);
 }

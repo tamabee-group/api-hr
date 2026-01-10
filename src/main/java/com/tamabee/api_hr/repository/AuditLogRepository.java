@@ -12,7 +12,6 @@ import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.List;
-import java.util.Optional;
 
 /**
  * Repository cho AuditLogEntity.
@@ -20,21 +19,20 @@ import java.util.Optional;
 @Repository
 public interface AuditLogRepository extends JpaRepository<AuditLogEntity, Long> {
 
-        // Tìm audit logs theo company
-        Page<AuditLogEntity> findByCompanyIdOrderByTimestampDesc(
-                        Long companyId, Pageable pageable);
+        // Tìm tất cả audit logs (phân trang)
+        Page<AuditLogEntity> findAllByOrderByTimestampDesc(Pageable pageable);
 
         // Tìm audit logs theo entity type và entity ID
         List<AuditLogEntity> findByEntityTypeAndEntityIdOrderByTimestampDesc(
                         AuditEntityType entityType, Long entityId);
 
-        // Tìm audit logs theo company và entity type
-        Page<AuditLogEntity> findByCompanyIdAndEntityTypeOrderByTimestampDesc(
-                        Long companyId, AuditEntityType entityType, Pageable pageable);
+        // Tìm audit logs theo entity type
+        Page<AuditLogEntity> findByEntityTypeOrderByTimestampDesc(
+                        AuditEntityType entityType, Pageable pageable);
 
-        // Tìm audit logs theo company và action
-        Page<AuditLogEntity> findByCompanyIdAndActionOrderByTimestampDesc(
-                        Long companyId, AuditAction action, Pageable pageable);
+        // Tìm audit logs theo action
+        Page<AuditLogEntity> findByActionOrderByTimestampDesc(
+                        AuditAction action, Pageable pageable);
 
         // Tìm audit logs theo user
         Page<AuditLogEntity> findByUserIdOrderByTimestampDesc(
@@ -42,26 +40,22 @@ public interface AuditLogRepository extends JpaRepository<AuditLogEntity, Long> 
 
         // Tìm audit logs theo khoảng thời gian
         @Query("SELECT a FROM AuditLogEntity a " +
-                        "WHERE a.companyId = :companyId " +
-                        "AND a.timestamp BETWEEN :startTime AND :endTime " +
+                        "WHERE a.timestamp BETWEEN :startTime AND :endTime " +
                         "ORDER BY a.timestamp DESC")
-        Page<AuditLogEntity> findByCompanyIdAndTimestampBetween(
-                        @Param("companyId") Long companyId,
+        Page<AuditLogEntity> findByTimestampBetween(
                         @Param("startTime") LocalDateTime startTime,
                         @Param("endTime") LocalDateTime endTime,
                         Pageable pageable);
 
         // Tìm audit logs với nhiều filter
         @Query("SELECT a FROM AuditLogEntity a " +
-                        "WHERE a.companyId = :companyId " +
-                        "AND (:entityType IS NULL OR a.entityType = :entityType) " +
+                        "WHERE (:entityType IS NULL OR a.entityType = :entityType) " +
                         "AND (:action IS NULL OR a.action = :action) " +
                         "AND (:userId IS NULL OR a.userId = :userId) " +
                         "AND (:startTime IS NULL OR a.timestamp >= :startTime) " +
                         "AND (:endTime IS NULL OR a.timestamp <= :endTime) " +
                         "ORDER BY a.timestamp DESC")
         Page<AuditLogEntity> findByFilters(
-                        @Param("companyId") Long companyId,
                         @Param("entityType") AuditEntityType entityType,
                         @Param("action") AuditAction action,
                         @Param("userId") Long userId,

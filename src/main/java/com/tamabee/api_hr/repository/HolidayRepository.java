@@ -25,31 +25,27 @@ public interface HolidayRepository extends JpaRepository<HolidayEntity, Long> {
         Optional<HolidayEntity> findByIdAndDeletedFalse(Long id);
 
         /**
-         * Lấy danh sách ngày nghỉ của công ty (phân trang)
+         * Lấy danh sách ngày nghỉ (phân trang)
          */
-        Page<HolidayEntity> findByCompanyIdAndDeletedFalse(Long companyId, Pageable pageable);
+        Page<HolidayEntity> findByDeletedFalse(Pageable pageable);
 
         /**
-         * Lấy danh sách ngày nghỉ của công ty trong khoảng thời gian (phân trang)
+         * Lấy danh sách ngày nghỉ trong khoảng thời gian (phân trang)
          */
         @Query("SELECT h FROM HolidayEntity h WHERE h.deleted = false " +
-                        "AND h.companyId = :companyId " +
                         "AND h.date BETWEEN :startDate AND :endDate")
-        Page<HolidayEntity> findByCompanyIdAndDateBetweenAndDeletedFalse(
-                        @Param("companyId") Long companyId,
+        Page<HolidayEntity> findByDateBetweenAndDeletedFalse(
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate,
                         Pageable pageable);
 
         /**
-         * Lấy danh sách ngày nghỉ của công ty trong khoảng thời gian
+         * Lấy danh sách ngày nghỉ trong khoảng thời gian
          */
         @Query("SELECT h FROM HolidayEntity h WHERE h.deleted = false " +
-                        "AND h.companyId = :companyId " +
                         "AND h.date BETWEEN :startDate AND :endDate " +
                         "ORDER BY h.date ASC")
-        List<HolidayEntity> findByCompanyIdAndDateBetween(
-                        @Param("companyId") Long companyId,
+        List<HolidayEntity> findByDateBetween(
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate);
 
@@ -57,7 +53,6 @@ public interface HolidayRepository extends JpaRepository<HolidayEntity, Long> {
          * Lấy danh sách ngày lễ quốc gia trong khoảng thời gian
          */
         @Query("SELECT h FROM HolidayEntity h WHERE h.deleted = false " +
-                        "AND h.companyId IS NULL " +
                         "AND h.type = 'NATIONAL' " +
                         "AND h.date BETWEEN :startDate AND :endDate " +
                         "ORDER BY h.date ASC")
@@ -66,38 +61,33 @@ public interface HolidayRepository extends JpaRepository<HolidayEntity, Long> {
                         @Param("endDate") LocalDate endDate);
 
         /**
-         * Lấy tất cả ngày nghỉ (công ty + quốc gia) trong khoảng thời gian
-         */
-        @Query("SELECT h FROM HolidayEntity h WHERE h.deleted = false " +
-                        "AND (h.companyId = :companyId OR h.companyId IS NULL) " +
-                        "AND h.date BETWEEN :startDate AND :endDate " +
-                        "ORDER BY h.date ASC")
-        List<HolidayEntity> findAllHolidaysByCompanyIdAndDateBetween(
-                        @Param("companyId") Long companyId,
-                        @Param("startDate") LocalDate startDate,
-                        @Param("endDate") LocalDate endDate);
-
-        /**
-         * Kiểm tra ngày có phải ngày nghỉ không (công ty hoặc quốc gia)
+         * Kiểm tra ngày có phải ngày nghỉ không
          */
         @Query("SELECT COUNT(h) > 0 FROM HolidayEntity h WHERE h.deleted = false " +
-                        "AND (h.companyId = :companyId OR h.companyId IS NULL) " +
                         "AND h.date = :date")
-        boolean isHoliday(@Param("companyId") Long companyId, @Param("date") LocalDate date);
+        boolean isHoliday(@Param("date") LocalDate date);
 
         /**
-         * Kiểm tra ngày nghỉ đã tồn tại cho công ty chưa
+         * Kiểm tra ngày nghỉ đã tồn tại chưa
          */
-        boolean existsByCompanyIdAndDateAndDeletedFalse(Long companyId, LocalDate date);
+        boolean existsByDateAndDeletedFalse(LocalDate date);
+
+        /**
+         * Lấy danh sách ngày nghỉ trong khoảng thời gian (phân trang) - alias cho
+         * service cũ
+         */
+        @Query("SELECT h FROM HolidayEntity h WHERE h.deleted = false " +
+                        "AND h.date BETWEEN :startDate AND :endDate")
+        Page<HolidayEntity> findByDateBetweenAndDeletedFalsePageable(
+                        @Param("startDate") LocalDate startDate,
+                        @Param("endDate") LocalDate endDate,
+                        Pageable pageable);
 
         /**
          * Lấy danh sách ngày nghỉ theo loại
          */
         @Query("SELECT h FROM HolidayEntity h WHERE h.deleted = false " +
-                        "AND h.companyId = :companyId " +
                         "AND h.type = :type " +
                         "ORDER BY h.date ASC")
-        List<HolidayEntity> findByCompanyIdAndType(
-                        @Param("companyId") Long companyId,
-                        @Param("type") HolidayType type);
+        List<HolidayEntity> findByType(@Param("type") HolidayType type);
 }

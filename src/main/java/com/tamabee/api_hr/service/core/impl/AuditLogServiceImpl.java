@@ -122,7 +122,6 @@ public class AuditLogServiceImpl implements IAuditLogService {
             Object beforeValue, Object afterValue, String description) {
         try {
             AuditLogEntity auditLog = new AuditLogEntity();
-            auditLog.setCompanyId(companyId);
             auditLog.setEntityType(entityType);
             auditLog.setEntityId(entityId);
             auditLog.setAction(action);
@@ -160,7 +159,7 @@ public class AuditLogServiceImpl implements IAuditLogService {
     @Override
     @Transactional(readOnly = true)
     public Page<AuditLogResponse> getAuditLogs(Long companyId, Pageable pageable) {
-        return auditLogRepository.findByCompanyIdOrderByTimestampDesc(companyId, pageable)
+        return auditLogRepository.findAllByOrderByTimestampDesc(pageable)
                 .map(this::toResponse);
     }
 
@@ -168,7 +167,6 @@ public class AuditLogServiceImpl implements IAuditLogService {
     @Transactional(readOnly = true)
     public Page<AuditLogResponse> getAuditLogs(Long companyId, AuditLogQueryRequest request, Pageable pageable) {
         return auditLogRepository.findByFilters(
-                companyId,
                 request.getEntityType(),
                 request.getAction(),
                 request.getUserId(),
@@ -217,7 +215,6 @@ public class AuditLogServiceImpl implements IAuditLogService {
     private AuditLogResponse toResponse(AuditLogEntity entity) {
         return AuditLogResponse.builder()
                 .id(entity.getId())
-                .companyId(entity.getCompanyId())
                 .entityType(entity.getEntityType())
                 .entityId(entity.getEntityId())
                 .action(entity.getAction())

@@ -47,7 +47,7 @@ public class LeaveServiceImpl implements ILeaveService {
 
     @Override
     @Transactional
-    public LeaveRequestResponse createLeaveRequest(Long employeeId, Long companyId, CreateLeaveRequest request) {
+    public LeaveRequestResponse createLeaveRequest(Long employeeId, CreateLeaveRequest request) {
         // Validate ngày bắt đầu <= ngày kết thúc
         if (request.getStartDate().isAfter(request.getEndDate())) {
             throw new BadRequestException(
@@ -80,7 +80,7 @@ public class LeaveServiceImpl implements ILeaveService {
         }
 
         // Tạo yêu cầu nghỉ phép
-        LeaveRequestEntity entity = leaveMapper.toEntity(employeeId, companyId, request);
+        LeaveRequestEntity entity = leaveMapper.toEntity(employeeId, request);
         entity.setTotalDays(totalDays);
         entity.setStatus(LeaveStatus.PENDING);
 
@@ -206,15 +206,15 @@ public class LeaveServiceImpl implements ILeaveService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<LeaveRequestResponse> getPendingLeaveRequests(Long companyId, Pageable pageable) {
-        return leaveRequestRepository.findPendingByCompanyId(companyId, pageable)
+    public Page<LeaveRequestResponse> getPendingLeaveRequests(Pageable pageable) {
+        return leaveRequestRepository.findPending(pageable)
                 .map(this::mapToResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public Page<LeaveRequestResponse> getAllLeaveRequests(Long companyId, Pageable pageable) {
-        return leaveRequestRepository.findByCompanyId(companyId, pageable)
+    public Page<LeaveRequestResponse> getAllLeaveRequests(Pageable pageable) {
+        return leaveRequestRepository.findAll(pageable)
                 .map(this::mapToResponse);
     }
 

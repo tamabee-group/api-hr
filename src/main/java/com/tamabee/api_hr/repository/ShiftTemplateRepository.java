@@ -9,6 +9,9 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 import java.util.Optional;
 
+/**
+ * Repository quản lý mẫu ca làm việc.
+ */
 @Repository
 public interface ShiftTemplateRepository extends JpaRepository<ShiftTemplateEntity, Long> {
 
@@ -18,27 +21,22 @@ public interface ShiftTemplateRepository extends JpaRepository<ShiftTemplateEnti
     Optional<ShiftTemplateEntity> findByIdAndDeletedFalse(Long id);
 
     /**
-     * Lấy danh sách shift templates của công ty (phân trang)
+     * Lấy danh sách shift templates (phân trang)
      */
-    Page<ShiftTemplateEntity> findByCompanyIdAndDeletedFalse(Long companyId, Pageable pageable);
+    Page<ShiftTemplateEntity> findByDeletedFalse(Pageable pageable);
 
     /**
-     * Lấy tất cả shift templates của công ty (không phân trang)
+     * Lấy tất cả shift templates (không phân trang)
      */
-    List<ShiftTemplateEntity> findByCompanyIdAndDeletedFalse(Long companyId);
+    List<ShiftTemplateEntity> findByDeletedFalse();
 
     /**
-     * Lấy danh sách shift templates đang active của công ty
+     * Lấy danh sách shift templates đang active
      */
-    List<ShiftTemplateEntity> findByCompanyIdAndIsActiveTrueAndDeletedFalse(Long companyId);
+    List<ShiftTemplateEntity> findByIsActiveTrueAndDeletedFalse();
 
     /**
      * Kiểm tra shift template có tồn tại không
      */
     boolean existsByIdAndDeletedFalse(Long id);
-
-    /**
-     * Kiểm tra shift template có thuộc công ty không
-     */
-    boolean existsByIdAndCompanyIdAndDeletedFalse(Long id, Long companyId);
 }

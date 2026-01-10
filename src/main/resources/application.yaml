@@ -10,8 +10,8 @@ spring:
 
   jpa:
     hibernate:
-      ddl-auto: validate
-    show-sql: true
+      ddl-auto: none # Multi-tenant: Flyway quản lý schema, không validate vì entities có thể ở tenant DB
+    show-sql: false
     properties:
       hibernate:
         format_sql: true

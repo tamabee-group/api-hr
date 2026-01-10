@@ -23,7 +23,6 @@ import java.time.LocalDateTime;
 @Table(name = "payroll_items", indexes = {
         @Index(name = "idx_payroll_item_period_id", columnList = "payrollPeriodId"),
         @Index(name = "idx_payroll_item_employee_id", columnList = "employeeId"),
-        @Index(name = "idx_payroll_item_company_id", columnList = "companyId"),
         @Index(name = "idx_payroll_item_period_employee", columnList = "payrollPeriodId, employeeId")
 })
 public class PayrollItemEntity extends BaseEntity {
@@ -35,10 +34,6 @@ public class PayrollItemEntity extends BaseEntity {
     // ID nhân viên
     @Column(nullable = false)
     private Long employeeId;
-
-    // ID công ty
-    @Column(nullable = false)
-    private Long companyId;
 
     // === Thông tin lương ===
     // Loại lương

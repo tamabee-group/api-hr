@@ -21,9 +21,6 @@ public class MonthlyBreakReportResponse {
     // Tháng báo cáo
     private YearMonth reportMonth;
 
-    // ID công ty
-    private Long companyId;
-
     // Tổng số nhân viên có bản ghi giải lao trong tháng
     private Integer totalEmployees;
 

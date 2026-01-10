@@ -40,9 +40,8 @@ public class LeaveController {
     public ResponseEntity<BaseResponse<Page<LeaveRequestResponse>>> getAllLeaveRequests(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Long companyId = getCurrentUserCompanyId();
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<LeaveRequestResponse> requests = leaveService.getAllLeaveRequests(companyId, pageable);
+        Page<LeaveRequestResponse> requests = leaveService.getAllLeaveRequests(pageable);
         return ResponseEntity
                 .ok(BaseResponse.success(requests, "Lấy danh sách yêu cầu nghỉ phép thành công"));
     }
@@ -55,9 +54,8 @@ public class LeaveController {
     public ResponseEntity<BaseResponse<Page<LeaveRequestResponse>>> getPendingLeaveRequests(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
-        Long companyId = getCurrentUserCompanyId();
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<LeaveRequestResponse> requests = leaveService.getPendingLeaveRequests(companyId, pageable);
+        Page<LeaveRequestResponse> requests = leaveService.getPendingLeaveRequests(pageable);
         return ResponseEntity
                 .ok(BaseResponse.success(requests, "Lấy danh sách yêu cầu nghỉ phép chờ duyệt thành công"));
     }
@@ -94,13 +92,6 @@ public class LeaveController {
         Long managerId = getCurrentUserId();
         LeaveRequestResponse response = leaveService.rejectLeave(id, managerId, request.getRejectionReason());
         return ResponseEntity.ok(BaseResponse.success(response, "Từ chối yêu cầu nghỉ phép thành công"));
-    }
-
-    /**
-     * Lấy companyId của user đang đăng nhập
-     */
-    private Long getCurrentUserCompanyId() {
-        return getCurrentUser().getCompanyId();
     }
 
     /**

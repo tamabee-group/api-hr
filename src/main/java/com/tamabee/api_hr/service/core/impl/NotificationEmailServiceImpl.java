@@ -1,5 +1,17 @@
 package com.tamabee.api_hr.service.core.impl;
 
+import java.math.BigDecimal;
+import java.text.NumberFormat;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Locale;
+
+import org.springframework.mail.javamail.JavaMailSender;
+import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.stereotype.Service;
+
 import com.tamabee.api_hr.entity.attendance.AttendanceAdjustmentRequestEntity;
 import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
 import com.tamabee.api_hr.entity.leave.LeaveRequestEntity;
@@ -13,20 +25,10 @@ import com.tamabee.api_hr.repository.PayrollRecordRepository;
 import com.tamabee.api_hr.repository.UserRepository;
 import com.tamabee.api_hr.service.core.INotificationEmailService;
 import com.tamabee.api_hr.util.LocaleUtil;
+
 import jakarta.mail.internet.MimeMessage;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.mail.javamail.JavaMailSender;
-import org.springframework.mail.javamail.MimeMessageHelper;
-import org.springframework.stereotype.Service;
-
-import java.math.BigDecimal;
-import java.text.NumberFormat;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Locale;
 
 /**
  * Service gửi email thông báo cho nhân viên.
@@ -90,13 +92,13 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
     @Override
     public void sendBulkSalaryNotifications(Long companyId, Integer year, Integer month) {
         List<PayrollRecordEntity> records = payrollRecordRepository
-                .findPendingNotifications(companyId, year, month);
+                .findPendingNotifications(year, month);
 
         for (PayrollRecordEntity record : records) {
             sendSalaryNotification(record.getEmployeeId(), record);
         }
 
-        log.info("Đã gửi {} thông báo lương cho công ty {}", records.size(), companyId);
+        log.info("Đã gửi {} thông báo lương", records.size());
     }
 
     // ==================== Adjustment Notification ====================
@@ -438,7 +440,7 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
     }
 
     /**
-     * Format currency theo ngôn ngữ
+     * Format currency theo ngôn ngữ của nhân viên (lương)
      */
     private String formatCurrency(BigDecimal amount, String language) {
         if (amount == null) {

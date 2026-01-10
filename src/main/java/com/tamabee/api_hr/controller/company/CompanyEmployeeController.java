@@ -47,15 +47,13 @@ public class CompanyEmployeeController {
     private final IWorkScheduleService workScheduleService;
     private final IAttendanceService attendanceService;
     private final IPayrollService payrollService;
-    private final UserRepository userRepository;
 
     /**
      * Lấy danh sách nhân viên công ty (phân trang)
      */
     @GetMapping
     public ResponseEntity<BaseResponse<Page<UserResponse>>> getEmployees(Pageable pageable) {
-        Long companyId = getCurrentUserCompanyId();
-        Page<UserResponse> employees = companyEmployeeService.getCompanyEmployees(companyId, pageable);
+        Page<UserResponse> employees = companyEmployeeService.getCompanyEmployees(pageable);
         return ResponseEntity.ok(BaseResponse.success(employees, "Lấy danh sách nhân viên thành công"));
     }
 
@@ -64,8 +62,7 @@ public class CompanyEmployeeController {
      */
     @GetMapping("/{id}")
     public ResponseEntity<BaseResponse<UserResponse>> getEmployee(@PathVariable Long id) {
-        Long companyId = getCurrentUserCompanyId();
-        UserResponse employee = companyEmployeeService.getCompanyEmployee(companyId, id);
+        UserResponse employee = companyEmployeeService.getCompanyEmployee(id);
         return ResponseEntity.ok(BaseResponse.success(employee, "Lấy thông tin nhân viên thành công"));
     }
 
@@ -76,8 +73,7 @@ public class CompanyEmployeeController {
     @PreAuthorize(RoleConstants.HAS_ADMIN_COMPANY)
     public ResponseEntity<BaseResponse<UserResponse>> createEmployee(
             @Valid @RequestBody CreateCompanyEmployeeRequest request) {
-        Long companyId = getCurrentUserCompanyId();
-        UserResponse employee = companyEmployeeService.createCompanyEmployee(companyId, request);
+        UserResponse employee = companyEmployeeService.createCompanyEmployee(request);
         return ResponseEntity
                 .status(HttpStatus.CREATED)
                 .body(BaseResponse.created(employee, "Tạo nhân viên thành công"));
@@ -90,8 +86,7 @@ public class CompanyEmployeeController {
     public ResponseEntity<BaseResponse<UserResponse>> updateEmployee(
             @PathVariable Long id,
             @Valid @RequestBody UpdateUserProfileRequest request) {
-        Long companyId = getCurrentUserCompanyId();
-        UserResponse employee = companyEmployeeService.updateCompanyEmployee(companyId, id, request);
+        UserResponse employee = companyEmployeeService.updateCompanyEmployee(id, request);
         return ResponseEntity.ok(BaseResponse.success(employee, "Cập nhật thông tin nhân viên thành công"));
     }
 
@@ -102,8 +97,7 @@ public class CompanyEmployeeController {
     public ResponseEntity<BaseResponse<String>> uploadAvatar(
             @PathVariable Long id,
             @RequestParam("avatar") MultipartFile file) {
-        Long companyId = getCurrentUserCompanyId();
-        String avatarUrl = companyEmployeeService.uploadEmployeeAvatar(companyId, id, file);
+        String avatarUrl = companyEmployeeService.uploadEmployeeAvatar(id, file);
         return ResponseEntity.ok(BaseResponse.success(avatarUrl, "Tải ảnh đại diện thành công"));
     }
 
@@ -117,9 +111,8 @@ public class CompanyEmployeeController {
     public ResponseEntity<BaseResponse<WorkScheduleResponse>> getEffectiveSchedule(
             @PathVariable Long id,
             @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        Long companyId = getCurrentUserCompanyId();
         LocalDate effectiveDate = date != null ? date : LocalDate.now();
-        WorkScheduleResponse schedule = workScheduleService.getEffectiveSchedule(id, companyId, effectiveDate);
+        WorkScheduleResponse schedule = workScheduleService.getEffectiveSchedule(id, effectiveDate);
         return ResponseEntity.ok(BaseResponse.success(schedule, "Lấy lịch làm việc hiệu lực thành công"));
     }
 
@@ -134,9 +127,8 @@ public class CompanyEmployeeController {
     public ResponseEntity<BaseResponse<AttendanceSummaryResponse>> getAttendanceSummary(
             @PathVariable Long id,
             @RequestParam(required = false) @DateTimeFormat(pattern = "yyyy-MM") YearMonth period) {
-        Long companyId = getCurrentUserCompanyId();
         YearMonth effectivePeriod = period != null ? period : YearMonth.now();
-        AttendanceSummaryResponse summary = attendanceService.getAttendanceSummary(id, companyId, effectivePeriod);
+        AttendanceSummaryResponse summary = attendanceService.getAttendanceSummary(id, effectivePeriod);
         return ResponseEntity.ok(BaseResponse.success(summary, "Lấy tổng hợp chấm công thành công"));
     }
 
@@ -149,10 +141,6 @@ public class CompanyEmployeeController {
             @PathVariable Long id,
             @RequestParam int year,
             @RequestParam int month) {
-        Long companyId = getCurrentUserCompanyId();
-        // Kiểm tra nhân viên thuộc công ty
-        companyEmployeeService.getCompanyEmployee(companyId, id);
-
         Page<AttendanceRecordResponse> records = attendanceService.getEmployeeAttendanceByMonth(id, year, month);
         return ResponseEntity.ok(BaseResponse.success(records, "Lấy danh sách chấm công thành công"));
     }
@@ -165,8 +153,7 @@ public class CompanyEmployeeController {
     @GetMapping("/approvers")
     @PreAuthorize(RoleConstants.HAS_ALL_COMPANY_ACCESS)
     public ResponseEntity<BaseResponse<List<ApproverResponse>>> getApprovers() {
-        Long companyId = getCurrentUserCompanyId();
-        List<ApproverResponse> approvers = companyEmployeeService.getApprovers(companyId);
+        List<ApproverResponse> approvers = companyEmployeeService.getApprovers();
         return ResponseEntity.ok(BaseResponse.success(approvers, "Lấy danh sách người duyệt thành công"));
     }
 
@@ -178,21 +165,7 @@ public class CompanyEmployeeController {
     public ResponseEntity<BaseResponse<Page<PayrollRecordResponse>>> getEmployeePayrollHistory(
             @PathVariable Long id,
             Pageable pageable) {
-        Long companyId = getCurrentUserCompanyId();
-        // Kiểm tra nhân viên thuộc công ty
-        companyEmployeeService.getCompanyEmployee(companyId, id);
         Page<PayrollRecordResponse> payrollHistory = payrollService.getEmployeePayrollHistory(id, pageable);
         return ResponseEntity.ok(BaseResponse.success(payrollHistory, "Lấy lịch sử bảng lương thành công"));
-    }
-
-    /**
-     * Lấy companyId của user đang đăng nhập
-     */
-    private Long getCurrentUserCompanyId() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
-                .orElseThrow(() -> NotFoundException.user(email));
-        return user.getCompanyId();
     }
 }

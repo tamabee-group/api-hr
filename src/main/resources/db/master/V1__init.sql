@@ -1,13 +1,3 @@
--- =====================================================
--- TAMABEE HR - MASTER DATABASE SCHEMA
--- Version: 1.0
--- Currency: JPY (Japanese Yen)
--- Multi-tenant architecture: Master DB
--- =====================================================
-
--- =====================================================
--- 1. EMAIL VERIFICATIONS - Xác thực email đăng ký
--- =====================================================
 CREATE TABLE email_verifications (
     id BIGSERIAL PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
@@ -24,9 +14,6 @@ CREATE INDEX idx_email_verifications_email ON email_verifications(email);
 CREATE INDEX idx_email_verifications_expired ON email_verifications(expired_at);
 CREATE INDEX idx_email_verifications_deleted ON email_verifications(deleted);
 
--- =====================================================
--- 2. PLANS - Gói dịch vụ subscription (JPY)
--- =====================================================
 CREATE TABLE plans (
     id BIGSERIAL PRIMARY KEY,
     name_vi VARCHAR(255) NOT NULL,
@@ -46,9 +33,6 @@ CREATE TABLE plans (
 CREATE INDEX idx_plans_deleted ON plans(deleted);
 CREATE INDEX idx_plans_is_active ON plans(is_active);
 
--- =====================================================
--- 3. PLAN_FEATURES - Tính năng của gói dịch vụ (mô tả)
--- =====================================================
 CREATE TABLE plan_features (
     id BIGSERIAL PRIMARY KEY,
     plan_id BIGINT NOT NULL,
@@ -66,9 +50,6 @@ CREATE TABLE plan_features (
 CREATE INDEX idx_plan_features_plan_id ON plan_features(plan_id);
 CREATE INDEX idx_plan_features_deleted ON plan_features(deleted);
 
--- =====================================================
--- 4. PLAN_FEATURE_CODES - Mapping Plan với Feature Code
--- =====================================================
 CREATE TABLE plan_feature_codes (
     id BIGSERIAL PRIMARY KEY,
     plan_id BIGINT NOT NULL,
@@ -87,9 +68,6 @@ CREATE INDEX idx_plan_feature_codes_plan_id_deleted ON plan_feature_codes(plan_i
 CREATE INDEX idx_plan_feature_codes_plan_feature ON plan_feature_codes(plan_id, feature_code);
 CREATE UNIQUE INDEX idx_plan_feature_codes_unique ON plan_feature_codes(plan_id, feature_code) WHERE deleted = FALSE;
 
--- =====================================================
--- 5. COMPANIES - Công ty khách hàng
--- =====================================================
 CREATE TABLE companies (
     id BIGSERIAL PRIMARY KEY,
     name VARCHAR(255) NOT NULL,
@@ -123,37 +101,6 @@ CREATE INDEX idx_companies_status ON companies(status);
 CREATE INDEX idx_companies_deleted ON companies(deleted);
 CREATE INDEX idx_companies_deactivated_at ON companies(deactivated_at);
 
--- =====================================================
--- 6. USERS - Người dùng hệ thống (auth info only)
--- =====================================================
-CREATE TABLE users (
-    id BIGSERIAL PRIMARY KEY,
-    employee_code VARCHAR(10) UNIQUE,
-    email VARCHAR(255) UNIQUE NOT NULL,
-    password VARCHAR(255) NOT NULL,
-    role VARCHAR(50) NOT NULL,
-    status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
-    locale VARCHAR(50) NOT NULL,
-    language VARCHAR(10) NOT NULL,
-    company_id BIGINT NOT NULL DEFAULT 0,
-    tenant_domain VARCHAR(50),
-    profile_completeness INTEGER NOT NULL DEFAULT 0,
-    deleted BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_users_email ON users(email);
-CREATE INDEX idx_users_employee_code ON users(employee_code);
-CREATE INDEX idx_users_role ON users(role);
-CREATE INDEX idx_users_status ON users(status);
-CREATE INDEX idx_users_company_id ON users(company_id);
-CREATE INDEX idx_users_tenant_domain ON users(tenant_domain);
-CREATE INDEX idx_users_deleted ON users(deleted);
-
--- =====================================================
--- 7. WALLETS - Ví tiền công ty (JPY)
--- =====================================================
 CREATE TABLE wallets (
     id BIGSERIAL PRIMARY KEY,
     company_id BIGINT UNIQUE NOT NULL,
@@ -172,11 +119,6 @@ CREATE UNIQUE INDEX idx_wallets_company_id ON wallets(company_id);
 CREATE INDEX idx_wallets_free_trial ON wallets(free_trial_end_date);
 CREATE INDEX idx_wallets_deleted ON wallets(deleted);
 
-
--- =====================================================
--- 8. WALLET_TRANSACTIONS - Lịch sử giao dịch ví (JPY)
--- KHÔNG có soft delete (data lớn)
--- =====================================================
 CREATE TABLE wallet_transactions (
     id BIGSERIAL PRIMARY KEY,
     wallet_id BIGINT NOT NULL,
@@ -195,9 +137,6 @@ CREATE INDEX idx_wallet_transactions_wallet_id ON wallet_transactions(wallet_id)
 CREATE INDEX idx_wallet_transactions_type ON wallet_transactions(transaction_type);
 CREATE INDEX idx_wallet_transactions_created_at ON wallet_transactions(created_at DESC);
 
--- =====================================================
--- 9. DEPOSIT_REQUESTS - Yêu cầu nạp tiền (JPY)
--- =====================================================
 CREATE TABLE deposit_requests (
     id BIGSERIAL PRIMARY KEY,
     company_id BIGINT NOT NULL,
@@ -219,10 +158,6 @@ CREATE INDEX idx_deposit_requests_status ON deposit_requests(status);
 CREATE INDEX idx_deposit_requests_deleted ON deposit_requests(deleted);
 CREATE INDEX idx_deposit_requests_created_at ON deposit_requests(created_at DESC);
 
--- =====================================================
--- 10. EMPLOYEE_COMMISSIONS - Hoa hồng nhân viên Tamabee (JPY)
--- KHÔNG có soft delete (data lớn)
--- =====================================================
 CREATE TABLE employee_commissions (
     id BIGSERIAL PRIMARY KEY,
     employee_code VARCHAR(50) NOT NULL,
@@ -242,9 +177,6 @@ CREATE INDEX idx_employee_commissions_company_id ON employee_commissions(company
 CREATE INDEX idx_employee_commissions_status ON employee_commissions(status);
 CREATE INDEX idx_employee_commissions_created_at ON employee_commissions(created_at DESC);
 
--- =====================================================
--- 11. TAMABEE_SETTINGS - Cấu hình hệ thống
--- =====================================================
 CREATE TABLE tamabee_settings (
     id BIGSERIAL PRIMARY KEY,
     setting_key VARCHAR(100) NOT NULL UNIQUE,
@@ -259,10 +191,6 @@ CREATE TABLE tamabee_settings (
 CREATE UNIQUE INDEX idx_tamabee_settings_key ON tamabee_settings(setting_key);
 CREATE INDEX idx_tamabee_settings_deleted ON tamabee_settings(deleted);
 
--- =====================================================
--- 12. MAIL_HISTORY - Lịch sử gửi email
--- KHÔNG có soft delete (log data)
--- =====================================================
 CREATE TABLE mail_history (
     id BIGSERIAL PRIMARY KEY,
     recipient_email VARCHAR(255) NOT NULL,
@@ -279,11 +207,7 @@ CREATE INDEX idx_mail_history_recipient ON mail_history(recipient_email);
 CREATE INDEX idx_mail_history_status ON mail_history(status);
 CREATE INDEX idx_mail_history_sent_at ON mail_history(sent_at DESC);
 
--- =====================================================
--- INSERT TAMABEE COMPANY (id=0, tenantDomain="tamabee")
--- =====================================================
 INSERT INTO companies (id, name, owner_name, email, phone, address, industry, zipcode, locale, language, tenant_domain, status, deleted, created_at, updated_at)
-VALUES (0, 'Tamabee', 'Tamabee Admin', 'admin@tamabee.com', '0311111111', '東京都千代田区1-1-1', 'technology', '1000001', 'Asia/Tokyo', 'ja', 'tamabee', 'ACTIVE', false, NOW(), NOW());
+VALUES (0, 'Tamabee', 'Tamabee Admin', 'admin@tamabee.com', '0311111111', 'Tokyo', 'technology', '1000001', 'Asia/Tokyo', 'ja', 'tamabee', 'ACTIVE', false, NOW(), NOW());
 
--- Reset sequence để bắt đầu từ 1 cho companies mới
 SELECT setval('companies_id_seq', 1, false);

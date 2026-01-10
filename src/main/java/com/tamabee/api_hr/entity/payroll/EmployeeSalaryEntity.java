@@ -18,7 +18,6 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "employee_salaries", indexes = {
         @Index(name = "idx_emp_salary_employee_id", columnList = "employeeId"),
-        @Index(name = "idx_emp_salary_company_id", columnList = "companyId"),
         @Index(name = "idx_emp_salary_deleted", columnList = "deleted"),
         @Index(name = "idx_emp_salary_effective", columnList = "employeeId, effectiveFrom")
 })
@@ -30,9 +29,6 @@ public class EmployeeSalaryEntity extends BaseEntity {
 
     @Column(nullable = false)
     private Long employeeId;
-
-    @Column(nullable = false)
-    private Long companyId;
 
     // Loại lương
     @Enumerated(EnumType.STRING)

@@ -37,18 +37,18 @@ public class HolidayServiceImpl implements IHolidayService {
 
     @Override
     @Transactional
-    public HolidayResponse createHoliday(Long companyId, CreateHolidayRequest request) {
+    public HolidayResponse createHoliday(CreateHolidayRequest request) {
         // Kiểm tra ngày nghỉ đã tồn tại chưa
-        if (holidayRepository.existsByCompanyIdAndDateAndDeletedFalse(companyId, request.getDate())) {
+        if (holidayRepository.existsByDateAndDeletedFalse(request.getDate())) {
             throw new ConflictException(
                     "Ngày nghỉ lễ đã tồn tại cho ngày " + request.getDate(),
                     ErrorCode.HOLIDAY_DATE_EXISTS);
         }
 
-        HolidayEntity entity = holidayMapper.toEntity(companyId, request);
+        HolidayEntity entity = holidayMapper.toEntity(request);
         entity = holidayRepository.save(entity);
 
-        log.info("Đã tạo ngày nghỉ lễ {} cho công ty {}", entity.getId(), companyId);
+        log.info("Đã tạo ngày nghỉ lễ {} cho ngày {}", entity.getId(), request.getDate());
         return holidayMapper.toResponse(entity);
     }
 
@@ -59,7 +59,7 @@ public class HolidayServiceImpl implements IHolidayService {
 
         // Nếu thay đổi ngày, kiểm tra ngày mới đã tồn tại chưa
         if (request.getDate() != null && !request.getDate().equals(entity.getDate())) {
-            if (holidayRepository.existsByCompanyIdAndDateAndDeletedFalse(entity.getCompanyId(), request.getDate())) {
+            if (holidayRepository.existsByDateAndDeletedFalse(request.getDate())) {
                 throw new ConflictException(
                         "Ngày nghỉ lễ đã tồn tại cho ngày " + request.getDate(),
                         ErrorCode.HOLIDAY_DATE_EXISTS);
@@ -94,22 +94,22 @@ public class HolidayServiceImpl implements IHolidayService {
 
     @Override
     @Transactional(readOnly = true)
-    public Page<HolidayResponse> getHolidays(Long companyId, Integer year, Pageable pageable) {
+    public Page<HolidayResponse> getHolidays(Integer year, Pageable pageable) {
         if (year != null) {
             LocalDate startDate = LocalDate.of(year, 1, 1);
             LocalDate endDate = LocalDate.of(year, 12, 31);
             return holidayRepository
-                    .findByCompanyIdAndDateBetweenAndDeletedFalse(companyId, startDate, endDate, pageable)
+                    .findByDateBetweenAndDeletedFalse(startDate, endDate, pageable)
                     .map(holidayMapper::toResponse);
         }
-        return holidayRepository.findByCompanyIdAndDeletedFalse(companyId, pageable)
+        return holidayRepository.findByDeletedFalse(pageable)
                 .map(holidayMapper::toResponse);
     }
 
     @Override
     @Transactional(readOnly = true)
-    public List<HolidayResponse> getHolidaysByDateRange(Long companyId, LocalDate startDate, LocalDate endDate) {
-        return holidayRepository.findByCompanyIdAndDateBetween(companyId, startDate, endDate)
+    public List<HolidayResponse> getHolidaysByDateRange(LocalDate startDate, LocalDate endDate) {
+        return holidayRepository.findByDateBetween(startDate, endDate)
                 .stream()
                 .map(holidayMapper::toResponse)
                 .collect(Collectors.toList());

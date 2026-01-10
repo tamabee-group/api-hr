@@ -35,202 +35,185 @@ import java.util.List;
 @PreAuthorize(RoleConstants.HAS_COMPANY_ACCESS)
 public class ReportController {
 
-    private final IReportService reportService;
-    private final UserRepository userRepository;
+        private final IReportService reportService;
+        private final UserRepository userRepository;
 
-    /**
-     * Tạo báo cáo tổng hợp chấm công
-     * GET /api/company/reports/attendance-summary
-     */
-    @GetMapping("/attendance-summary")
-    public ResponseEntity<BaseResponse<AttendanceSummaryReport>> getAttendanceSummary(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) List<Long> employeeIds,
-            @RequestParam(required = false) List<Long> departmentIds,
-            @RequestParam(required = false) List<ContractType> contractTypes,
-            @RequestParam(required = false) List<SalaryType> salaryTypes,
-            @RequestParam(required = false) List<Long> shiftTemplateIds) {
-        Long companyId = getCurrentUserCompanyId();
-        ReportQuery query = buildReportQuery(startDate, endDate, employeeIds, departmentIds,
-                contractTypes, salaryTypes, shiftTemplateIds);
-        AttendanceSummaryReport report = reportService.generateAttendanceSummary(companyId, query);
-        return ResponseEntity.ok(BaseResponse.success(report, "Tạo báo cáo chấm công thành công"));
-    }
+        /**
+         * Tạo báo cáo tổng hợp chấm công
+         * GET /api/company/reports/attendance-summary
+         */
+        @GetMapping("/attendance-summary")
+        public ResponseEntity<BaseResponse<AttendanceSummaryReport>> getAttendanceSummary(
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                        @RequestParam(required = false) List<Long> employeeIds,
+                        @RequestParam(required = false) List<Long> departmentIds,
+                        @RequestParam(required = false) List<ContractType> contractTypes,
+                        @RequestParam(required = false) List<SalaryType> salaryTypes,
+                        @RequestParam(required = false) List<Long> shiftTemplateIds) {
+                ReportQuery query = buildReportQuery(startDate, endDate, employeeIds, departmentIds,
+                                contractTypes, salaryTypes, shiftTemplateIds);
+                AttendanceSummaryReport report = reportService.generateAttendanceSummary(query);
+                return ResponseEntity.ok(BaseResponse.success(report, "Tạo báo cáo chấm công thành công"));
+        }
 
-    /**
-     * Tạo báo cáo làm thêm giờ
-     * GET /api/company/reports/overtime
-     */
-    @GetMapping("/overtime")
-    public ResponseEntity<BaseResponse<OvertimeReport>> getOvertimeReport(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) List<Long> employeeIds,
-            @RequestParam(required = false) List<Long> departmentIds,
-            @RequestParam(required = false) List<ContractType> contractTypes,
-            @RequestParam(required = false) List<SalaryType> salaryTypes,
-            @RequestParam(required = false) List<Long> shiftTemplateIds) {
-        Long companyId = getCurrentUserCompanyId();
-        ReportQuery query = buildReportQuery(startDate, endDate, employeeIds, departmentIds,
-                contractTypes, salaryTypes, shiftTemplateIds);
-        OvertimeReport report = reportService.generateOvertimeReport(companyId, query);
-        return ResponseEntity.ok(BaseResponse.success(report, "Tạo báo cáo làm thêm giờ thành công"));
-    }
+        /**
+         * Tạo báo cáo làm thêm giờ
+         * GET /api/company/reports/overtime
+         */
+        @GetMapping("/overtime")
+        public ResponseEntity<BaseResponse<OvertimeReport>> getOvertimeReport(
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                        @RequestParam(required = false) List<Long> employeeIds,
+                        @RequestParam(required = false) List<Long> departmentIds,
+                        @RequestParam(required = false) List<ContractType> contractTypes,
+                        @RequestParam(required = false) List<SalaryType> salaryTypes,
+                        @RequestParam(required = false) List<Long> shiftTemplateIds) {
+                ReportQuery query = buildReportQuery(startDate, endDate, employeeIds, departmentIds,
+                                contractTypes, salaryTypes, shiftTemplateIds);
+                OvertimeReport report = reportService.generateOvertimeReport(query);
+                return ResponseEntity.ok(BaseResponse.success(report, "Tạo báo cáo làm thêm giờ thành công"));
+        }
 
-    /**
-     * Tạo báo cáo tuân thủ nghỉ giải lao
-     * GET /api/company/reports/break-compliance
-     */
-    @GetMapping("/break-compliance")
-    public ResponseEntity<BaseResponse<BreakComplianceReport>> getBreakComplianceReport(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) List<Long> employeeIds,
-            @RequestParam(required = false) List<Long> departmentIds,
-            @RequestParam(required = false) List<ContractType> contractTypes,
-            @RequestParam(required = false) List<SalaryType> salaryTypes,
-            @RequestParam(required = false) List<Long> shiftTemplateIds) {
-        Long companyId = getCurrentUserCompanyId();
-        ReportQuery query = buildReportQuery(startDate, endDate, employeeIds, departmentIds,
-                contractTypes, salaryTypes, shiftTemplateIds);
-        BreakComplianceReport report = reportService.generateBreakComplianceReport(companyId, query);
-        return ResponseEntity.ok(BaseResponse.success(report, "Tạo báo cáo tuân thủ nghỉ giải lao thành công"));
-    }
+        /**
+         * Tạo báo cáo tuân thủ nghỉ giải lao
+         * GET /api/company/reports/break-compliance
+         */
+        @GetMapping("/break-compliance")
+        public ResponseEntity<BaseResponse<BreakComplianceReport>> getBreakComplianceReport(
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                        @RequestParam(required = false) List<Long> employeeIds,
+                        @RequestParam(required = false) List<Long> departmentIds,
+                        @RequestParam(required = false) List<ContractType> contractTypes,
+                        @RequestParam(required = false) List<SalaryType> salaryTypes,
+                        @RequestParam(required = false) List<Long> shiftTemplateIds) {
+                ReportQuery query = buildReportQuery(startDate, endDate, employeeIds, departmentIds,
+                                contractTypes, salaryTypes, shiftTemplateIds);
+                BreakComplianceReport report = reportService.generateBreakComplianceReport(query);
+                return ResponseEntity.ok(BaseResponse.success(report, "Tạo báo cáo tuân thủ nghỉ giải lao thành công"));
+        }
 
-    /**
-     * Tạo báo cáo tổng hợp lương
-     * GET /api/company/reports/payroll-summary
-     */
-    @GetMapping("/payroll-summary")
-    public ResponseEntity<BaseResponse<PayrollSummaryReport>> getPayrollSummary(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) List<Long> employeeIds,
-            @RequestParam(required = false) List<Long> departmentIds,
-            @RequestParam(required = false) List<ContractType> contractTypes,
-            @RequestParam(required = false) List<SalaryType> salaryTypes,
-            @RequestParam(required = false) List<Long> shiftTemplateIds) {
-        Long companyId = getCurrentUserCompanyId();
-        ReportQuery query = buildReportQuery(startDate, endDate, employeeIds, departmentIds,
-                contractTypes, salaryTypes, shiftTemplateIds);
-        PayrollSummaryReport report = reportService.generatePayrollSummary(companyId, query);
-        return ResponseEntity.ok(BaseResponse.success(report, "Tạo báo cáo tổng hợp lương thành công"));
-    }
+        /**
+         * Tạo báo cáo tổng hợp lương
+         * GET /api/company/reports/payroll-summary
+         */
+        @GetMapping("/payroll-summary")
+        public ResponseEntity<BaseResponse<PayrollSummaryReport>> getPayrollSummary(
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                        @RequestParam(required = false) List<Long> employeeIds,
+                        @RequestParam(required = false) List<Long> departmentIds,
+                        @RequestParam(required = false) List<ContractType> contractTypes,
+                        @RequestParam(required = false) List<SalaryType> salaryTypes,
+                        @RequestParam(required = false) List<Long> shiftTemplateIds) {
+                ReportQuery query = buildReportQuery(startDate, endDate, employeeIds, departmentIds,
+                                contractTypes, salaryTypes, shiftTemplateIds);
+                PayrollSummaryReport report = reportService.generatePayrollSummary(query);
+                return ResponseEntity.ok(BaseResponse.success(report, "Tạo báo cáo tổng hợp lương thành công"));
+        }
 
-    /**
-     * Tạo báo cáo phân tích chi phí
-     * GET /api/company/reports/cost-analysis
-     */
-    @GetMapping("/cost-analysis")
-    public ResponseEntity<BaseResponse<CostAnalysisReport>> getCostAnalysis(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) List<Long> employeeIds,
-            @RequestParam(required = false) List<Long> departmentIds,
-            @RequestParam(required = false) List<ContractType> contractTypes,
-            @RequestParam(required = false) List<SalaryType> salaryTypes,
-            @RequestParam(required = false) List<Long> shiftTemplateIds) {
-        Long companyId = getCurrentUserCompanyId();
-        ReportQuery query = buildReportQuery(startDate, endDate, employeeIds, departmentIds,
-                contractTypes, salaryTypes, shiftTemplateIds);
-        CostAnalysisReport report = reportService.generateCostAnalysis(companyId, query);
-        return ResponseEntity.ok(BaseResponse.success(report, "Tạo báo cáo phân tích chi phí thành công"));
-    }
+        /**
+         * Tạo báo cáo phân tích chi phí
+         * GET /api/company/reports/cost-analysis
+         */
+        @GetMapping("/cost-analysis")
+        public ResponseEntity<BaseResponse<CostAnalysisReport>> getCostAnalysis(
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                        @RequestParam(required = false) List<Long> employeeIds,
+                        @RequestParam(required = false) List<Long> departmentIds,
+                        @RequestParam(required = false) List<ContractType> contractTypes,
+                        @RequestParam(required = false) List<SalaryType> salaryTypes,
+                        @RequestParam(required = false) List<Long> shiftTemplateIds) {
+                ReportQuery query = buildReportQuery(startDate, endDate, employeeIds, departmentIds,
+                                contractTypes, salaryTypes, shiftTemplateIds);
+                CostAnalysisReport report = reportService.generateCostAnalysis(query);
+                return ResponseEntity.ok(BaseResponse.success(report, "Tạo báo cáo phân tích chi phí thành công"));
+        }
 
-    /**
-     * Tạo báo cáo sử dụng ca làm việc
-     * GET /api/company/reports/shift-utilization
-     */
-    @GetMapping("/shift-utilization")
-    public ResponseEntity<BaseResponse<ShiftUtilizationReport>> getShiftUtilization(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) List<Long> employeeIds,
-            @RequestParam(required = false) List<Long> departmentIds,
-            @RequestParam(required = false) List<ContractType> contractTypes,
-            @RequestParam(required = false) List<SalaryType> salaryTypes,
-            @RequestParam(required = false) List<Long> shiftTemplateIds) {
-        Long companyId = getCurrentUserCompanyId();
-        ReportQuery query = buildReportQuery(startDate, endDate, employeeIds, departmentIds,
-                contractTypes, salaryTypes, shiftTemplateIds);
-        ShiftUtilizationReport report = reportService.generateShiftUtilization(companyId, query);
-        return ResponseEntity.ok(BaseResponse.success(report, "Tạo báo cáo sử dụng ca làm việc thành công"));
-    }
+        /**
+         * Tạo báo cáo sử dụng ca làm việc
+         * GET /api/company/reports/shift-utilization
+         */
+        @GetMapping("/shift-utilization")
+        public ResponseEntity<BaseResponse<ShiftUtilizationReport>> getShiftUtilization(
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                        @RequestParam(required = false) List<Long> employeeIds,
+                        @RequestParam(required = false) List<Long> departmentIds,
+                        @RequestParam(required = false) List<ContractType> contractTypes,
+                        @RequestParam(required = false) List<SalaryType> salaryTypes,
+                        @RequestParam(required = false) List<Long> shiftTemplateIds) {
+                ReportQuery query = buildReportQuery(startDate, endDate, employeeIds, departmentIds,
+                                contractTypes, salaryTypes, shiftTemplateIds);
+                ShiftUtilizationReport report = reportService.generateShiftUtilization(query);
+                return ResponseEntity.ok(BaseResponse.success(report, "Tạo báo cáo sử dụng ca làm việc thành công"));
+        }
 
-    /**
-     * Xuất báo cáo theo định dạng (CSV, PDF)
-     * GET /api/company/reports/export
-     */
-    @GetMapping("/export")
-    public ResponseEntity<byte[]> exportReport(
-            @RequestParam ReportType type,
-            @RequestParam ExportFormat format,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
-            @RequestParam(required = false) List<Long> employeeIds,
-            @RequestParam(required = false) List<Long> departmentIds,
-            @RequestParam(required = false) List<ContractType> contractTypes,
-            @RequestParam(required = false) List<SalaryType> salaryTypes,
-            @RequestParam(required = false) List<Long> shiftTemplateIds,
-            @RequestParam(defaultValue = "vi") String language) {
-        Long companyId = getCurrentUserCompanyId();
-        ReportQuery query = buildReportQuery(startDate, endDate, employeeIds, departmentIds,
-                contractTypes, salaryTypes, shiftTemplateIds);
+        /**
+         * Xuất báo cáo theo định dạng (CSV, PDF)
+         * GET /api/company/reports/export
+         */
+        @GetMapping("/export")
+        public ResponseEntity<byte[]> exportReport(
+                        @RequestParam ReportType type,
+                        @RequestParam ExportFormat format,
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+                        @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate,
+                        @RequestParam(required = false) List<Long> employeeIds,
+                        @RequestParam(required = false) List<Long> departmentIds,
+                        @RequestParam(required = false) List<ContractType> contractTypes,
+                        @RequestParam(required = false) List<SalaryType> salaryTypes,
+                        @RequestParam(required = false) List<Long> shiftTemplateIds,
+                        @RequestParam(defaultValue = "vi") String language) {
+                ReportQuery query = buildReportQuery(startDate, endDate, employeeIds, departmentIds,
+                                contractTypes, salaryTypes, shiftTemplateIds);
 
-        byte[] data = reportService.exportReport(type, companyId, query, format, language);
+                byte[] data = reportService.exportReport(type, query, format, language);
 
-        String filename = buildExportFilename(type, startDate, endDate, format);
-        String contentType = format == ExportFormat.PDF
-                ? MediaType.APPLICATION_PDF_VALUE
-                : "text/csv; charset=UTF-8";
+                String filename = buildExportFilename(type, startDate, endDate, format);
+                String contentType = format == ExportFormat.PDF
+                                ? MediaType.APPLICATION_PDF_VALUE
+                                : "text/csv; charset=UTF-8";
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
-                .header(HttpHeaders.CONTENT_TYPE, contentType)
-                .body(data);
-    }
+                return ResponseEntity.ok()
+                                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + filename + "\"")
+                                .header(HttpHeaders.CONTENT_TYPE, contentType)
+                                .body(data);
+        }
 
-    /**
-     * Build ReportQuery từ các parameters
-     */
-    private ReportQuery buildReportQuery(
-            LocalDate startDate,
-            LocalDate endDate,
-            List<Long> employeeIds,
-            List<Long> departmentIds,
-            List<ContractType> contractTypes,
-            List<SalaryType> salaryTypes,
-            List<Long> shiftTemplateIds) {
-        return ReportQuery.builder()
-                .startDate(startDate)
-                .endDate(endDate)
-                .employeeIds(employeeIds)
-                .departmentIds(departmentIds)
-                .contractTypes(contractTypes)
-                .salaryTypes(salaryTypes)
-                .shiftTemplateIds(shiftTemplateIds)
-                .build();
-    }
+        /**
+         * Build ReportQuery từ các parameters
+         */
+        private ReportQuery buildReportQuery(
+                        LocalDate startDate,
+                        LocalDate endDate,
+                        List<Long> employeeIds,
+                        List<Long> departmentIds,
+                        List<ContractType> contractTypes,
+                        List<SalaryType> salaryTypes,
+                        List<Long> shiftTemplateIds) {
+                return ReportQuery.builder()
+                                .startDate(startDate)
+                                .endDate(endDate)
+                                .employeeIds(employeeIds)
+                                .departmentIds(departmentIds)
+                                .contractTypes(contractTypes)
+                                .salaryTypes(salaryTypes)
+                                .shiftTemplateIds(shiftTemplateIds)
+                                .build();
+        }
 
-    /**
-     * Build filename cho file export
-     */
-    private String buildExportFilename(ReportType type, LocalDate startDate, LocalDate endDate, ExportFormat format) {
-        String dateRange = startDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "-"
-                + endDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
-        String extension = format == ExportFormat.PDF ? ".pdf" : ".csv";
-        return type.name().toLowerCase() + "_" + dateRange + extension;
-    }
-
-    /**
-     * Lấy companyId của user đang đăng nhập
-     */
-    private Long getCurrentUserCompanyId() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
-                .orElseThrow(() -> NotFoundException.user(email));
-        return user.getCompanyId();
-    }
+        /**
+         * Build filename cho file export
+         */
+        private String buildExportFilename(ReportType type, LocalDate startDate, LocalDate endDate,
+                        ExportFormat format) {
+                String dateRange = startDate.format(DateTimeFormatter.ofPattern("yyyyMMdd")) + "-"
+                                + endDate.format(DateTimeFormatter.ofPattern("yyyyMMdd"));
+                String extension = format == ExportFormat.PDF ? ".pdf" : ".csv";
+                return type.name().toLowerCase() + "_" + dateRange + extension;
+        }
 }

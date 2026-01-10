@@ -47,9 +47,8 @@ public class HolidayController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "50") int size,
             @RequestParam(required = false) Integer year) {
-        Long companyId = getCurrentUserCompanyId();
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "date"));
-        Page<HolidayResponse> holidays = holidayService.getHolidays(companyId, year, pageable);
+        Page<HolidayResponse> holidays = holidayService.getHolidays(year, pageable);
         return ResponseEntity.ok(BaseResponse.success(holidays, "Lấy danh sách ngày nghỉ thành công"));
     }
 
@@ -70,8 +69,7 @@ public class HolidayController {
     @PostMapping
     public ResponseEntity<BaseResponse<HolidayResponse>> createHoliday(
             @Valid @RequestBody CreateHolidayRequest request) {
-        Long companyId = getCurrentUserCompanyId();
-        HolidayResponse holiday = holidayService.createHoliday(companyId, request);
+        HolidayResponse holiday = holidayService.createHoliday(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.created(holiday, "Tạo ngày nghỉ thành công"));
     }
@@ -108,17 +106,9 @@ public class HolidayController {
     public ResponseEntity<BaseResponse<List<HolidayResponse>>> getHolidaysByDateRange(
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
             @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        Long companyId = getCurrentUserCompanyId();
-        List<HolidayResponse> holidays = holidayService.getHolidaysByDateRange(companyId, startDate, endDate);
+        List<HolidayResponse> holidays = holidayService.getHolidaysByDateRange(startDate, endDate);
         return ResponseEntity
                 .ok(BaseResponse.success(holidays, "Lấy danh sách ngày nghỉ theo khoảng thời gian thành công"));
-    }
-
-    /**
-     * Lấy companyId của user đang đăng nhập
-     */
-    private Long getCurrentUserCompanyId() {
-        return getCurrentUser().getCompanyId();
     }
 
     /**

@@ -7,13 +7,10 @@ import com.tamabee.api_hr.dto.response.CompanySettingsResponse;
 import com.tamabee.api_hr.dto.response.OvertimeConfigResponse;
 import com.tamabee.api_hr.dto.response.WorkModeChangeLogResponse;
 import com.tamabee.api_hr.dto.response.WorkModeConfigResponse;
-import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.mapper.company.BreakConfigMapper;
 import com.tamabee.api_hr.mapper.company.OvertimeConfigMapper;
 import com.tamabee.api_hr.model.response.BaseResponse;
-import com.tamabee.api_hr.repository.UserRepository;
 import com.tamabee.api_hr.service.company.ICompanySettingsService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -35,7 +32,6 @@ import java.util.List;
 public class CompanySettingsController {
 
     private final ICompanySettingsService companySettingsService;
-    private final UserRepository userRepository;
     private final BreakConfigMapper breakConfigMapper;
     private final OvertimeConfigMapper overtimeConfigMapper;
 
@@ -44,8 +40,7 @@ public class CompanySettingsController {
      */
     @GetMapping
     public ResponseEntity<BaseResponse<CompanySettingsResponse>> getSettings() {
-        Long companyId = getCurrentUserCompanyId();
-        CompanySettingsResponse settings = companySettingsService.getSettings(companyId);
+        CompanySettingsResponse settings = companySettingsService.getSettings();
         return ResponseEntity.ok(BaseResponse.success(settings, "Lấy cấu hình công ty thành công"));
     }
 
@@ -54,8 +49,7 @@ public class CompanySettingsController {
      */
     @GetMapping("/work-mode")
     public ResponseEntity<BaseResponse<WorkModeConfigResponse>> getWorkModeConfig() {
-        Long companyId = getCurrentUserCompanyId();
-        WorkModeConfigResponse config = companySettingsService.getWorkModeConfig(companyId);
+        WorkModeConfigResponse config = companySettingsService.getWorkModeConfig();
         return ResponseEntity.ok(BaseResponse.success(config, "Lấy cấu hình work mode thành công"));
     }
 
@@ -65,9 +59,8 @@ public class CompanySettingsController {
     @PutMapping("/work-mode")
     public ResponseEntity<BaseResponse<WorkModeConfigResponse>> updateWorkModeConfig(
             @Valid @RequestBody WorkModeConfigRequest request) {
-        Long companyId = getCurrentUserCompanyId();
         String changedBy = getCurrentUserEmail();
-        WorkModeConfigResponse config = companySettingsService.updateWorkModeConfig(companyId, request, changedBy);
+        WorkModeConfigResponse config = companySettingsService.updateWorkModeConfig(request, changedBy);
         return ResponseEntity.ok(BaseResponse.success(config, "Cập nhật cấu hình work mode thành công"));
     }
 
@@ -76,8 +69,7 @@ public class CompanySettingsController {
      */
     @GetMapping("/work-mode/logs")
     public ResponseEntity<BaseResponse<List<WorkModeChangeLogResponse>>> getWorkModeChangeLogs() {
-        Long companyId = getCurrentUserCompanyId();
-        List<WorkModeChangeLogResponse> logs = companySettingsService.getWorkModeChangeLogs(companyId);
+        List<WorkModeChangeLogResponse> logs = companySettingsService.getWorkModeChangeLogs();
         return ResponseEntity.ok(BaseResponse.success(logs, "Lấy lịch sử thay đổi work mode thành công"));
     }
 
@@ -87,8 +79,7 @@ public class CompanySettingsController {
     @PutMapping("/attendance")
     public ResponseEntity<BaseResponse<AttendanceConfig>> updateAttendanceConfig(
             @Valid @RequestBody AttendanceConfigRequest request) {
-        Long companyId = getCurrentUserCompanyId();
-        AttendanceConfig config = companySettingsService.updateAttendanceConfig(companyId, request);
+        AttendanceConfig config = companySettingsService.updateAttendanceConfig(request);
         return ResponseEntity.ok(BaseResponse.success(config, "Cập nhật cấu hình chấm công thành công"));
     }
 
@@ -98,8 +89,7 @@ public class CompanySettingsController {
     @PutMapping("/payroll")
     public ResponseEntity<BaseResponse<PayrollConfig>> updatePayrollConfig(
             @Valid @RequestBody PayrollConfigRequest request) {
-        Long companyId = getCurrentUserCompanyId();
-        PayrollConfig config = companySettingsService.updatePayrollConfig(companyId, request);
+        PayrollConfig config = companySettingsService.updatePayrollConfig(request);
         return ResponseEntity.ok(BaseResponse.success(config, "Cập nhật cấu hình tính lương thành công"));
     }
 
@@ -109,8 +99,7 @@ public class CompanySettingsController {
     @PutMapping("/overtime")
     public ResponseEntity<BaseResponse<OvertimeConfigResponse>> updateOvertimeConfig(
             @Valid @RequestBody OvertimeConfigRequest request) {
-        Long companyId = getCurrentUserCompanyId();
-        OvertimeConfig config = companySettingsService.updateOvertimeConfig(companyId, request);
+        OvertimeConfig config = companySettingsService.updateOvertimeConfig(request);
         OvertimeConfigResponse response = overtimeConfigMapper.toResponse(config);
         return ResponseEntity.ok(BaseResponse.success(response, "Cập nhật cấu hình tăng ca thành công"));
     }
@@ -120,8 +109,7 @@ public class CompanySettingsController {
      */
     @GetMapping("/overtime")
     public ResponseEntity<BaseResponse<OvertimeConfigResponse>> getOvertimeConfig() {
-        Long companyId = getCurrentUserCompanyId();
-        OvertimeConfig config = companySettingsService.getOvertimeConfig(companyId);
+        OvertimeConfig config = companySettingsService.getOvertimeConfig();
         OvertimeConfigResponse response = overtimeConfigMapper.toResponse(config);
         return ResponseEntity.ok(BaseResponse.success(response, "Lấy cấu hình tăng ca thành công"));
     }
@@ -132,8 +120,7 @@ public class CompanySettingsController {
     @PutMapping("/break")
     public ResponseEntity<BaseResponse<Void>> updateBreakConfig(
             @Valid @RequestBody BreakConfigRequest request) {
-        Long companyId = getCurrentUserCompanyId();
-        companySettingsService.updateBreakConfig(companyId, request);
+        companySettingsService.updateBreakConfig(request);
         return ResponseEntity.ok(BaseResponse.success(null, "Cập nhật cấu hình giờ giải lao thành công"));
     }
 
@@ -142,8 +129,7 @@ public class CompanySettingsController {
      */
     @GetMapping("/break")
     public ResponseEntity<BaseResponse<BreakConfigResponse>> getBreakConfig() {
-        Long companyId = getCurrentUserCompanyId();
-        BreakConfig config = companySettingsService.getBreakConfig(companyId);
+        BreakConfig config = companySettingsService.getBreakConfig();
         BreakConfigResponse response = breakConfigMapper.toResponse(config);
         return ResponseEntity.ok(BaseResponse.success(response, "Lấy cấu hình giờ giải lao thành công"));
     }
@@ -154,8 +140,7 @@ public class CompanySettingsController {
     @PutMapping("/allowance")
     public ResponseEntity<BaseResponse<AllowanceConfig>> updateAllowanceConfig(
             @Valid @RequestBody AllowanceConfigRequest request) {
-        Long companyId = getCurrentUserCompanyId();
-        AllowanceConfig config = companySettingsService.updateAllowanceConfig(companyId, request);
+        AllowanceConfig config = companySettingsService.updateAllowanceConfig(request);
         return ResponseEntity.ok(BaseResponse.success(config, "Cập nhật cấu hình phụ cấp thành công"));
     }
 
@@ -165,20 +150,8 @@ public class CompanySettingsController {
     @PutMapping("/deduction")
     public ResponseEntity<BaseResponse<DeductionConfig>> updateDeductionConfig(
             @Valid @RequestBody DeductionConfigRequest request) {
-        Long companyId = getCurrentUserCompanyId();
-        DeductionConfig config = companySettingsService.updateDeductionConfig(companyId, request);
+        DeductionConfig config = companySettingsService.updateDeductionConfig(request);
         return ResponseEntity.ok(BaseResponse.success(config, "Cập nhật cấu hình khấu trừ thành công"));
-    }
-
-    /**
-     * Lấy companyId của user đang đăng nhập
-     */
-    private Long getCurrentUserCompanyId() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
-                .orElseThrow(() -> NotFoundException.user(email));
-        return user.getCompanyId();
     }
 
     /**

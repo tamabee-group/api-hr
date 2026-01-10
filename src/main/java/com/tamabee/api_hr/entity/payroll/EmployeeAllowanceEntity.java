@@ -18,7 +18,6 @@ import java.time.LocalDate;
 @Entity
 @Table(name = "employee_allowances", indexes = {
         @Index(name = "idx_emp_allowance_employee_id", columnList = "employeeId"),
-        @Index(name = "idx_emp_allowance_company_id", columnList = "companyId"),
         @Index(name = "idx_emp_allowance_deleted", columnList = "deleted"),
         @Index(name = "idx_emp_allowance_active", columnList = "employeeId, isActive"),
         @Index(name = "idx_emp_allowance_effective", columnList = "employeeId, effectiveFrom, effectiveTo")
@@ -32,10 +31,6 @@ public class EmployeeAllowanceEntity extends BaseEntity {
     // ID nhân viên
     @Column(nullable = false)
     private Long employeeId;
-
-    // ID công ty
-    @Column(nullable = false)
-    private Long companyId;
 
     // Mã phụ cấp
     @Column(nullable = false, length = 50)

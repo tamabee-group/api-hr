@@ -47,34 +47,30 @@ public interface EmploymentContractRepository extends JpaRepository<EmploymentCo
                         Long employeeId, ContractStatus status);
 
         /**
-         * Lấy danh sách contracts của công ty (phân trang)
+         * Lấy danh sách contracts (phân trang)
          */
-        Page<EmploymentContractEntity> findByCompanyIdAndDeletedFalse(Long companyId, Pageable pageable);
+        Page<EmploymentContractEntity> findByDeletedFalse(Pageable pageable);
 
         /**
-         * Lấy contracts của công ty theo status
+         * Lấy contracts theo status
          */
-        Page<EmploymentContractEntity> findByCompanyIdAndStatusAndDeletedFalse(
-                        Long companyId, ContractStatus status, Pageable pageable);
+        Page<EmploymentContractEntity> findByStatusAndDeletedFalse(ContractStatus status, Pageable pageable);
 
         /**
-         * Lấy contracts của công ty theo contract type
+         * Lấy contracts theo contract type
          */
-        Page<EmploymentContractEntity> findByCompanyIdAndContractTypeAndDeletedFalse(
-                        Long companyId, ContractType contractType, Pageable pageable);
+        Page<EmploymentContractEntity> findByContractTypeAndDeletedFalse(ContractType contractType, Pageable pageable);
 
         /**
          * Lấy contracts sắp hết hạn (trong vòng N ngày)
          */
         @Query("SELECT ec FROM EmploymentContractEntity ec " +
                         "WHERE ec.deleted = false " +
-                        "AND ec.companyId = :companyId " +
                         "AND ec.status = 'ACTIVE' " +
                         "AND ec.endDate IS NOT NULL " +
                         "AND ec.endDate BETWEEN :currentDate AND :expiryDate " +
                         "ORDER BY ec.endDate ASC")
         Page<EmploymentContractEntity> findExpiringContracts(
-                        @Param("companyId") Long companyId,
                         @Param("currentDate") LocalDate currentDate,
                         @Param("expiryDate") LocalDate expiryDate,
                         Pageable pageable);
@@ -131,19 +127,17 @@ public interface EmploymentContractRepository extends JpaRepository<EmploymentCo
         /**
          * Đếm số contracts theo status
          */
-        long countByCompanyIdAndStatusAndDeletedFalse(Long companyId, ContractStatus status);
+        long countByStatusAndDeletedFalse(ContractStatus status);
 
         /**
          * Lấy contracts trong khoảng thời gian
          */
         @Query("SELECT ec FROM EmploymentContractEntity ec " +
                         "WHERE ec.deleted = false " +
-                        "AND ec.companyId = :companyId " +
                         "AND ec.startDate <= :endDate " +
                         "AND (ec.endDate IS NULL OR ec.endDate >= :startDate) " +
                         "ORDER BY ec.startDate DESC")
-        List<EmploymentContractEntity> findByCompanyIdAndDateRange(
-                        @Param("companyId") Long companyId,
+        List<EmploymentContractEntity> findByDateRange(
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate);
 
@@ -152,22 +146,17 @@ public interface EmploymentContractRepository extends JpaRepository<EmploymentCo
          */
         @Query("SELECT ec FROM EmploymentContractEntity ec " +
                         "WHERE ec.deleted = false " +
-                        "AND ec.companyId = :companyId " +
                         "AND ec.status = 'ACTIVE' " +
                         "AND ec.startDate <= :endDate " +
                         "AND (ec.endDate IS NULL OR ec.endDate >= :startDate)")
-        List<EmploymentContractEntity> findActiveContractsByCompanyIdAndDateRange(
-                        @Param("companyId") Long companyId,
+        List<EmploymentContractEntity> findActiveContractsByDateRange(
                         @Param("startDate") LocalDate startDate,
                         @Param("endDate") LocalDate endDate);
 
         /**
-         * Đếm số contracts của công ty trong năm (dùng để generate contract number)
+         * Đếm số contracts trong năm (dùng để generate contract number)
          */
         @Query("SELECT COUNT(ec) FROM EmploymentContractEntity ec " +
-                        "WHERE ec.companyId = :companyId " +
-                        "AND YEAR(ec.createdAt) = :year")
-        long countByCompanyIdAndYear(
-                        @Param("companyId") Long companyId,
-                        @Param("year") int year);
+                        "WHERE YEAR(ec.createdAt) = :year")
+        long countByYear(@Param("year") int year);
 }

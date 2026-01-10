@@ -15,7 +15,6 @@ import java.util.List;
 
 /**
  * Repository quản lý phân ca làm việc cho nhân viên.
- * Entity này KHÔNG có soft delete - xóa thẳng.
  */
 @Repository
 public interface ShiftAssignmentRepository
@@ -33,26 +32,25 @@ public interface ShiftAssignmentRepository
                         Long employeeId, LocalDate startDate, LocalDate endDate);
 
         /**
-         * Lấy danh sách shift assignments của công ty (phân trang)
+         * Lấy danh sách shift assignments (phân trang)
          */
-        Page<ShiftAssignmentEntity> findByCompanyId(Long companyId, Pageable pageable);
+        Page<ShiftAssignmentEntity> findAll(Pageable pageable);
 
         /**
-         * Lấy danh sách shift assignments của công ty theo ngày
+         * Lấy danh sách shift assignments theo ngày
          */
-        List<ShiftAssignmentEntity> findByCompanyIdAndWorkDate(Long companyId, LocalDate workDate);
+        List<ShiftAssignmentEntity> findByWorkDate(LocalDate workDate);
 
         /**
-         * Lấy danh sách shift assignments của công ty trong khoảng thời gian
+         * Lấy danh sách shift assignments trong khoảng thời gian
          */
-        Page<ShiftAssignmentEntity> findByCompanyIdAndWorkDateBetween(
-                        Long companyId, LocalDate startDate, LocalDate endDate, Pageable pageable);
+        Page<ShiftAssignmentEntity> findByWorkDateBetween(
+                        LocalDate startDate, LocalDate endDate, Pageable pageable);
 
         /**
          * Lấy danh sách shift assignments theo status
          */
-        Page<ShiftAssignmentEntity> findByCompanyIdAndStatus(
-                        Long companyId, ShiftAssignmentStatus status, Pageable pageable);
+        Page<ShiftAssignmentEntity> findByStatus(ShiftAssignmentStatus status, Pageable pageable);
 
         /**
          * Kiểm tra nhân viên có shift assignment vào ngày cụ thể không
@@ -61,7 +59,6 @@ public interface ShiftAssignmentRepository
 
         /**
          * Kiểm tra overlap shift assignments cho nhân viên trong ngày
-         * (dùng để validate không có 2 ca trùng nhau)
          */
         @Query("SELECT COUNT(sa) > 0 FROM ShiftAssignmentEntity sa " +
                         "JOIN ShiftTemplateEntity st ON sa.shiftTemplateId = st.id " +
@@ -90,16 +87,13 @@ public interface ShiftAssignmentRepository
         boolean existsByShiftTemplateId(Long shiftTemplateId);
 
         /**
-         * Tìm các ca làm việc có thể đổi (cùng công ty, cùng ngày, khác nhân viên,
-         * status SCHEDULED)
+         * Tìm các ca làm việc có thể đổi (cùng ngày, khác nhân viên, status SCHEDULED)
          */
         @Query("SELECT sa FROM ShiftAssignmentEntity sa " +
-                        "WHERE sa.companyId = :companyId " +
-                        "AND sa.employeeId != :excludeEmployeeId " +
+                        "WHERE sa.employeeId != :excludeEmployeeId " +
                         "AND sa.workDate = :workDate " +
                         "AND sa.status = 'SCHEDULED'")
         List<ShiftAssignmentEntity> findAvailableForSwap(
-                        @Param("companyId") Long companyId,
                         @Param("excludeEmployeeId") Long excludeEmployeeId,
                         @Param("workDate") LocalDate workDate);
 }

@@ -40,16 +40,16 @@ public class BreakReportServiceImpl implements IBreakReportService {
 
         @Override
         @Transactional(readOnly = true)
-        public DailyBreakReportResponse generateDailyBreakReport(Long companyId, LocalDate date) {
+        public DailyBreakReportResponse generateDailyBreakReport(LocalDate date) {
                 // Lấy cấu hình break của công ty
-                BreakConfig breakConfig = companySettingsService.getBreakConfig(companyId);
+                BreakConfig breakConfig = companySettingsService.getBreakConfig();
 
                 // Lấy tất cả bản ghi giải lao trong ngày
                 List<BreakRecordEntity> breakRecords = breakRecordRepository
-                                .findByCompanyIdAndWorkDateBetween(companyId, date, date);
+                                .findByWorkDateBetween(date, date);
 
                 // Lấy danh sách nhân viên của công ty
-                List<UserEntity> employees = userRepository.findByCompanyIdAndDeletedFalse(companyId);
+                List<UserEntity> employees = userRepository.findByDeletedFalse();
                 Map<Long, UserEntity> employeeMap = employees.stream()
                                 .collect(Collectors.toMap(UserEntity::getId, e -> e));
 
@@ -142,7 +142,6 @@ public class BreakReportServiceImpl implements IBreakReportService {
 
                 return DailyBreakReportResponse.builder()
                                 .reportDate(date)
-                                .companyId(companyId)
                                 .totalEmployees(totalEmployees)
                                 .totalBreakMinutes(totalBreakMinutes)
                                 .averageBreakMinutes(Math.round(averageBreak * 100.0) / 100.0)
@@ -157,9 +156,9 @@ public class BreakReportServiceImpl implements IBreakReportService {
 
         @Override
         @Transactional(readOnly = true)
-        public MonthlyBreakReportResponse generateMonthlyBreakReport(Long companyId, YearMonth yearMonth) {
+        public MonthlyBreakReportResponse generateMonthlyBreakReport(YearMonth yearMonth) {
                 // Lấy cấu hình break của công ty
-                BreakConfig breakConfig = companySettingsService.getBreakConfig(companyId);
+                BreakConfig breakConfig = companySettingsService.getBreakConfig();
 
                 // Xác định khoảng thời gian
                 LocalDate startDate = yearMonth.atDay(1);
@@ -167,10 +166,10 @@ public class BreakReportServiceImpl implements IBreakReportService {
 
                 // Lấy tất cả bản ghi giải lao trong tháng
                 List<BreakRecordEntity> breakRecords = breakRecordRepository
-                                .findByCompanyIdAndWorkDateBetween(companyId, startDate, endDate);
+                                .findByWorkDateBetween(startDate, endDate);
 
                 // Lấy danh sách nhân viên của công ty
-                List<UserEntity> employees = userRepository.findByCompanyIdAndDeletedFalse(companyId);
+                List<UserEntity> employees = userRepository.findByDeletedFalse();
                 Map<Long, UserEntity> employeeMap = employees.stream()
                                 .collect(Collectors.toMap(UserEntity::getId, e -> e));
 
@@ -279,7 +278,6 @@ public class BreakReportServiceImpl implements IBreakReportService {
 
                 return MonthlyBreakReportResponse.builder()
                                 .reportMonth(yearMonth)
-                                .companyId(companyId)
                                 .totalEmployees(totalEmployees)
                                 .totalWorkingDays(totalWorkingDays)
                                 .totalBreakMinutes(totalBreakMinutes)

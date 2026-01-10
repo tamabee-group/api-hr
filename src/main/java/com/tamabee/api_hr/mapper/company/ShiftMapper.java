@@ -20,13 +20,12 @@ public class ShiftMapper {
 
     // ==================== Shift Template ====================
 
-    public ShiftTemplateEntity toEntity(ShiftTemplateRequest request, Long companyId) {
+    public ShiftTemplateEntity toEntity(ShiftTemplateRequest request) {
         if (request == null) {
             return null;
         }
 
         ShiftTemplateEntity entity = new ShiftTemplateEntity();
-        entity.setCompanyId(companyId);
         entity.setName(request.getName());
         entity.setStartTime(request.getStartTime());
         entity.setEndTime(request.getEndTime());
@@ -61,7 +60,6 @@ public class ShiftMapper {
 
         ShiftTemplateResponse response = new ShiftTemplateResponse();
         response.setId(entity.getId());
-        response.setCompanyId(entity.getCompanyId());
         response.setName(entity.getName());
         response.setStartTime(entity.getStartTime());
         response.setEndTime(entity.getEndTime());
@@ -77,14 +75,13 @@ public class ShiftMapper {
 
     // ==================== Shift Assignment ====================
 
-    public ShiftAssignmentEntity toEntity(ShiftAssignmentRequest request, Long companyId) {
+    public ShiftAssignmentEntity toEntity(ShiftAssignmentRequest request) {
         if (request == null) {
             return null;
         }
 
         ShiftAssignmentEntity entity = new ShiftAssignmentEntity();
         entity.setEmployeeId(request.getEmployeeId());
-        entity.setCompanyId(companyId);
         entity.setShiftTemplateId(request.getShiftTemplateId());
         entity.setWorkDate(request.getWorkDate());
 
@@ -104,7 +101,6 @@ public class ShiftMapper {
         response.setEmployeeId(entity.getEmployeeId());
         response.setEmployeeName(
                 employee != null && employee.getProfile() != null ? employee.getProfile().getName() : null);
-        response.setCompanyId(entity.getCompanyId());
         response.setShiftTemplateId(entity.getShiftTemplateId());
         response.setShiftTemplate(toResponse(shiftTemplate));
         response.setWorkDate(entity.getWorkDate());
@@ -122,13 +118,12 @@ public class ShiftMapper {
 
     // ==================== Shift Swap Request ====================
 
-    public ShiftSwapRequestEntity toEntity(ShiftSwapRequest request, Long companyId, Long requesterId) {
+    public ShiftSwapRequestEntity toEntity(ShiftSwapRequest request, Long requesterId) {
         if (request == null) {
             return null;
         }
 
         ShiftSwapRequestEntity entity = new ShiftSwapRequestEntity();
-        entity.setCompanyId(companyId);
         entity.setRequesterId(requesterId);
         entity.setTargetEmployeeId(request.getTargetEmployeeId());
         entity.setRequesterAssignmentId(request.getRequesterAssignmentId());
@@ -149,7 +144,6 @@ public class ShiftMapper {
 
         ShiftSwapRequestResponse response = new ShiftSwapRequestResponse();
         response.setId(entity.getId());
-        response.setCompanyId(entity.getCompanyId());
         response.setRequesterId(entity.getRequesterId());
         response.setRequesterName(
                 requester != null && requester.getProfile() != null ? requester.getProfile().getName() : null);

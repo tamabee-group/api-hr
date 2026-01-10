@@ -15,18 +15,16 @@ public interface IBreakReportService {
     /**
      * Tạo báo cáo giờ giải lao hàng ngày
      *
-     * @param companyId ID công ty
-     * @param date      ngày báo cáo
+     * @param date ngày báo cáo
      * @return báo cáo giờ giải lao hàng ngày
      */
-    DailyBreakReportResponse generateDailyBreakReport(Long companyId, LocalDate date);
+    DailyBreakReportResponse generateDailyBreakReport(LocalDate date);
 
     /**
      * Tạo báo cáo giờ giải lao hàng tháng
      *
-     * @param companyId ID công ty
      * @param yearMonth tháng báo cáo
      * @return báo cáo giờ giải lao hàng tháng
      */
-    MonthlyBreakReportResponse generateMonthlyBreakReport(Long companyId, YearMonth yearMonth);
+    MonthlyBreakReportResponse generateMonthlyBreakReport(YearMonth yearMonth);
 }

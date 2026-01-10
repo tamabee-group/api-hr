@@ -12,14 +12,12 @@ import java.time.LocalTime;
 
 /**
  * Entity lưu trữ cấu hình chấm công và tính lương của từng công ty.
- * Mỗi công ty có 1 bộ settings duy nhất với các config được lưu dưới dạng
- * JSONB.
+ * Mỗi tenant DB có 1 bộ settings duy nhất với các config được lưu dưới dạng JSONB.
  */
 @Data
 @EqualsAndHashCode(callSuper = true)
 @Entity
 @Table(name = "company_settings", indexes = {
-        @Index(name = "idx_company_settings_company_id", columnList = "companyId", unique = true),
         @Index(name = "idx_company_settings_deleted", columnList = "deleted"),
         @Index(name = "idx_company_settings_work_mode", columnList = "workMode")
 })
@@ -28,10 +26,6 @@ public class CompanySettingEntity extends BaseEntity {
     // Soft delete flag
     @Column(nullable = false)
     private Boolean deleted = false;
-
-    // ID công ty (foreign key đến companies table)
-    @Column(nullable = false, unique = true)
-    private Long companyId;
 
     // Chế độ làm việc của công ty
     @Enumerated(EnumType.STRING)

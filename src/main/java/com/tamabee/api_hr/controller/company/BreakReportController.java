@@ -41,9 +41,8 @@ public class BreakReportController {
     @GetMapping("/daily")
     public ResponseEntity<BaseResponse<DailyBreakReportResponse>> getDailyBreakReport(
             @RequestParam String date) {
-        Long companyId = getCurrentUserCompanyId();
         LocalDate reportDate = LocalDate.parse(date, DATE_FORMATTER);
-        DailyBreakReportResponse report = breakReportService.generateDailyBreakReport(companyId, reportDate);
+        DailyBreakReportResponse report = breakReportService.generateDailyBreakReport(reportDate);
         return ResponseEntity.ok(BaseResponse.success(report, "Lấy báo cáo giờ giải lao hàng ngày thành công"));
     }
 
@@ -54,20 +53,8 @@ public class BreakReportController {
     @GetMapping("/monthly")
     public ResponseEntity<BaseResponse<MonthlyBreakReportResponse>> getMonthlyBreakReport(
             @RequestParam String yearMonth) {
-        Long companyId = getCurrentUserCompanyId();
         YearMonth reportMonth = YearMonth.parse(yearMonth, MONTH_FORMATTER);
-        MonthlyBreakReportResponse report = breakReportService.generateMonthlyBreakReport(companyId, reportMonth);
+        MonthlyBreakReportResponse report = breakReportService.generateMonthlyBreakReport(reportMonth);
         return ResponseEntity.ok(BaseResponse.success(report, "Lấy báo cáo giờ giải lao hàng tháng thành công"));
-    }
-
-    /**
-     * Lấy companyId của user đang đăng nhập
-     */
-    private Long getCurrentUserCompanyId() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
-                .orElseThrow(() -> NotFoundException.user(email));
-        return user.getCompanyId();
     }
 }

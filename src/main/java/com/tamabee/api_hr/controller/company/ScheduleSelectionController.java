@@ -40,9 +40,8 @@ public class ScheduleSelectionController {
     public ResponseEntity<BaseResponse<Page<ScheduleSelectionResponse>>> getPendingSelections(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Long companyId = getCurrentUserCompanyId();
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<ScheduleSelectionResponse> selections = scheduleSelectionService.getPendingSelections(companyId, pageable);
+        Page<ScheduleSelectionResponse> selections = scheduleSelectionService.getPendingSelections(pageable);
         return ResponseEntity.ok(BaseResponse.success(selections, "Lấy danh sách yêu cầu chờ duyệt thành công"));
     }
 
@@ -79,13 +78,6 @@ public class ScheduleSelectionController {
         ScheduleSelectionResponse selection = scheduleSelectionService.rejectSelection(id, managerId,
                 request.getRejectionReason());
         return ResponseEntity.ok(BaseResponse.success(selection, "Từ chối yêu cầu chọn lịch thành công"));
-    }
-
-    /**
-     * Lấy companyId của user đang đăng nhập
-     */
-    private Long getCurrentUserCompanyId() {
-        return getCurrentUser().getCompanyId();
     }
 
     /**

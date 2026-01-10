@@ -52,8 +52,6 @@ public class CompanyAttendanceController {
             @RequestParam(required = false) Long employeeId,
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
-        Long companyId = getCurrentUserCompanyId();
-
         AttendanceQueryRequest request = AttendanceQueryRequest.builder()
                 .startDate(startDate)
                 .endDate(endDate)
@@ -62,7 +60,7 @@ public class CompanyAttendanceController {
                 .build();
 
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "workDate"));
-        Page<AttendanceRecordResponse> records = attendanceService.getAttendanceRecords(companyId, request, pageable);
+        Page<AttendanceRecordResponse> records = attendanceService.getAttendanceRecords(request, pageable);
         return ResponseEntity.ok(BaseResponse.success(records, "Lấy danh sách chấm công thành công"));
     }
 
@@ -98,17 +96,6 @@ public class CompanyAttendanceController {
         Long adjustedBy = getCurrentUserId();
         AttendanceRecordResponse record = attendanceService.adjustAttendance(id, adjustedBy, request);
         return ResponseEntity.ok(BaseResponse.success(record, "Điều chỉnh chấm công thành công"));
-    }
-
-    /**
-     * Lấy companyId của user đang đăng nhập
-     */
-    private Long getCurrentUserCompanyId() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        String email = authentication.getName();
-        UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
-                .orElseThrow(() -> NotFoundException.user(email));
-        return user.getCompanyId();
     }
 
     /**

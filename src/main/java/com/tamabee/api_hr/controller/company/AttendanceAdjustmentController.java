@@ -43,11 +43,10 @@ public class AttendanceAdjustmentController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         UserEntity currentUser = getCurrentUser();
-        Long companyId = currentUser.getCompanyId();
         Long userId = currentUser.getId();
         boolean isAdmin = currentUser.getRole() == UserRole.ADMIN_COMPANY;
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<AdjustmentRequestResponse> requests = adjustmentService.getAllRequests(companyId, userId, isAdmin,
+        Page<AdjustmentRequestResponse> requests = adjustmentService.getAllRequests(userId, isAdmin,
                 pageable);
         return ResponseEntity.ok(BaseResponse.success(requests, "Lấy danh sách yêu cầu điều chỉnh thành công"));
     }
@@ -62,11 +61,10 @@ public class AttendanceAdjustmentController {
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size) {
         UserEntity currentUser = getCurrentUser();
-        Long companyId = currentUser.getCompanyId();
         Long userId = currentUser.getId();
         boolean isAdmin = currentUser.getRole() == UserRole.ADMIN_COMPANY;
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "createdAt"));
-        Page<AdjustmentRequestResponse> requests = adjustmentService.getPendingRequests(companyId, userId, isAdmin,
+        Page<AdjustmentRequestResponse> requests = adjustmentService.getPendingRequests(userId, isAdmin,
                 pageable);
         return ResponseEntity.ok(BaseResponse.success(requests, "Lấy danh sách yêu cầu chờ duyệt thành công"));
     }

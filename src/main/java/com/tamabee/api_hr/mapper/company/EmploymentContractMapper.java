@@ -19,14 +19,13 @@ public class EmploymentContractMapper {
     /**
      * Chuyển đổi từ Request DTO sang Entity
      */
-    public EmploymentContractEntity toEntity(ContractRequest request, Long employeeId, Long companyId) {
+    public EmploymentContractEntity toEntity(ContractRequest request, Long employeeId) {
         if (request == null) {
             return null;
         }
 
         EmploymentContractEntity entity = new EmploymentContractEntity();
         entity.setEmployeeId(employeeId);
-        entity.setCompanyId(companyId);
         entity.setContractType(request.getContractType());
         entity.setContractNumber(request.getContractNumber());
         entity.setStartDate(request.getStartDate());
@@ -85,7 +84,6 @@ public class EmploymentContractMapper {
                 .employeeId(entity.getEmployeeId())
                 .employeeName(employeeName)
                 .employeeCode(employeeCode)
-                .companyId(entity.getCompanyId())
                 .contractType(entity.getContractType())
                 .contractNumber(entity.getContractNumber())
                 .startDate(entity.getStartDate())

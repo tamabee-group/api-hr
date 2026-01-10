@@ -18,11 +18,13 @@ public class WalletMapper {
     /**
      * Chuyển đổi WalletEntity sang WalletResponse
      *
-     * @param entity   wallet entity
-     * @param planName tên gói dịch vụ hiện tại
+     * @param entity      wallet entity
+     * @param planNameVi  tên gói dịch vụ tiếng Việt
+     * @param planNameEn  tên gói dịch vụ tiếng Anh
+     * @param planNameJa  tên gói dịch vụ tiếng Nhật
      * @return wallet response
      */
-    public WalletResponse toResponse(WalletEntity entity, String planName) {
+    public WalletResponse toResponse(WalletEntity entity, String planNameVi, String planNameEn, String planNameJa) {
         if (entity == null) {
             return null;
         }
@@ -34,7 +36,9 @@ public class WalletMapper {
         response.setLastBillingDate(entity.getLastBillingDate());
         response.setNextBillingDate(entity.getNextBillingDate());
         response.setFreeTrialEndDate(entity.getFreeTrialEndDate());
-        response.setPlanName(planName);
+        response.setPlanNameVi(planNameVi);
+        response.setPlanNameEn(planNameEn);
+        response.setPlanNameJa(planNameJa);
         response.setIsFreeTrialActive(isInFreeTrial(entity.getFreeTrialEndDate()));
 
         return response;
@@ -45,7 +49,9 @@ public class WalletMapper {
      *
      * @param entity        wallet entity
      * @param companyName   tên công ty
-     * @param planName      tên gói dịch vụ
+     * @param planNameVi    tên gói dịch vụ tiếng Việt
+     * @param planNameEn    tên gói dịch vụ tiếng Anh
+     * @param planNameJa    tên gói dịch vụ tiếng Nhật
      * @param totalDeposits tổng số tiền đã nạp
      * @param totalBillings tổng số tiền đã billing
      * @return wallet overview response
@@ -53,7 +59,9 @@ public class WalletMapper {
     public WalletOverviewResponse toOverviewResponse(
             WalletEntity entity,
             String companyName,
-            String planName,
+            String planNameVi,
+            String planNameEn,
+            String planNameJa,
             BigDecimal totalDeposits,
             BigDecimal totalBillings) {
 
@@ -69,7 +77,9 @@ public class WalletMapper {
         response.setLastBillingDate(entity.getLastBillingDate());
         response.setNextBillingDate(entity.getNextBillingDate());
         response.setFreeTrialEndDate(entity.getFreeTrialEndDate());
-        response.setPlanName(planName);
+        response.setPlanNameVi(planNameVi);
+        response.setPlanNameEn(planNameEn);
+        response.setPlanNameJa(planNameJa);
         response.setIsFreeTrialActive(isInFreeTrial(entity.getFreeTrialEndDate()));
         response.setTotalDeposits(totalDeposits != null ? totalDeposits : BigDecimal.ZERO);
         response.setTotalBillings(totalBillings != null ? totalBillings : BigDecimal.ZERO);

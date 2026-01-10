@@ -27,21 +27,19 @@ public interface IAttendanceService {
          * Ghi nhận check-in của nhân viên
          *
          * @param employeeId ID nhân viên
-         * @param companyId  ID công ty
          * @param request    thông tin check-in (device, location)
          * @return bản ghi chấm công
          */
-        AttendanceRecordResponse checkIn(Long employeeId, Long companyId, CheckInRequest request);
+        AttendanceRecordResponse checkIn(Long employeeId, CheckInRequest request);
 
         /**
          * Ghi nhận check-out của nhân viên
          *
          * @param employeeId ID nhân viên
-         * @param companyId  ID công ty
          * @param request    thông tin check-out (device, location)
          * @return bản ghi chấm công đã cập nhật
          */
-        AttendanceRecordResponse checkOut(Long employeeId, Long companyId, CheckOutRequest request);
+        AttendanceRecordResponse checkOut(Long employeeId, CheckOutRequest request);
 
         // ==================== Break Management ====================
 
@@ -107,12 +105,11 @@ public interface IAttendanceService {
         /**
          * Lấy danh sách chấm công của công ty (phân trang)
          *
-         * @param companyId ID công ty
-         * @param request   điều kiện lọc
-         * @param pageable  thông tin phân trang
+         * @param request  điều kiện lọc
+         * @param pageable thông tin phân trang
          * @return danh sách bản ghi chấm công
          */
-        Page<AttendanceRecordResponse> getAttendanceRecords(Long companyId, AttendanceQueryRequest request,
+        Page<AttendanceRecordResponse> getAttendanceRecords(AttendanceQueryRequest request,
                         Pageable pageable);
 
         /**
@@ -140,30 +137,27 @@ public interface IAttendanceService {
          * Lấy tổng hợp chấm công của nhân viên trong một kỳ
          *
          * @param employeeId ID nhân viên
-         * @param companyId  ID công ty
          * @param period     kỳ tính (tháng)
          * @return tổng hợp chấm công
          */
-        AttendanceSummaryResponse getAttendanceSummary(Long employeeId, Long companyId, YearMonth period);
+        AttendanceSummaryResponse getAttendanceSummary(Long employeeId, YearMonth period);
 
         // ==================== Validation ====================
 
         /**
          * Kiểm tra thiết bị có được đăng ký không
          *
-         * @param companyId ID công ty
-         * @param deviceId  ID thiết bị
+         * @param deviceId ID thiết bị
          * @return true nếu thiết bị hợp lệ hoặc công ty không yêu cầu đăng ký thiết bị
          */
-        boolean validateDevice(Long companyId, String deviceId);
+        boolean validateDevice(String deviceId);
 
         /**
          * Kiểm tra vị trí có nằm trong geo-fence không
          *
-         * @param companyId ID công ty
          * @param latitude  vĩ độ
          * @param longitude kinh độ
          * @return true nếu vị trí hợp lệ hoặc công ty không yêu cầu geo-location
          */
-        boolean validateLocation(Long companyId, Double latitude, Double longitude);
+        boolean validateLocation(Double latitude, Double longitude);
 }

@@ -18,15 +18,9 @@ import java.time.LocalDateTime;
 @Table(name = "shift_swap_requests", indexes = {
         @Index(name = "idx_swap_request_requester_id", columnList = "requesterId"),
         @Index(name = "idx_swap_request_target_id", columnList = "targetEmployeeId"),
-        @Index(name = "idx_swap_request_company_id", columnList = "companyId"),
-        @Index(name = "idx_swap_request_status", columnList = "status"),
-        @Index(name = "idx_swap_request_company_status", columnList = "companyId, status")
+        @Index(name = "idx_swap_request_status", columnList = "status")
 })
 public class ShiftSwapRequestEntity extends BaseEntity {
-
-    // ID công ty
-    @Column(nullable = false)
-    private Long companyId;
 
     // ID nhân viên yêu cầu đổi ca
     @Column(nullable = false)

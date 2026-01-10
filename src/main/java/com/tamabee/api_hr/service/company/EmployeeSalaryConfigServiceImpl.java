@@ -48,7 +48,7 @@ public class EmployeeSalaryConfigServiceImpl implements IEmployeeSalaryConfigSer
         deactivateOverlappingConfigs(employeeId, request.getEffectiveFrom());
 
         // Tạo entity mới
-        EmployeeSalaryEntity entity = salaryMapper.toEntity(request, employeeId, employee.getCompanyId());
+        EmployeeSalaryEntity entity = salaryMapper.toEntity(request, employeeId);
 
         // Lưu vào database
         entity = salaryRepository.save(entity);
@@ -84,8 +84,7 @@ public class EmployeeSalaryConfigServiceImpl implements IEmployeeSalaryConfigSer
         // Tạo config mới
         EmployeeSalaryEntity newConfig = salaryMapper.toEntity(
                 request,
-                currentConfig.getEmployeeId(),
-                currentConfig.getCompanyId());
+                currentConfig.getEmployeeId());
 
         newConfig = salaryRepository.save(newConfig);
 

@@ -9,23 +9,23 @@ import org.springframework.stereotype.Repository;
 import java.util.List;
 
 /**
- * Repository quản lý audit log thay đổi work mode của công ty.
+ * Repository quản lý audit log thay đổi work mode.
  */
 @Repository
 public interface WorkModeChangeLogRepository extends JpaRepository<WorkModeChangeLogEntity, Long> {
 
     /**
-     * Tìm tất cả log thay đổi work mode của công ty
+     * Tìm tất cả log thay đổi work mode (sắp xếp theo thời gian mới nhất)
      */
-    List<WorkModeChangeLogEntity> findByCompanyIdOrderByChangedAtDesc(Long companyId);
+    List<WorkModeChangeLogEntity> findAllByOrderByChangedAtDesc();
 
     /**
-     * Tìm tất cả log thay đổi work mode của công ty (phân trang)
+     * Tìm tất cả log thay đổi work mode (phân trang)
      */
-    Page<WorkModeChangeLogEntity> findByCompanyId(Long companyId, Pageable pageable);
+    Page<WorkModeChangeLogEntity> findAll(Pageable pageable);
 
     /**
-     * Đếm số lần thay đổi work mode của công ty
+     * Đếm số lần thay đổi work mode
      */
-    long countByCompanyId(Long companyId);
+    long count();
 }

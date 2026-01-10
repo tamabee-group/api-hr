@@ -49,12 +49,12 @@ public class BreakServiceImpl implements IBreakService {
 
     @Override
     @Transactional
-    public BreakRecordResponse startBreak(Long employeeId, Long companyId, StartBreakRequest request) {
+    public BreakRecordResponse startBreak(Long employeeId, StartBreakRequest request) {
         LocalDate today = LocalDate.now();
         LocalDateTime now = LocalDateTime.now();
 
         // Lấy cấu hình break
-        BreakConfig config = companySettingsService.getBreakConfig(companyId);
+        BreakConfig config = companySettingsService.getBreakConfig();
 
         // Kiểm tra break có được bật không
         if (!Boolean.TRUE.equals(config.getBreakEnabled())) {
@@ -113,7 +113,6 @@ public class BreakServiceImpl implements IBreakService {
         BreakRecordEntity breakRecord = new BreakRecordEntity();
         breakRecord.setAttendanceRecordId(attendance.getId());
         breakRecord.setEmployeeId(employeeId);
-        breakRecord.setCompanyId(companyId);
         breakRecord.setWorkDate(today);
         breakRecord.setBreakStart(now);
         breakRecord.setBreakNumber(nextBreakNumber);
@@ -151,7 +150,7 @@ public class BreakServiceImpl implements IBreakService {
         }
 
         // Lấy cấu hình break
-        BreakConfig config = companySettingsService.getBreakConfig(breakRecord.getCompanyId());
+        BreakConfig config = companySettingsService.getBreakConfig();
 
         // Cập nhật thời gian kết thúc
         breakRecord.setBreakEnd(now);
@@ -204,7 +203,7 @@ public class BreakServiceImpl implements IBreakService {
         // Lấy thông tin nhân viên
         String employeeName = getEmployeeName(employeeId);
 
-        // Lấy attendance record để biết company
+        // Lấy attendance record
         // AttendanceRecord không có soft delete
         AttendanceRecordEntity attendance = attendanceRecordRepository
                 .findByEmployeeIdAndWorkDate(employeeId, date)
@@ -224,7 +223,7 @@ public class BreakServiceImpl implements IBreakService {
         }
 
         // Lấy cấu hình break
-        BreakConfig config = companySettingsService.getBreakConfig(attendance.getCompanyId());
+        BreakConfig config = companySettingsService.getBreakConfig();
 
         // Tính tổng thời gian giải lao
         int totalActual = records.stream()
@@ -239,7 +238,7 @@ public class BreakServiceImpl implements IBreakService {
         int workingHours = attendance.getWorkingMinutes() != null
                 ? attendance.getWorkingMinutes() / 60
                 : 8;
-        int minimumRequired = getEffectiveMinimumBreak(attendance.getCompanyId(), workingHours);
+        int minimumRequired = getEffectiveMinimumBreak(workingHours);
 
         // Kiểm tra compliance
         boolean compliant = totalEffective >= minimumRequired;
@@ -287,12 +286,12 @@ public class BreakServiceImpl implements IBreakService {
     }
 
     @Override
-    public void validateBreakDuration(Long companyId, Integer breakMinutes) {
+    public void validateBreakDuration(Integer breakMinutes) {
         if (breakMinutes == null || breakMinutes < 0) {
             throw new BadRequestException("Thời gian giải lao không hợp lệ", ErrorCode.BAD_REQUEST);
         }
 
-        BreakConfig config = companySettingsService.getBreakConfig(companyId);
+        BreakConfig config = companySettingsService.getBreakConfig();
 
         // Kiểm tra minimum
         if (config.getMinimumBreakMinutes() != null && breakMinutes < config.getMinimumBreakMinutes()) {
@@ -314,12 +313,12 @@ public class BreakServiceImpl implements IBreakService {
     }
 
     @Override
-    public Integer getEffectiveMinimumBreak(Long companyId, Integer workingHours) {
+    public Integer getEffectiveMinimumBreak(Integer workingHours) {
         if (workingHours == null || workingHours <= 0) {
             return 0;
         }
 
-        BreakConfig config = companySettingsService.getBreakConfig(companyId);
+        BreakConfig config = companySettingsService.getBreakConfig();
 
         // Lấy legal minimum
         int legalMinimum = legalBreakRequirements.getMinimumBreak(
@@ -365,7 +364,7 @@ public class BreakServiceImpl implements IBreakService {
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy bản ghi chấm công",
                         ErrorCode.ATTENDANCE_RECORD_NOT_FOUND));
 
-        BreakConfig config = companySettingsService.getBreakConfig(attendance.getCompanyId());
+        BreakConfig config = companySettingsService.getBreakConfig();
 
         // Chỉ áp dụng cho fixed break mode
         if (!Boolean.TRUE.equals(config.getFixedBreakMode())) {
@@ -413,7 +412,6 @@ public class BreakServiceImpl implements IBreakService {
         BreakRecordEntity breakRecord = new BreakRecordEntity();
         breakRecord.setAttendanceRecordId(attendance.getId());
         breakRecord.setEmployeeId(attendance.getEmployeeId());
-        breakRecord.setCompanyId(attendance.getCompanyId());
         breakRecord.setWorkDate(attendance.getWorkDate());
         breakRecord.setBreakNumber(nextBreakNumber);
         breakRecord.setActualBreakMinutes(defaultMinutes);
@@ -447,7 +445,6 @@ public class BreakServiceImpl implements IBreakService {
         BreakRecordEntity breakRecord = new BreakRecordEntity();
         breakRecord.setAttendanceRecordId(attendance.getId());
         breakRecord.setEmployeeId(attendance.getEmployeeId());
-        breakRecord.setCompanyId(attendance.getCompanyId());
         breakRecord.setWorkDate(workDate);
         breakRecord.setBreakNumber(nextBreakNumber);
         breakRecord.setBreakStart(breakStart);
@@ -488,11 +485,11 @@ public class BreakServiceImpl implements IBreakService {
         attendance.setEffectiveBreakMinutes(effectiveBreak);
         attendance.setBreakType(config.getBreakType());
 
-        // Kiểm tra compliance
+        // Tính working hours từ attendance record
         int workingHours = attendance.getWorkingMinutes() != null
                 ? attendance.getWorkingMinutes() / 60
                 : 8;
-        int minimumRequired = getEffectiveMinimumBreak(attendance.getCompanyId(), workingHours);
+        int minimumRequired = getEffectiveMinimumBreak(workingHours);
         attendance.setBreakCompliant(effectiveBreak >= minimumRequired);
 
         attendanceRecordRepository.save(attendance);
