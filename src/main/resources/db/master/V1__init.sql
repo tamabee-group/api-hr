@@ -208,6 +208,6 @@ CREATE INDEX idx_mail_history_status ON mail_history(status);
 CREATE INDEX idx_mail_history_sent_at ON mail_history(sent_at DESC);
 
 INSERT INTO companies (id, name, owner_name, email, phone, address, industry, zipcode, locale, language, tenant_domain, status, deleted, created_at, updated_at)
-VALUES (0, 'Tamabee', 'Tamabee Admin', 'admin@tamabee.com', '0311111111', 'Tokyo', 'technology', '1000001', 'Asia/Tokyo', 'ja', 'tamabee', 'ACTIVE', false, NOW(), NOW());
+VALUES (0, 'Tamabee', 'Tamabee Admin', 'admin@tamabee.vn', '0311111111', 'Tokyo', 'technology', '1000001', 'Asia/Tokyo', 'ja', 'tamabee', 'ACTIVE', false, NOW(), NOW());
 
 SELECT setval('companies_id_seq', 1, false);

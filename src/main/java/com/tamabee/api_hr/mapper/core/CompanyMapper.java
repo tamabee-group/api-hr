@@ -7,19 +7,12 @@ import com.tamabee.api_hr.dto.response.company.CompanyResponse;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.dto.auth.RegisterRequest;
-import com.tamabee.api_hr.repository.user.UserRepository;
-
-import lombok.RequiredArgsConstructor;
 
 @Component
-@RequiredArgsConstructor
 public class CompanyMapper {
-
-    private final UserRepository userRepository;
 
     /**
      * Chuyển đổi RegisterRequest sang CompanyEntity
-     * Lưu ý: referredByEmployee được set từ referralCode
      * Company mới đăng ký sẽ tự động được gán Free Plan (planId = 0)
      */
     public CompanyEntity toEntity(RegisterRequest request) {
@@ -43,11 +36,9 @@ public class CompanyMapper {
         // Free Plan cho phép dùng full tính năng trong thời gian trial
         entity.setPlanId(FREE_PLAN_ID);
 
-        // Tìm nhân viên tư vấn từ mã giới thiệu
-        if (request.getReferralCode() != null && !request.getReferralCode().isEmpty()) {
-            userRepository.findByEmployeeCodeAndDeletedFalse(request.getReferralCode())
-                    .ifPresent(entity::setReferredByEmployee);
-        }
+        // TODO: Xử lý referral code để tính commission sau
+        // Referral code nằm trong tenant DB (tamabee_tamabee.user_profiles)
+        // Cần implement cross-tenant query hoặc lưu referral code riêng
 
         return entity;
     }

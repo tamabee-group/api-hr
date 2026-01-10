@@ -1,13 +1,19 @@
 package com.tamabee.api_hr.service;
 
-import com.tamabee.api_hr.util.JwtUtil;
-import net.jqwik.api.*;
-import net.jqwik.api.constraints.*;
-
 import java.lang.reflect.Field;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+
+import com.tamabee.api_hr.util.JwtUtil;
+
+import net.jqwik.api.Arbitraries;
+import net.jqwik.api.Arbitrary;
+import net.jqwik.api.Combinators;
+import net.jqwik.api.ForAll;
+import net.jqwik.api.Property;
+import net.jqwik.api.Provide;
+import net.jqwik.api.constraints.LongRange;
 
 /**
  * Property-based tests cho JWT payload.
@@ -358,7 +364,7 @@ class JwtPayloadPropertyTest {
                 .ofMinLength(3)
                 .ofMaxLength(10);
 
-        Arbitrary<String> domain = Arbitraries.of("example.com", "test.org", "company.vn", "tamabee.com");
+        Arbitrary<String> domain = Arbitraries.of("example.com", "test.org", "company.vn", "tamabee.vn");
 
         return Combinators.combine(localPart, domain)
                 .as((local, dom) -> local + "@" + dom);

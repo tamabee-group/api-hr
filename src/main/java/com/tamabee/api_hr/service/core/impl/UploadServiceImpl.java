@@ -1,20 +1,24 @@
 package com.tamabee.api_hr.service.core.impl;
 
-import com.tamabee.api_hr.exception.InternalServerException;
-import com.tamabee.api_hr.service.core.interfaces.IUploadService;
-import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.UUID;
 
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Service;
+import org.springframework.web.multipart.MultipartFile;
+
+import com.tamabee.api_hr.datasource.TenantContext;
+import com.tamabee.api_hr.exception.InternalServerException;
+import com.tamabee.api_hr.service.core.interfaces.IUploadService;
+
+import lombok.extern.slf4j.Slf4j;
+
 /**
  * Service xử lý upload và xóa file
+ * Cấu trúc: uploads/{tenant-domain}/{folder}/{filename}
  */
 @Slf4j
 @Service
@@ -25,17 +29,24 @@ public class UploadServiceImpl implements IUploadService {
 
     /**
      * Upload file lên server
+     * Cấu trúc: uploads/{tenant-domain}/{folder}/{filename}
      * 
      * @param file      file cần upload
-     * @param folder    thư mục chính (vd: avatars, documents)
-     * @param subFolder thư mục con (vd: user-id, company-id)
+     * @param folder    thư mục (vd: avatar, logo)
+     * @param subFolder không sử dụng nữa, giữ lại để tương thích
      * @return đường dẫn tương đối của file đã upload
      */
     @Override
     public String uploadFile(MultipartFile file, String folder, String subFolder) {
         try {
-            // Tạo thư mục: uploads/{folder}/{subFolder}
-            String dirPath = uploadPath + "/" + folder + "/" + subFolder;
+            // Lấy tenant domain từ context
+            String tenantDomain = TenantContext.getCurrentTenant();
+            if (tenantDomain == null || tenantDomain.isEmpty()) {
+                tenantDomain = "default";
+            }
+
+            // Tạo thư mục: uploads/{tenant-domain}/{folder}
+            String dirPath = uploadPath + "/" + tenantDomain + "/" + folder;
             Path directory = Paths.get(dirPath);
             Files.createDirectories(directory);
 
@@ -51,8 +62,8 @@ public class UploadServiceImpl implements IUploadService {
             Path filePath = directory.resolve(fileName);
             Files.write(filePath, file.getBytes());
 
-            // Trả về đường dẫn tương đối
-            String relativePath = "/uploads/" + folder + "/" + subFolder + "/" + fileName;
+            // Trả về đường dẫn tương đối: /uploads/{tenant-domain}/{folder}/{filename}
+            String relativePath = "/uploads/" + tenantDomain + "/" + folder + "/" + fileName;
             log.info("File uploaded successfully: {}", relativePath);
 
             return relativePath;

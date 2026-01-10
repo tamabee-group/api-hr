@@ -1,6 +1,7 @@
 package com.tamabee.api_hr.config;
 
-import lombok.extern.slf4j.Slf4j;
+import javax.sql.DataSource;
+
 import org.flywaydb.core.Flyway;
 import org.flywaydb.core.api.configuration.FluentConfiguration;
 import org.springframework.beans.factory.annotation.Qualifier;
@@ -10,7 +11,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.DependsOn;
 import org.springframework.context.annotation.Primary;
 
-import javax.sql.DataSource;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Cấu hình Flyway cho multi-tenant architecture.
@@ -39,7 +40,7 @@ public class FlywayMultiTenantConfig {
                 .dataSource(masterDataSource)
                 .locations("classpath:db/master")
                 .baselineOnMigrate(true)
-                .cleanDisabled(false)
+                .cleanDisabled(true)  // QUAN TRỌNG: Không cho phép clean database
                 .defaultSchema("public")
                 .createSchemas(true);
 
@@ -71,7 +72,7 @@ public class FlywayMultiTenantConfig {
                 .dataSource(jdbcUrl, username, password)
                 .locations("classpath:db/tenant")
                 .baselineOnMigrate(true)
-                .cleanDisabled(false)
+                .cleanDisabled(true)  // QUAN TRỌNG: Không cho phép clean database
                 .load();
 
         // flyway.clean();
@@ -92,7 +93,7 @@ public class FlywayMultiTenantConfig {
                 .dataSource(tenantDataSource)
                 .locations("classpath:db/tenant")
                 .baselineOnMigrate(true)
-                .cleanDisabled(false)
+                .cleanDisabled(true)  // QUAN TRỌNG: Không cho phép clean database
                 .load();
 
         // flyway.clean();

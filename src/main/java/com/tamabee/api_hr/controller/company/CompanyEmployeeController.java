@@ -1,33 +1,45 @@
 package com.tamabee.api_hr.controller.company;
 
-import com.tamabee.api_hr.dto.request.user.CreateCompanyEmployeeRequest;
-import com.tamabee.api_hr.dto.request.user.UpdateUserProfileRequest;
-import com.tamabee.api_hr.dto.response.user.ApproverResponse;
-import com.tamabee.api_hr.dto.response.attendance.AttendanceRecordResponse;
-import com.tamabee.api_hr.dto.response.attendance.AttendanceSummaryResponse;
-import com.tamabee.api_hr.dto.response.payroll.PayrollRecordResponse;
-import com.tamabee.api_hr.dto.response.user.UserResponse;
-import com.tamabee.api_hr.dto.response.schedule.WorkScheduleResponse;
-import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.dto.common.BaseResponse;
-import com.tamabee.api_hr.service.company.interfaces.IAttendanceService;
-import com.tamabee.api_hr.service.company.interfaces.ICompanyEmployeeService;
-import com.tamabee.api_hr.service.company.interfaces.IPayrollService;
-import com.tamabee.api_hr.service.company.interfaces.IWorkScheduleService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.time.LocalDate;
-import java.time.YearMonth;
-import java.util.List;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.dto.request.user.CreateCompanyEmployeeRequest;
+import com.tamabee.api_hr.dto.request.user.UpdateUserProfileRequest;
+import com.tamabee.api_hr.dto.response.attendance.AttendanceRecordResponse;
+import com.tamabee.api_hr.dto.response.attendance.AttendanceSummaryResponse;
+import com.tamabee.api_hr.dto.response.payroll.PayrollRecordResponse;
+import com.tamabee.api_hr.dto.response.schedule.WorkScheduleResponse;
+import com.tamabee.api_hr.dto.response.user.ApproverResponse;
+import com.tamabee.api_hr.dto.response.user.UserResponse;
+import com.tamabee.api_hr.enums.RoleConstants;
+import com.tamabee.api_hr.service.company.interfaces.IAttendanceService;
+import com.tamabee.api_hr.service.company.interfaces.ICompanyEmployeeService;
+import com.tamabee.api_hr.service.company.interfaces.IPayrollService;
+import com.tamabee.api_hr.service.company.interfaces.IWorkScheduleService;
+import com.tamabee.api_hr.service.core.interfaces.IEmailVerificationService;
+
+import jakarta.validation.Valid;
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.NotBlank;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Controller quản lý nhân viên công ty
@@ -43,6 +55,7 @@ public class CompanyEmployeeController {
     private final IWorkScheduleService workScheduleService;
     private final IAttendanceService attendanceService;
     private final IPayrollService payrollService;
+    private final IEmailVerificationService emailVerificationService;
 
     /**
      * Lấy danh sách nhân viên công ty (phân trang)
@@ -163,5 +176,35 @@ public class CompanyEmployeeController {
             Pageable pageable) {
         Page<PayrollRecordResponse> payrollHistory = payrollService.getEmployeePayrollHistory(id, pageable);
         return ResponseEntity.ok(BaseResponse.success(payrollHistory, "Lấy lịch sử bảng lương thành công"));
+    }
+
+    /**
+     * Gửi mã xác thực email cho nhân viên trong tenant
+     * POST /api/company/employees/send-verification
+     * Dùng cho: đổi email, xác thực email mới của nhân viên
+     */
+    @PostMapping("/send-verification")
+    @PreAuthorize(RoleConstants.HAS_ALL_COMPANY_ACCESS)
+    public ResponseEntity<BaseResponse<Void>> sendVerification(
+            @RequestParam @NotBlank @Email String email,
+            @RequestParam(defaultValue = "vi") String language) {
+        // Kiểm tra email chưa tồn tại trong tenant
+        companyEmployeeService.validateEmailNotExists(email);
+        emailVerificationService.sendVerificationCode(email, "", language);
+        return ResponseEntity.ok(BaseResponse.success(null, "Mã xác thực đã được gửi"));
+    }
+
+    /**
+     * Xác thực mã OTP cho nhân viên
+     * POST /api/company/employees/verify-email
+     */
+    @PostMapping("/verify-email")
+    @PreAuthorize(RoleConstants.HAS_ALL_COMPANY_ACCESS)
+    public ResponseEntity<BaseResponse<Boolean>> verifyEmail(
+            @RequestParam @NotBlank @Email String email,
+            @RequestParam @NotBlank String code) {
+        boolean verified = emailVerificationService.verifyCode(email, code);
+        String message = verified ? "Xác thực email thành công" : "Mã xác thực không hợp lệ";
+        return ResponseEntity.ok(BaseResponse.success(verified, message));
     }
 }

@@ -110,7 +110,7 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
         employee.setProfile(profile);
 
         // Tạo mã nhân viên duy nhất từ ngày sinh
-        String employeeCode = EmployeeCodeGenerator.generateUnique(0L, request.getDateOfBirth(), userRepository);
+        String employeeCode = EmployeeCodeGenerator.generateForUser(request.getDateOfBirth(), userRepository);
         employee.setEmployeeCode(employeeCode);
 
         // Tính toán % hoàn thiện profile
@@ -198,6 +198,14 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
                         .role(user.getRole().name())
                         .build())
                 .collect(Collectors.toList());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public void validateEmailNotExists(String email) {
+        if (userRepository.existsByEmailAndDeletedFalse(email)) {
+            throw ConflictException.emailExists(email);
+        }
     }
 
     // ==================== Private helper methods ====================

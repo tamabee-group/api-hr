@@ -7,7 +7,7 @@ Refactor hệ thống Tamabee HR từ single-database sang multi-tenant architec
 ## Glossary
 
 - **Tenant**: Một công ty sử dụng hệ thống Tamabee (bao gồm cả Tamabee company với tenantDomain = "tamabee")
-- **Tenant_Domain**: Subdomain riêng cho mỗi công ty (ví dụ: `acme` trong `acme.tamabee.com`, `tamabee` cho Tamabee company)
+- **Tenant_Domain**: Subdomain riêng cho mỗi công ty (ví dụ: `acme` trong `acme.tamabee.vn`, `tamabee` cho Tamabee company)
 - **Master_DB**: Database chung lưu thông tin companies, users, plans, billing
 - **Tenant_DB**: Database riêng cho mỗi tenant lưu attendance, payroll, leaves (kể cả `tamabee_tamabee` cho Tamabee)
 - **TenantContext**: ThreadLocal lưu trữ tenantDomain trong mỗi request

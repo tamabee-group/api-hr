@@ -18,6 +18,9 @@ import com.tamabee.api_hr.datasource.TenantRoutingDataSource;
 import com.zaxxer.hikari.HikariDataSource;
 
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.jdbc.datasource.DataSourceTransactionManager;
+import org.springframework.transaction.PlatformTransactionManager;
+import org.springframework.transaction.support.TransactionTemplate;
 
 /**
  * Cấu hình DataSource cho multi-tenant.
@@ -98,5 +101,16 @@ public class DataSourceConfig {
 
         log.info("TenantRoutingDataSource created with {} tenant(s), default = master DB", tenantSources.size());
         return routingDataSource;
+    }
+
+    /**
+     * TransactionTemplate cho master database.
+     * Dùng để quản lý transaction thủ công trong register flow.
+     */
+    @Bean
+    public TransactionTemplate transactionTemplate(
+            @Qualifier("masterDataSource") DataSource masterDataSource) {
+        PlatformTransactionManager transactionManager = new DataSourceTransactionManager(masterDataSource);
+        return new TransactionTemplate(transactionManager);
     }
 }

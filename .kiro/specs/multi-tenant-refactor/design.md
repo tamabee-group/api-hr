@@ -259,7 +259,7 @@ CREATE TABLE companies (
 
 -- Tamabee company (companyId = 0, tenantDomain = "tamabee")
 INSERT INTO companies (id, name, email, tenant_domain, status)
-VALUES (0, 'Tamabee', 'admin@tamabee.com', 'tamabee', 'ACTIVE');
+VALUES (0, 'Tamabee', 'admin@tamabee.vn', 'tamabee', 'ACTIVE');
 
 CREATE TABLE users (
     id BIGSERIAL PRIMARY KEY,
@@ -369,7 +369,7 @@ CREATE TABLE attendance_records (
 ```json
 {
   "userId": 1,
-  "email": "admin@tamabee.com",
+  "email": "admin@tamabee.vn",
   "role": "ADMIN_TAMABEE",
   "tenantDomain": "tamabee",
   "planId": null,

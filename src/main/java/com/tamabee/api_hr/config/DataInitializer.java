@@ -11,6 +11,7 @@ import org.springframework.stereotype.Component;
 import static com.tamabee.api_hr.constants.PlanConstants.FREE_PLAN_ID;
 import static com.tamabee.api_hr.constants.PlanConstants.TAMABEE_FREE_TRIAL_YEARS;
 import static com.tamabee.api_hr.constants.PlanConstants.TAMABEE_TENANT;
+import com.tamabee.api_hr.datasource.TenantContext;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.entity.user.UserProfileEntity;
@@ -18,7 +19,6 @@ import com.tamabee.api_hr.entity.wallet.WalletEntity;
 import com.tamabee.api_hr.enums.CompanyStatus;
 import com.tamabee.api_hr.enums.UserRole;
 import com.tamabee.api_hr.enums.UserStatus;
-import com.tamabee.api_hr.datasource.TenantContext;
 import com.tamabee.api_hr.mapper.core.WalletFactory;
 import com.tamabee.api_hr.repository.company.CompanyRepository;
 import com.tamabee.api_hr.repository.user.UserRepository;
@@ -135,7 +135,7 @@ public class DataInitializer {
             admin.setTenantDomain(TAMABEE_TENANT);
 
             // Tạo mã nhân viên duy nhất
-            String employeeCode = EmployeeCodeGenerator.generateUnique(0L, adminDateOfBirth, userRepository);
+            String employeeCode = EmployeeCodeGenerator.generateForAdmin(userRepository);
             admin.setEmployeeCode(employeeCode);
 
             // Tạo profile với mã giới thiệu

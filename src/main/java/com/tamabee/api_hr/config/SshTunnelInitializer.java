@@ -1,18 +1,19 @@
 package com.tamabee.api_hr.config;
 
-import com.jcraft.jsch.JSch;
-import com.jcraft.jsch.Session;
-import org.springframework.context.ApplicationContextInitializer;
-import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.core.env.ConfigurableEnvironment;
-import org.springframework.core.env.MapPropertySource;
-
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
+
+import org.springframework.context.ApplicationContextInitializer;
+import org.springframework.context.ConfigurableApplicationContext;
+import org.springframework.core.env.ConfigurableEnvironment;
+import org.springframework.core.env.MapPropertySource;
+
+import com.jcraft.jsch.JSch;
+import com.jcraft.jsch.Session;
 
 /**
  * Khởi tạo SSH tunnel TRƯỚC KHI Spring context được refresh.
@@ -120,6 +121,18 @@ public class SshTunnelInitializer implements ApplicationContextInitializer<Confi
      * Ví dụ: SSH_HOST -> database.tunnel.ssh.host
      */
     private void mapEnvToSpringProperties(Map<String, Object> envVars) {
+        // Database properties
+        if (envVars.containsKey("DATABASE_URL")) {
+            envVars.put("spring.datasource.url", envVars.get("DATABASE_URL"));
+        }
+        if (envVars.containsKey("DATABASE_USERNAME")) {
+            envVars.put("spring.datasource.username", envVars.get("DATABASE_USERNAME"));
+        }
+        if (envVars.containsKey("DATABASE_PASSWORD")) {
+            envVars.put("spring.datasource.password", envVars.get("DATABASE_PASSWORD"));
+        }
+        
+        // SSH tunnel properties
         if (envVars.containsKey("DATABASE_TUNNEL_ENABLED")) {
             envVars.put("database.tunnel.enabled", envVars.get("DATABASE_TUNNEL_ENABLED"));
         }
@@ -143,6 +156,17 @@ public class SshTunnelInitializer implements ApplicationContextInitializer<Confi
         }
         if (envVars.containsKey("REMOTE_PORT")) {
             envVars.put("database.tunnel.remote.port", envVars.get("REMOTE_PORT"));
+        }
+        
+        // JWT properties
+        if (envVars.containsKey("JWT_SECRET")) {
+            envVars.put("jwt.secret", envVars.get("JWT_SECRET"));
+        }
+        if (envVars.containsKey("JWT_ACCESS_TOKEN_EXPIRATION")) {
+            envVars.put("jwt.access-token-expiration", envVars.get("JWT_ACCESS_TOKEN_EXPIRATION"));
+        }
+        if (envVars.containsKey("JWT_REFRESH_TOKEN_EXPIRATION")) {
+            envVars.put("jwt.refresh-token-expiration", envVars.get("JWT_REFRESH_TOKEN_EXPIRATION"));
         }
     }
 }

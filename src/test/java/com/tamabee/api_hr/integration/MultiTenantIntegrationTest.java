@@ -258,7 +258,7 @@ class MultiTenantIntegrationTest {
         void tamabeeUser_shouldHaveTenantDomainTamabee() {
             // Given
             Long userId = 1L;
-            String email = "admin@tamabee.com";
+            String email = "admin@tamabee.vn";
             String role = UserRole.ADMIN_TAMABEE.name();
 
             // When
@@ -274,7 +274,7 @@ class MultiTenantIntegrationTest {
         void tamabeeUser_shouldHaveCompanyIdZero() {
             // Given
             Long userId = 1L;
-            String email = "admin@tamabee.com";
+            String email = "admin@tamabee.vn";
             String role = UserRole.ADMIN_TAMABEE.name();
 
             // When
@@ -290,7 +290,7 @@ class MultiTenantIntegrationTest {
         void tamabeeUser_shouldHaveNullPlanId() {
             // Given
             Long userId = 1L;
-            String email = "admin@tamabee.com";
+            String email = "admin@tamabee.vn";
             String role = UserRole.ADMIN_TAMABEE.name();
 
             // When
@@ -322,7 +322,7 @@ class MultiTenantIntegrationTest {
 
             // When & Then
             for (String role : tamabeeRoles) {
-                String token = jwtUtil.generateAccessToken(1L, "user@tamabee.com", role, TAMABEE_COMPANY_ID,
+                String token = jwtUtil.generateAccessToken(1L, "user@tamabee.vn", role, TAMABEE_COMPANY_ID,
                         TAMABEE_TENANT, null);
                 Map<String, Object> claims = jwtUtil.validateToken(token);
 

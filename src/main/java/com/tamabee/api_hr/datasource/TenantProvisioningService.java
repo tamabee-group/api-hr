@@ -1,11 +1,12 @@
 package com.tamabee.api_hr.datasource;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.concurrent.CompletableFuture;
+
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
-import java.util.concurrent.CompletableFuture;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Service orchestrate việc tạo tenant database.
@@ -19,6 +20,7 @@ public class TenantProvisioningService {
 
     private final TenantDatabaseInitializer tenantDatabaseInitializer;
     private final TenantDataSourceManager tenantDataSourceManager;
+    private final javax.sql.DataSource dataSource; // TenantRoutingDataSource (primary)
 
     /**
      * Provision tenant database đồng bộ.
@@ -34,16 +36,34 @@ public class TenantProvisioningService {
             // Kiểm tra tenant đã tồn tại chưa
             if (tenantDataSourceManager.hasTenant(tenantDomain)) {
                 log.warn("Tenant already provisioned: {}", tenantDomain);
+                // Đảm bảo đã add vào routing
+                addToRoutingDataSource(tenantDomain);
                 return;
             }
 
             // Tạo database và chạy migration
             tenantDatabaseInitializer.createTenantDatabase(tenantDomain);
 
+            // Add vào TenantRoutingDataSource để có thể route ngay lập tức
+            addToRoutingDataSource(tenantDomain);
+
             log.info("Successfully provisioned tenant: {}", tenantDomain);
         } catch (Exception e) {
             log.error("Failed to provision tenant: {}", tenantDomain, e);
             throw new TenantProvisioningException("Failed to provision tenant: " + tenantDomain, e);
+        }
+    }
+
+    /**
+     * Add tenant DataSource vào TenantRoutingDataSource.
+     */
+    private void addToRoutingDataSource(String tenantDomain) {
+        if (dataSource instanceof TenantRoutingDataSource routingDataSource) {
+            javax.sql.DataSource tenantDs = tenantDataSourceManager.getDataSource(tenantDomain);
+            if (tenantDs != null) {
+                routingDataSource.addTenantDataSource(tenantDomain, tenantDs);
+                log.info("Added tenant {} to TenantRoutingDataSource", tenantDomain);
+            }
         }
     }
 
@@ -87,6 +107,17 @@ public class TenantProvisioningService {
     public void deprovisionTenant(String tenantDomain) {
         log.info("Deprovisioning tenant: {}", tenantDomain);
         tenantDataSourceManager.removeTenant(tenantDomain);
+    }
+
+    /**
+     * Xóa hoàn toàn tenant - xóa cả DataSource và database.
+     * Dùng cho rollback khi tạo company thất bại.
+     *
+     * @param tenantDomain domain của tenant
+     */
+    public void dropTenant(String tenantDomain) {
+        log.info("Dropping tenant completely: {}", tenantDomain);
+        tenantDatabaseInitializer.dropTenantDatabase(tenantDomain);
     }
 
     /**

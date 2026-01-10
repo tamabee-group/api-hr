@@ -1,61 +1,53 @@
 package com.tamabee.api_hr.util;
 
+import java.time.LocalDate;
+
 import com.tamabee.api_hr.repository.user.UserRepository;
 
 /**
- * Utility class để tạo mã nhân viên
- * Format: prefix (25-99) + 2 số cuối companyId + 2 số ngày sinh + 2 số tháng
- * sinh (8 số)
- * Ví dụ: companyId=5, ngày sinh 15/03 -> 25050315
- * Nếu trùng thì tăng prefix: 26050315, 27050315, ...
+ * Utility class để tạo mã nhân viên 8 số
+ * - Admin (đăng ký công ty): yyyymmdd (ngày đăng ký)
+ * - User thường: yyyy (năm đăng ký) + mm (tháng sinh) + dd (ngày sinh)
+ * Nếu trùng thì năm + 1
  */
 public class EmployeeCodeGenerator {
 
-    private static final int START_PREFIX = 25;
-    private static final int MAX_PREFIX = 99;
-
     /**
-     * Tạo mã nhân viên duy nhất từ companyId và ngày sinh
-     * 
-     * @param companyId      ID của công ty
-     * @param dateOfBirth    Ngày sinh format "yyyy-MM-dd" hoặc "dd/MM/yyyy"
-     * @param userRepository Repository để kiểm tra trùng mã
-     * @return Mã nhân viên 8 số duy nhất
+     * Tạo mã nhân viên cho admin: yyyymmdd (ngày đăng ký)
+     * Nếu trùng thì tăng năm
      */
-    public static String generateUnique(Long companyId, String dateOfBirth, UserRepository userRepository) {
-        String baseCode = generateBaseCode(companyId, dateOfBirth);
-
-        // Thử từ prefix 25 đến 99
-        for (int prefix = START_PREFIX; prefix <= MAX_PREFIX; prefix++) {
-            String employeeCode = String.format("%02d", prefix) + baseCode;
+    public static String generateForAdmin(UserRepository userRepository) {
+        LocalDate today = LocalDate.now();
+        int year = today.getYear();
+        String monthDay = String.format("%02d%02d", today.getMonthValue(), today.getDayOfMonth());
+        
+        for (int i = 0; i < 100; i++) {
+            String employeeCode = String.valueOf(year + i) + monthDay;
             if (!userRepository.existsByEmployeeCodeAndDeletedFalse(employeeCode)) {
                 return employeeCode;
             }
         }
-
-        // Nếu hết prefix (rất hiếm), thêm timestamp
-        return START_PREFIX + baseCode + System.currentTimeMillis() % 1000;
+        
+        // Fallback: thêm random suffix (rất hiếm)
+        return String.valueOf(year) + monthDay;
     }
 
     /**
-     * Tạo mã nhân viên cơ bản (không kiểm tra trùng)
-     * Dùng cho trường hợp đã biết chắc không trùng
+     * Tạo mã nhân viên cho user thường: năm đăng ký + tháng sinh + ngày sinh
+     * Nếu trùng thì năm + 1
+     * 
+     * @param dateOfBirth format yyyy-MM-dd hoặc dd/MM/yyyy
+     * @param userRepository Repository để kiểm tra trùng mã
+     * @return Mã nhân viên 8 số duy nhất
      */
-    public static String generate(Long companyId, String dateOfBirth) {
-        return START_PREFIX + generateBaseCode(companyId, dateOfBirth);
-    }
-
-    /**
-     * Tạo phần base code: 2 số cuối companyId + ngày + tháng
-     */
-    private static String generateBaseCode(Long companyId, String dateOfBirth) {
-        // Lấy 2 số cuối của companyId (nếu < 10 thì thêm 0 phía trước)
-        String companyPart = String.format("%02d", companyId % 100);
-
+    public static String generateForUser(String dateOfBirth, UserRepository userRepository) {
+        LocalDate today = LocalDate.now();
+        int year = today.getYear();
+        
         // Parse ngày sinh
-        String day = "01";
         String month = "01";
-
+        String day = "01";
+        
         if (dateOfBirth != null && !dateOfBirth.isEmpty()) {
             try {
                 if (dateOfBirth.contains("-")) {
@@ -74,11 +66,31 @@ public class EmployeeCodeGenerator {
                     }
                 }
             } catch (NumberFormatException e) {
-                // Giữ giá trị mặc định nếu parse lỗi
+                // Giữ giá trị mặc định
             }
         }
+        
+        // Thử từ năm hiện tại, nếu trùng thì tăng năm
+        for (int i = 0; i < 100; i++) {
+            String employeeCode = String.valueOf(year + i) + month + day;
+            if (!userRepository.existsByEmployeeCodeAndDeletedFalse(employeeCode)) {
+                return employeeCode;
+            }
+        }
+        
+        // Fallback
+        return String.valueOf(year) + month + day;
+    }
 
-        // Format: companyId (2 số) + ngày (2 số) + tháng (2 số)
-        return companyPart + day + month;
+    /**
+     * Tạo mã nhân viên duy nhất (backward compatible)
+     * @deprecated Dùng generateForAdmin() hoặc generateForUser() thay thế
+     */
+    @Deprecated
+    public static String generateUnique(Long companyId, String dateOfBirth, UserRepository userRepository) {
+        if (dateOfBirth == null || dateOfBirth.isEmpty()) {
+            return generateForAdmin(userRepository);
+        }
+        return generateForUser(dateOfBirth, userRepository);
     }
 }

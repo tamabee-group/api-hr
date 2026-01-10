@@ -1,5 +1,13 @@
 package com.tamabee.api_hr.datasource;
 
+import java.io.IOException;
+import java.util.Base64;
+import java.util.Set;
+
+import org.springframework.core.annotation.Order;
+import org.springframework.stereotype.Component;
+import org.springframework.web.filter.OncePerRequestFilter;
+
 import jakarta.servlet.FilterChain;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.http.Cookie;
@@ -7,13 +15,6 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.core.annotation.Order;
-import org.springframework.stereotype.Component;
-import org.springframework.web.filter.OncePerRequestFilter;
-
-import java.io.IOException;
-import java.util.Base64;
-import java.util.Set;
 
 /**
  * Filter đọc tenantDomain từ JWT hoặc host.
@@ -29,9 +30,13 @@ public class TenantFilter extends OncePerRequestFilter {
 
     /**
      * Các path prefix cần query từ master DB (không set tenant).
-     * Bao gồm: plans, admin APIs (companies, deposits, wallets)
+     * Bao gồm: plans, admin APIs, register/check-domain (companies ở master)
      */
     private static final Set<String> MASTER_ONLY_PATHS = Set.of(
+            "/api/auth/register",
+            "/api/auth/check-domain",
+            "/api/auth/send-verification",
+            "/api/auth/verify-email",
             "/api/plans",
             "/api/admin");
 
@@ -107,6 +112,13 @@ public class TenantFilter extends OncePerRequestFilter {
                     }
                 }
             }
+        }
+
+        // Từ X-Tenant-Domain header (cho login từ frontend)
+        String tenantHeader = request.getHeader("X-Tenant-Domain");
+        if (tenantHeader != null && !tenantHeader.isEmpty()) {
+            log.info("TenantFilter: using X-Tenant-Domain header: {}", tenantHeader);
+            return tenantHeader;
         }
 
         return null;

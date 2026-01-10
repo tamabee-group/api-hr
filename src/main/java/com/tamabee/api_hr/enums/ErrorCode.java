@@ -50,6 +50,7 @@ public enum ErrorCode {
         TENANT_DOMAIN_EXISTS("TENANT_DOMAIN_EXISTS", "Địa chỉ tên miền đã được sử dụng"),
         TENANT_DOMAIN_RESERVED("TENANT_DOMAIN_RESERVED", "Địa chỉ tên miền này đã được đặt trước"),
         TENANT_PROVISIONING_FAILED("TENANT_PROVISIONING_FAILED", "Không thể tạo cơ sở dữ liệu cho công ty"),
+        USER_CREATION_FAILED("USER_CREATION_FAILED", "Không thể tạo tài khoản người dùng"),
 
         // === PLAN ===
         PLAN_NOT_FOUND("PLAN_NOT_FOUND", "Không tìm thấy gói dịch vụ"),

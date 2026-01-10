@@ -110,7 +110,7 @@ public class EmployeeManagerServiceImpl implements IEmployeeManagerService {
         user.setProfile(profile);
 
         // Tạo mã nhân viên duy nhất từ companyId và ngày sinh
-        String employeeCode = EmployeeCodeGenerator.generateUnique(0L, request.getDateOfBirth(), userRepository);
+        String employeeCode = EmployeeCodeGenerator.generateForUser(request.getDateOfBirth(), userRepository);
         user.setEmployeeCode(employeeCode);
 
         // Tính toán % hoàn thiện profile

@@ -1,15 +1,17 @@
 package com.tamabee.api_hr.datasource;
 
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.sql.Connection;
+import java.sql.SQLException;
+import java.sql.Statement;
+
+import javax.sql.DataSource;
+
 import org.flywaydb.core.Flyway;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
-import javax.sql.DataSource;
-import java.sql.Connection;
-import java.sql.SQLException;
-import java.sql.Statement;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Tạo database mới cho tenant.
@@ -67,6 +69,7 @@ public class TenantDatabaseInitializer {
     /**
      * Tạo database mới trong PostgreSQL.
      * Sử dụng master connection để CREATE DATABASE.
+     * Database name với dấu "-" cần được quote.
      */
     private void createDatabase(String dbName) throws SQLException {
         // Kết nối đến postgres database để tạo database mới
@@ -85,8 +88,8 @@ public class TenantDatabaseInitializer {
                 return;
             }
 
-            // Tạo database mới
-            String createSql = String.format("CREATE DATABASE %s", dbName);
+            // Tạo database mới - quote tên database để hỗ trợ dấu "-"
+            String createSql = String.format("CREATE DATABASE \"%s\"", dbName);
             stmt.executeUpdate(createSql);
             log.info("Created database: {}", dbName);
         }
@@ -143,6 +146,38 @@ public class TenantDatabaseInitializer {
         } catch (SQLException e) {
             log.error("Failed to check database existence: {}", dbName, e);
             return false;
+        }
+    }
+
+    /**
+     * Xóa tenant database (dùng cho rollback khi tạo company thất bại).
+     * 
+     * @param tenantDomain domain của tenant
+     */
+    public void dropTenantDatabase(String tenantDomain) {
+        String dbName = DATABASE_PREFIX + tenantDomain;
+        log.info("Dropping tenant database: {}", dbName);
+
+        // Xóa DataSource khỏi pool trước
+        tenantDataSourceManager.removeTenant(tenantDomain);
+
+        String postgresUrl = buildPostgresDbUrl();
+
+        try (Connection conn = java.sql.DriverManager.getConnection(postgresUrl, dbUsername, dbPassword);
+                Statement stmt = conn.createStatement()) {
+
+            // Terminate tất cả connections đến database
+            String terminateSql = String.format(
+                    "SELECT pg_terminate_backend(pid) FROM pg_stat_activity WHERE datname = '%s'", dbName);
+            stmt.execute(terminateSql);
+
+            // Drop database - quote tên database để hỗ trợ dấu "-"
+            String dropSql = String.format("DROP DATABASE IF EXISTS \"%s\"", dbName);
+            stmt.executeUpdate(dropSql);
+            log.info("Dropped database: {}", dbName);
+        } catch (SQLException e) {
+            log.error("Failed to drop database: {}", dbName, e);
+            // Không throw exception vì đây là cleanup
         }
     }
 

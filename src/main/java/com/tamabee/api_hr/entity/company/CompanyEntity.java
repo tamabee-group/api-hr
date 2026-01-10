@@ -3,7 +3,17 @@ package com.tamabee.api_hr.entity.company;
 import com.tamabee.api_hr.entity.BaseEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.CompanyStatus;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.Index;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -74,7 +84,7 @@ public class CompanyEntity extends BaseEntity {
     @Column(name = "deactivated_at")
     private java.time.LocalDateTime deactivatedAt;
 
-    // Tenant domain cho multi-tenant (ví dụ: "acme" trong acme.tamabee.com)
+    // Tenant domain cho multi-tenant (ví dụ: "acme" trong acme.tamabee.vn)
     @Column(name = "tenant_domain", unique = true, nullable = false)
     private String tenantDomain;
 }

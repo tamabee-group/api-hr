@@ -1,14 +1,15 @@
 package com.tamabee.api_hr.service.company.interfaces;
 
-import com.tamabee.api_hr.dto.request.user.CreateCompanyEmployeeRequest;
-import com.tamabee.api_hr.dto.request.user.UpdateUserProfileRequest;
-import com.tamabee.api_hr.dto.response.user.ApproverResponse;
-import com.tamabee.api_hr.dto.response.user.UserResponse;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.List;
+import com.tamabee.api_hr.dto.request.user.CreateCompanyEmployeeRequest;
+import com.tamabee.api_hr.dto.request.user.UpdateUserProfileRequest;
+import com.tamabee.api_hr.dto.response.user.ApproverResponse;
+import com.tamabee.api_hr.dto.response.user.UserResponse;
 
 /**
  * Service quản lý nhân viên công ty
@@ -64,4 +65,12 @@ public interface ICompanyEmployeeService {
      * @return danh sách người duyệt
      */
     List<ApproverResponse> getApprovers();
+
+    /**
+     * Kiểm tra email chưa tồn tại trong tenant
+     * Throw ConflictException nếu email đã tồn tại
+     * 
+     * @param email địa chỉ email cần kiểm tra
+     */
+    void validateEmailNotExists(String email);
 }
