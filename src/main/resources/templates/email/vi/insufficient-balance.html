@@ -3,41 +3,109 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
-<body>
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <p>Xin chào <strong>{companyName}</strong>,</p>
-        <p style="color: #dc3545; font-weight: bold;">⚠️ Cảnh báo: Số dư ví không đủ để thanh toán!</p>
-        <p>Hệ thống không thể trừ phí subscription hàng tháng do số dư ví không đủ.</p>
-        <div
-            style="background-color: #fff3cd; border: 1px solid #ffc107; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <p style="margin: 0 0 10px 0; color: #856404; font-size: 14px;">THÔNG TIN THANH TOÁN</p>
-            <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                    <td style="padding: 8px 0; color: #856404;">Gói dịch vụ:</td>
-                    <td style="padding: 8px 0; text-align: right; font-weight: bold;">{planName}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; color: #856404;">Số tiền cần thanh toán:</td>
-                    <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #dc3545;">{amount}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; color: #856404;">Số dư hiện tại:</td>
-                    <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #dc3545;">{balance}</td>
-                </tr>
-            </table>
-        </div>
-        <p>🚨 <strong>Tài khoản của bạn đã bị tạm ngưng</strong></p>
-        <p>Để tiếp tục sử dụng dịch vụ, vui lòng nạp tiền vào ví ngay.</p>
-        <p style="color: #999; font-size: 13px;">Nếu bạn cần hỗ trợ, vui lòng liên hệ với chúng tôi.</p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-        <p>Trân trọng,<br><strong>Đội ngũ Tamabee HR</strong></p>
-        <p style="font-size: 13px; color: #666;">
-            🌐 Website: <a href="https://tamabee.vn" style="color: #00b1ce;">https://tamabee.vn</a><br>
-            📧 Email: <a href="mailto:support@tamabee.vn" style="color: #00b1ce;">support@tamabee.vn</a>
-        </p>
-    </div>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4;">
+        <tr>
+            <td align="center" style="padding: 30px 0;">
+                <table width="600" cellpadding="0" cellspacing="0"
+                    style="background-color: #ffffff; border-radius: 4px; overflow: hidden;">
+                    <!-- Header với logo -->
+                    <tr>
+                        <td style="background-color: #232f3e; padding: 24px; text-align: center;">
+                            <span
+                                style="font-size: 28px; font-weight: bold; color: #00ddff; letter-spacing: 2px;">TAMABEE</span>
+                        </td>
+                    </tr>
+
+                    <!-- Nội dung chính -->
+                    <tr>
+                        <td style="padding: 30px 20px;">
+                            <h1 style="margin: 0 0 20px; font-size: 24px; font-weight: bold; color: #dc3545;">
+                                ⚠️ Số dư ví không đủ
+                            </h1>
+                            <p style="margin: 0 0 20px; font-size: 16px; color: #333;">
+                                Xin chào {companyName},
+                            </p>
+                            <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #333;">
+                                Hệ thống không thể trừ phí subscription hàng tháng do số dư ví không đủ.
+                            </p>
+
+                            <!-- Thông tin thanh toán -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background-color: #fff3cd; border-radius: 4px; margin: 20px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p
+                                            style="margin: 0 0 15px; font-size: 14px; font-weight: bold; color: #856404;">
+                                            THÔNG TIN THANH TOÁN
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #856404;">Gói dịch
+                                                    vụ:</td>
+                                                <td
+                                                    style="padding: 8px 0; font-size: 14px; font-weight: bold; text-align: right;">
+                                                    {planName}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #856404;">Số tiền cần
+                                                    thanh toán:</td>
+                                                <td
+                                                    style="padding: 8px 0; font-size: 14px; font-weight: bold; color: #dc3545; text-align: right;">
+                                                    {amount}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #856404;">Số dư hiện
+                                                    tại:</td>
+                                                <td
+                                                    style="padding: 8px 0; font-size: 14px; font-weight: bold; color: #dc3545; text-align: right;">
+                                                    {balance}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Cảnh báo -->
+                    <tr>
+                        <td style="padding: 0 40px 40px;">
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background-color: #f8d7da; border-radius: 4px; border-left: 4px solid #dc3545;">
+                                <tr>
+                                    <td style="padding: 16px 20px;">
+                                        <p style="margin: 0 0 8px; font-size: 14px; font-weight: bold; color: #721c24;">
+                                            🚨 Tài khoản của bạn đã bị tạm ngưng
+                                        </p>
+                                        <p style="margin: 0; font-size: 13px; color: #721c24; line-height: 1.5;">
+                                            Để tiếp tục sử dụng dịch vụ, vui lòng nạp tiền vào ví ngay.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 20px 40px; background-color: #f8f9fa; border-top: 1px solid #eee;">
+                            <p style="margin: 0; font-size: 12px; color: #999; line-height: 1.5;">
+                                Email này được gửi bởi Tamabee HR.<br>
+                                © {year} Tamabee. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 
 </html>

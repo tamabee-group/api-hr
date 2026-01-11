@@ -1,13 +1,14 @@
 package com.tamabee.api_hr.util;
 
-import io.jsonwebtoken.Jwts;
-import io.jsonwebtoken.security.Keys;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.stereotype.Component;
-
 import java.security.Key;
 import java.util.Date;
 import java.util.Map;
+
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.stereotype.Component;
+
+import io.jsonwebtoken.Jwts;
+import io.jsonwebtoken.security.Keys;
 
 @Component
 public class JwtUtil {
@@ -34,9 +35,12 @@ public class JwtUtil {
      * @param companyId    ID của company (0 = Tamabee)
      * @param tenantDomain Domain của tenant ("tamabee" cho Tamabee users)
      * @param planId       ID của plan (null cho Tamabee users = all features)
+     * @param employeeCode Mã nhân viên
+     * @param name         Tên nhân viên
+     * @param language     Ngôn ngữ của user (vi, en, ja)
      */
     public String generateAccessToken(Long userId, String email, String role,
-            Long companyId, String tenantDomain, Long planId) {
+            Long companyId, String tenantDomain, Long planId, String employeeCode, String name, String language) {
         return Jwts.builder()
                 .claim("userId", userId)
                 .claim("email", email)
@@ -44,6 +48,9 @@ public class JwtUtil {
                 .claim("companyId", companyId)
                 .claim("tenantDomain", tenantDomain)
                 .claim("planId", planId)
+                .claim("employeeCode", employeeCode)
+                .claim("name", name)
+                .claim("language", language)
                 .claim("type", "access")
                 .subject(email)
                 .issuedAt(new Date())

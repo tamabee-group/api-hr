@@ -1,7 +1,8 @@
 package com.tamabee.api_hr.repository.company;
 
-import com.tamabee.api_hr.entity.company.CompanyEntity;
-import com.tamabee.api_hr.enums.CompanyStatus;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,8 +10,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.tamabee.api_hr.entity.company.CompanyEntity;
+import com.tamabee.api_hr.enums.CompanyStatus;
 
 @Repository
 public interface CompanyRepository extends JpaRepository<CompanyEntity, Long> {
@@ -31,6 +32,12 @@ public interface CompanyRepository extends JpaRepository<CompanyEntity, Long> {
          * Lấy tất cả companies theo status và chưa bị xóa
          */
         List<CompanyEntity> findAllByStatusAndDeletedFalse(CompanyStatus status);
+
+        /**
+         * Lấy tất cả companies chưa bị xóa (cả ACTIVE và INACTIVE)
+         * Dùng để load tenant DataSources khi startup
+         */
+        List<CompanyEntity> findAllByDeletedFalse();
 
         /**
          * Lấy danh sách companies được giới thiệu bởi employee (phân trang)

@@ -3,41 +3,101 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
-<body>
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <p>Hello <strong>{employeeName}</strong>,</p>
-        <p>Your leave request has been <span style="color: #28a745; font-weight: bold;">APPROVED</span>.</p>
-        <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">LEAVE DETAILS</p>
-            <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                    <td style="padding: 8px 0; color: #666;">Leave Type:</td>
-                    <td style="padding: 8px 0; text-align: right; font-weight: bold;">{leaveType}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; color: #666;">Start Date:</td>
-                    <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #28a745;">{startDate}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; color: #666;">End Date:</td>
-                    <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #28a745;">{endDate}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; color: #666;">Approved By:</td>
-                    <td style="padding: 8px 0; text-align: right; font-weight: bold;">{approverName}</td>
-                </tr>
-            </table>
-        </div>
-        <p style="color: #999; font-size: 13px;">Enjoy your time off!</p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-        <p>Best regards,<br><strong>Tamabee HR Team</strong></p>
-        <p style="font-size: 13px; color: #666;">
-            🌐 Website: <a href="https://tamabee.vn" style="color: #00b1ce;">https://tamabee.vn</a><br>
-            📧 Email: <a href="mailto:support@tamabee.vn" style="color: #00b1ce;">support@tamabee.vn</a>
-        </p>
-    </div>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4;">
+        <tr>
+            <td align="center" style="padding: 30px 0;">
+                <table width="600" cellpadding="0" cellspacing="0"
+                    style="background-color: #ffffff; border-radius: 4px; overflow: hidden;">
+                    <!-- Header with logo -->
+                    <tr>
+                        <td style="background-color: #232f3e; padding: 24px; text-align: center;">
+                            <span
+                                style="font-size: 28px; font-weight: bold; color: #00ddff; letter-spacing: 2px;">TAMABEE</span>
+                        </td>
+                    </tr>
+
+                    <!-- Main content -->
+                    <tr>
+                        <td style="padding: 30px 20px;">
+                            <h1 style="margin: 0 0 20px; font-size: 24px; font-weight: bold; color: #28a745;">
+                                ✅ Leave request approved
+                            </h1>
+                            <p style="margin: 0 0 20px; font-size: 16px; color: #333;">
+                                Hi {employeeName},
+                            </p>
+                            <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #333;">
+                                Your leave request has been approved.
+                            </p>
+
+                            <!-- Leave details -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background-color: #f0f9ff; border-radius: 4px; margin: 20px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p
+                                            style="margin: 0 0 15px; font-size: 14px; font-weight: bold; color: #00b1ce;">
+                                            LEAVE DETAILS
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #666;">Leave type:
+                                                </td>
+                                                <td
+                                                    style="padding: 8px 0; font-size: 14px; font-weight: bold; text-align: right;">
+                                                    {leaveType}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #666;">Start date:
+                                                </td>
+                                                <td
+                                                    style="padding: 8px 0; font-size: 14px; font-weight: bold; color: #28a745; text-align: right;">
+                                                    {startDate}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #666;">End date:</td>
+                                                <td
+                                                    style="padding: 8px 0; font-size: 14px; font-weight: bold; color: #28a745; text-align: right;">
+                                                    {endDate}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #666;">Approved by:
+                                                </td>
+                                                <td
+                                                    style="padding: 8px 0; font-size: 14px; font-weight: bold; text-align: right;">
+                                                    {approverName}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #666;">
+                                Have a great time off!
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 20px 40px; background-color: #f8f9fa; border-top: 1px solid #eee;">
+                            <p style="margin: 0; font-size: 12px; color: #999; line-height: 1.5;">
+                                This message was produced and distributed by Tamabee HR.<br>
+                                © {year} Tamabee. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 
 </html>

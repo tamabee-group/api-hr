@@ -1,13 +1,19 @@
 package com.tamabee.api_hr.entity.wallet;
 
-import com.tamabee.api_hr.entity.BaseEntity;
-import com.tamabee.api_hr.enums.DepositStatus;
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import com.tamabee.api_hr.entity.BaseEntity;
+import com.tamabee.api_hr.enums.DepositStatus;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * Entity cho yêu cầu nạp tiền
@@ -48,9 +54,37 @@ public class DepositRequestEntity extends BaseEntity {
     @Column(name = "requested_by", nullable = false, length = 50)
     private String requestedBy;
 
+    // Tên người tạo yêu cầu (denormalized từ tenant DB)
+    @Column(name = "requester_name", length = 100)
+    private String requesterName;
+
+    // Role của người tạo yêu cầu
+    @Column(name = "requester_role", length = 50)
+    private String requesterRole;
+
+    // Email của người tạo yêu cầu
+    @Column(name = "requester_email", length = 255)
+    private String requesterEmail;
+
+    // Ngôn ngữ của người tạo yêu cầu (vi, en, ja)
+    @Column(name = "requester_language", length = 10)
+    private String requesterLanguage;
+
     // Employee code của người duyệt/từ chối
     @Column(name = "approved_by", length = 50)
     private String approvedBy;
+
+    // Tên người duyệt/từ chối
+    @Column(name = "approver_name", length = 100)
+    private String approverName;
+
+    // Role của người duyệt/từ chối
+    @Column(name = "approver_role", length = 50)
+    private String approverRole;
+
+    // Email của người duyệt/từ chối
+    @Column(name = "approver_email", length = 255)
+    private String approverEmail;
 
     // Lý do từ chối (nếu bị reject)
     @Column(name = "rejection_reason", length = 500)

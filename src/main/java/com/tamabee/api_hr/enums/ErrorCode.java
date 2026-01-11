@@ -50,11 +50,14 @@ public enum ErrorCode {
         TENANT_DOMAIN_EXISTS("TENANT_DOMAIN_EXISTS", "Địa chỉ tên miền đã được sử dụng"),
         TENANT_DOMAIN_RESERVED("TENANT_DOMAIN_RESERVED", "Địa chỉ tên miền này đã được đặt trước"),
         TENANT_PROVISIONING_FAILED("TENANT_PROVISIONING_FAILED", "Không thể tạo cơ sở dữ liệu cho công ty"),
+        TENANT_NOT_FOUND("TENANT_NOT_FOUND", "Công ty không tồn tại hoặc đã bị xóa"),
         USER_CREATION_FAILED("USER_CREATION_FAILED", "Không thể tạo tài khoản người dùng"),
 
         // === PLAN ===
         PLAN_NOT_FOUND("PLAN_NOT_FOUND", "Không tìm thấy gói dịch vụ"),
         PLAN_IN_USE("PLAN_IN_USE", "Gói dịch vụ đang được sử dụng, không thể xóa"),
+        PLAN_NOT_ACTIVE("PLAN_NOT_ACTIVE", "Gói dịch vụ không còn hoạt động"),
+        PLAN_EXCEEDS_EMPLOYEE_LIMIT("PLAN_EXCEEDS_EMPLOYEE_LIMIT", "Số nhân viên vượt quá giới hạn của gói"),
 
         // === SETTING ===
         SETTING_NOT_FOUND("SETTING_NOT_FOUND", "Không tìm thấy cấu hình"),
@@ -63,6 +66,7 @@ public enum ErrorCode {
         WALLET_NOT_FOUND("WALLET_NOT_FOUND", "Không tìm thấy ví"),
         INVALID_AMOUNT("INVALID_AMOUNT", "Số tiền không hợp lệ"),
         INSUFFICIENT_BALANCE("INSUFFICIENT_BALANCE", "Số dư không đủ"),
+        COMPANY_ALREADY_ACTIVE("COMPANY_ALREADY_ACTIVE", "Công ty đang hoạt động"),
 
         // === DEPOSIT ===
         DEPOSIT_NOT_FOUND("DEPOSIT_NOT_FOUND", "Không tìm thấy yêu cầu nạp tiền"),
@@ -70,6 +74,7 @@ public enum ErrorCode {
         DEPOSIT_NOT_REJECTED("DEPOSIT_NOT_REJECTED", "Chỉ có thể chỉnh sửa yêu cầu bị từ chối"),
         INVALID_TRANSFER_PROOF("INVALID_TRANSFER_PROOF", "Ảnh chứng minh chuyển khoản không hợp lệ"),
         INVALID_REJECTION_REASON("INVALID_REJECTION_REASON", "Lý do từ chối không được để trống"),
+        MIN_DEPOSIT_AMOUNT("MIN_DEPOSIT_AMOUNT", "Số tiền nạp dưới mức tối thiểu"),
 
         // === COMMISSION ===
         COMMISSION_NOT_FOUND("COMMISSION_NOT_FOUND", "Không tìm thấy hoa hồng"),

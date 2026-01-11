@@ -1,16 +1,19 @@
 package com.tamabee.api_hr.datasource;
 
-import com.tamabee.api_hr.entity.company.CompanyEntity;
-import com.tamabee.api_hr.enums.CompanyStatus;
-import com.tamabee.api_hr.repository.company.CompanyRepository;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.util.List;
+
+import javax.sql.DataSource;
+
 import org.springframework.boot.context.event.ApplicationReadyEvent;
 import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
-import javax.sql.DataSource;
-import java.util.List;
+import com.tamabee.api_hr.entity.company.CompanyEntity;
+import com.tamabee.api_hr.enums.CompanyStatus;
+import com.tamabee.api_hr.repository.company.CompanyRepository;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Load tất cả tenant DataSources khi application khởi động.
@@ -113,11 +116,10 @@ public class TenantDataSourceLoader {
                     .dataSource(tenantDs)
                     .locations("classpath:db/tenant")
                     .baselineOnMigrate(true)
-                    .cleanDisabled(false)
+                    .cleanDisabled(true) // QUAN TRỌNG: Không cho phép clean database
                     .load();
 
-            // Clean và migrate lại từ đầu (DB local mới)
-            flyway.clean();
+            // Chỉ migrate, KHÔNG clean
             flyway.migrate();
             log.info("Completed Flyway migration for tenant: {}", tenantDomain);
         } catch (Exception e) {
@@ -126,16 +128,17 @@ public class TenantDataSourceLoader {
     }
 
     /**
-     * Load DataSources cho tất cả active companies.
-     * Chỉ load companies có status = ACTIVE và deleted = false.
+     * Load DataSources cho tất cả companies (cả ACTIVE và INACTIVE).
+     * INACTIVE companies vẫn cần DataSource để user có thể login và nạp tiền.
+     * Chỉ skip companies đã deleted.
      */
     private void loadActiveCompanyTenants() {
-        List<CompanyEntity> activeCompanies = companyRepository.findAllByStatusAndDeletedFalse(CompanyStatus.ACTIVE);
+        List<CompanyEntity> companies = companyRepository.findAllByDeletedFalse();
 
         int loaded = 0;
         int failed = 0;
 
-        for (CompanyEntity company : activeCompanies) {
+        for (CompanyEntity company : companies) {
             String tenantDomain = company.getTenantDomain();
 
             // Skip Tamabee (đã load ở trên)
@@ -157,7 +160,7 @@ public class TenantDataSourceLoader {
                     // Add vào routing DataSource
                     addToRoutingDataSource(tenantDomain);
                     loaded++;
-                    log.debug("Loaded tenant DataSource: {}", tenantDomain);
+                    log.debug("Loaded tenant DataSource: {} (status: {})", tenantDomain, company.getStatus());
                 } else {
                     log.warn("Database not found for tenant: {}. Company may need re-provisioning.", tenantDomain);
                     failed++;

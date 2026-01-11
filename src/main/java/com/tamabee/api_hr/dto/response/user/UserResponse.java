@@ -2,6 +2,7 @@ package com.tamabee.api_hr.dto.response.user;
 
 import java.time.LocalDateTime;
 
+import com.tamabee.api_hr.enums.CompanyStatus;
 import com.tamabee.api_hr.enums.UserRole;
 import com.tamabee.api_hr.enums.UserStatus;
 
@@ -19,6 +20,7 @@ public class UserResponse {
     private Long companyId;
     private String companyName;
     private String companyLogo;
+    private CompanyStatus companyStatus; // Trạng thái công ty (ACTIVE, INACTIVE)
     private String tenantDomain; // Tenant domain cho multi-tenant ("tamabee" cho Tamabee users)
     private Long planId; // Plan ID của company (null cho Tamabee users)
     private Integer profileCompleteness;

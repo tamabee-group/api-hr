@@ -3,43 +3,116 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
-<body>
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <p>Hello <strong>{companyName}</strong>,</p>
-        <p>Your monthly subscription fee has been automatically deducted from your wallet.</p>
-        <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">PAYMENT DETAILS</p>
-            <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                    <td style="padding: 8px 0; color: #666;">Plan:</td>
-                    <td style="padding: 8px 0; text-align: right; font-weight: bold;">{planName}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; color: #666;">Amount Charged:</td>
-                    <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #dc3545;">{amount}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; color: #666;">Remaining Balance:</td>
-                    <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #00b1ce;">{balance}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; color: #666;">Payment Date:</td>
-                    <td style="padding: 8px 0; text-align: right;">{date}</td>
-                </tr>
-            </table>
-        </div>
-        <p>📅 Your next billing cycle will be processed next month</p>
-        <p style="color: #999; font-size: 13px;">Please ensure your wallet has sufficient balance to avoid service
-            interruption.</p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-        <p>Best regards,<br><strong>Tamabee HR Team</strong></p>
-        <p style="font-size: 13px; color: #666;">
-            🌐 Website: <a href="https://tamabee.vn" style="color: #00b1ce;">https://tamabee.vn</a><br>
-            📧 Email: <a href="mailto:support@tamabee.vn" style="color: #00b1ce;">support@tamabee.vn</a>
-        </p>
-    </div>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4;">
+        <tr>
+            <td align="center" style="padding: 30px 0;">
+                <table width="600" cellpadding="0" cellspacing="0"
+                    style="background-color: #ffffff; border-radius: 4px; overflow: hidden;">
+                    <!-- Header with logo -->
+                    <tr>
+                        <td style="background-color: #232f3e; padding: 24px; text-align: center;">
+                            <span
+                                style="font-size: 28px; font-weight: bold; color: #00ddff; letter-spacing: 2px;">TAMABEE</span>
+                        </td>
+                    </tr>
+
+                    <!-- Main content -->
+                    <tr>
+                        <td style="padding: 30px 20px;">
+                            <h1 style="margin: 0 0 20px; font-size: 24px; font-weight: bold; color: #232f3e;">
+                                Subscription payment notification
+                            </h1>
+                            <p style="margin: 0 0 20px; font-size: 16px; color: #333;">
+                                Hi {companyName},
+                            </p>
+                            <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #333;">
+                                The system has automatically deducted the monthly subscription fee from your wallet.
+                            </p>
+
+                            <!-- Payment details -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background-color: #f8f9fa; border-radius: 4px; margin: 20px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="margin: 0 0 15px; font-size: 14px; font-weight: bold; color: #666;">
+                                            PAYMENT DETAILS
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #666;">Plan:</td>
+                                                <td
+                                                    style="padding: 8px 0; font-size: 14px; font-weight: bold; text-align: right;">
+                                                    {planName}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #666;">Payment
+                                                    amount:</td>
+                                                <td
+                                                    style="padding: 8px 0; font-size: 14px; font-weight: bold; color: #dc3545; text-align: right;">
+                                                    {amount}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #666;">Remaining
+                                                    balance:</td>
+                                                <td
+                                                    style="padding: 8px 0; font-size: 14px; font-weight: bold; color: #00b1ce; text-align: right;">
+                                                    {balance}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #666;">Payment date:
+                                                </td>
+                                                <td style="padding: 8px 0; font-size: 14px; text-align: right;">
+                                                    {date}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #666;">
+                                📅 Next billing cycle will be processed next month.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Note -->
+                    <tr>
+                        <td style="padding: 0 40px 40px;">
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background-color: #f8f9fa; border-radius: 4px; border-left: 4px solid #00b1ce;">
+                                <tr>
+                                    <td style="padding: 16px 20px;">
+                                        <p style="margin: 0; font-size: 13px; color: #666; line-height: 1.5;">
+                                            Please ensure your wallet has sufficient balance to avoid service
+                                            interruption.
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 20px 40px; background-color: #f8f9fa; border-top: 1px solid #eee;">
+                            <p style="margin: 0; font-size: 12px; color: #999; line-height: 1.5;">
+                                This message was produced and distributed by Tamabee HR.<br>
+                                © {year} Tamabee. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 
 </html>

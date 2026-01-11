@@ -1,10 +1,11 @@
 package com.tamabee.api_hr.service.admin.interfaces;
 
-import com.tamabee.api_hr.dto.request.company.UpdateCompanyRequest;
-import com.tamabee.api_hr.dto.response.company.CompanyResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.web.multipart.MultipartFile;
+
+import com.tamabee.api_hr.dto.request.company.UpdateCompanyRequest;
+import com.tamabee.api_hr.dto.response.company.CompanyResponse;
 
 /**
  * Service quản lý công ty cho admin Tamabee
@@ -42,4 +43,13 @@ public interface ICompanyManagerService {
      * Chỉ có thể reactivate trong vòng 90 ngày sau khi deactivate.
      */
     CompanyResponse reactivateCompany(Long id);
+
+    /**
+     * Xóa hoàn toàn công ty - xóa company record và drop tenant database.
+     * Yêu cầu xác nhận bằng tên công ty để tránh xóa nhầm.
+     *
+     * @param id ID của công ty
+     * @param confirmName Tên công ty để xác nhận
+     */
+    void deleteCompany(Long id, String confirmName);
 }

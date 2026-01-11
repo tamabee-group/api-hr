@@ -1,5 +1,12 @@
 package com.tamabee.api_hr.service.admin.impl;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.wallet.PlanEntity;
 import com.tamabee.api_hr.entity.wallet.WalletEntity;
@@ -16,14 +23,9 @@ import com.tamabee.api_hr.service.admin.interfaces.IBillingService;
 import com.tamabee.api_hr.service.admin.interfaces.ICommissionService;
 import com.tamabee.api_hr.service.admin.interfaces.ISettingService;
 import com.tamabee.api_hr.service.core.interfaces.IEmailService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * Service xử lý billing tự động hàng tháng
@@ -127,11 +129,12 @@ public class BillingServiceImpl implements IBillingService {
 
         BigDecimal billingAmount = plan.getMonthlyPrice();
         BigDecimal currentBalance = wallet.getBalance();
+        String language = company.getLanguage() != null ? company.getLanguage() : "vi";
 
         // Kiểm tra số dư
         if (currentBalance.compareTo(billingAmount) < 0) {
             // Số dư không đủ
-            handleInsufficientBalance(wallet, company, plan, billingAmount, currentBalance);
+            handleInsufficientBalance(wallet, company, plan, billingAmount, currentBalance, language);
             return;
         }
 
@@ -144,8 +147,9 @@ public class BillingServiceImpl implements IBillingService {
         wallet.setTotalBilling(wallet.getTotalBilling().add(billingAmount));
         walletRepository.save(wallet);
 
-        // Tạo transaction record
-        String description = "Thanh toán subscription: " + getPlanName(plan, company.getLanguage());
+        // Tạo transaction record với description theo language
+        String planName = getPlanName(plan, language);
+        String description = getBillingDescription(planName, language);
         WalletTransactionEntity transaction = walletTransactionMapper.createEntity(
                 wallet.getId(),
                 TransactionType.BILLING,
@@ -160,10 +164,10 @@ public class BillingServiceImpl implements IBillingService {
         emailService.sendBillingNotification(
                 company.getEmail(),
                 company.getName(),
-                getPlanName(plan, company.getLanguage()),
+                planName,
                 billingAmount,
                 balanceAfter,
-                company.getLanguage());
+                language);
 
         // Xử lý hoa hồng giới thiệu (nếu có)
         // Commission chỉ được tính cho lần thanh toán đầu tiên của company được giới
@@ -190,20 +194,34 @@ public class BillingServiceImpl implements IBillingService {
      * Xử lý trường hợp số dư không đủ
      */
     private void handleInsufficientBalance(WalletEntity wallet, CompanyEntity company,
-            PlanEntity plan, BigDecimal billingAmount, BigDecimal currentBalance) {
+            PlanEntity plan, BigDecimal billingAmount, BigDecimal currentBalance, String language) {
 
-        // Đánh dấu company là INACTIVE
+        // Ghi transaction thất bại với description theo language
+        String planName = getPlanName(plan, language);
+        String description = getBillingFailedDescription(planName, language);
+        WalletTransactionEntity transaction = walletTransactionMapper.createEntity(
+                wallet.getId(),
+                TransactionType.BILLING_FAILED,
+                billingAmount,
+                currentBalance,
+                currentBalance, // balance không đổi
+                description,
+                null);
+        walletTransactionRepository.save(transaction);
+
+        // Đánh dấu company là INACTIVE và set thời điểm deactivate
         company.setStatus(CompanyStatus.INACTIVE);
+        company.setDeactivatedAt(LocalDateTime.now());
         companyRepository.save(company);
 
         // Gửi email thông báo
         emailService.sendInsufficientBalance(
                 company.getEmail(),
                 company.getName(),
-                getPlanName(plan, company.getLanguage()),
+                planName,
                 billingAmount,
                 currentBalance,
-                company.getLanguage());
+                language);
 
         log.warn("Company {} bị đánh dấu INACTIVE do số dư không đủ. Cần: {}, Có: {}",
                 company.getId(), billingAmount, currentBalance);
@@ -220,6 +238,28 @@ public class BillingServiceImpl implements IBillingService {
             case "vi" -> plan.getNameVi();
             case "ja" -> plan.getNameJa();
             default -> plan.getNameEn();
+        };
+    }
+
+    /**
+     * Lấy description cho transaction billing theo ngôn ngữ
+     */
+    private String getBillingDescription(String planName, String language) {
+        return switch (language) {
+            case "vi" -> "Thanh toán subscription: " + planName;
+            case "ja" -> "サブスクリプション支払い: " + planName;
+            default -> "Subscription payment: " + planName;
+        };
+    }
+
+    /**
+     * Lấy description cho transaction billing thất bại theo ngôn ngữ
+     */
+    private String getBillingFailedDescription(String planName, String language) {
+        return switch (language) {
+            case "vi" -> "Thanh toán thất bại - Số dư không đủ: " + planName;
+            case "ja" -> "支払い失敗 - 残高不足: " + planName;
+            default -> "Payment failed - Insufficient balance: " + planName;
         };
     }
 }

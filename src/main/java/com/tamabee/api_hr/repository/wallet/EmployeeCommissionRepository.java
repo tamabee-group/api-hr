@@ -1,18 +1,20 @@
 package com.tamabee.api_hr.repository.wallet;
 
-import com.tamabee.api_hr.entity.wallet.EmployeeCommissionEntity;
-import com.tamabee.api_hr.enums.CommissionStatus;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.jpa.repository.JpaRepository;
-import org.springframework.data.jpa.repository.Query;
-import org.springframework.data.repository.query.Param;
-import org.springframework.stereotype.Repository;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
+import org.springframework.stereotype.Repository;
+
+import com.tamabee.api_hr.entity.wallet.EmployeeCommissionEntity;
+import com.tamabee.api_hr.enums.CommissionStatus;
 
 /**
  * Repository cho quản lý hoa hồng giới thiệu của nhân viên Tamabee.
@@ -203,4 +205,11 @@ public interface EmployeeCommissionRepository extends JpaRepository<EmployeeComm
          * Lấy commission theo companyId (để hiển thị trong referred company response)
          */
         Optional<EmployeeCommissionEntity> findByCompanyId(Long companyId);
+
+        /**
+         * Xóa tất cả commissions theo companyId (dùng khi xóa company)
+         */
+        @Modifying
+        @Query("DELETE FROM EmployeeCommissionEntity c WHERE c.companyId = :companyId")
+        void deleteAllByCompanyId(@Param("companyId") Long companyId);
 }

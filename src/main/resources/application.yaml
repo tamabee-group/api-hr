@@ -63,6 +63,11 @@ jwt:
   access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
   refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:2592000000}
 
+app:
+  admin-email: ${ADMIN_EMAIL:hiepdeptrai0908@gmail.com}
+  base-url: ${BASE_URL:https://tamabee.vn}
+  frontend-url: ${FRONTEND_URL:https://tamabee.vn}
+
 database:
   tunnel:
     enabled: ${DATABASE_TUNNEL_ENABLED:false}

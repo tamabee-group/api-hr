@@ -149,9 +149,14 @@ public class TenantFilter extends OncePerRequestFilter {
 
     /**
      * Extract tenantDomain từ host.
+     * Ưu tiên X-Forwarded-Host (từ proxy) trước, sau đó mới dùng ServerName
      */
     private String extractTenantFromHost(HttpServletRequest request) {
-        String host = request.getServerName();
+        // Ưu tiên X-Forwarded-Host từ proxy
+        String host = request.getHeader("X-Forwarded-Host");
+        if (host == null || host.isEmpty()) {
+            host = request.getServerName();
+        }
 
         if ("localhost".equals(host) || "127.0.0.1".equals(host)) {
             return "tamabee";

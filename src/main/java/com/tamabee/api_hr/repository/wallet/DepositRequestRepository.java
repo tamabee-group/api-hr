@@ -1,16 +1,18 @@
 package com.tamabee.api_hr.repository.wallet;
 
-import com.tamabee.api_hr.entity.wallet.DepositRequestEntity;
-import com.tamabee.api_hr.enums.DepositStatus;
+import java.time.LocalDateTime;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDateTime;
-import java.util.Optional;
+import com.tamabee.api_hr.entity.wallet.DepositRequestEntity;
+import com.tamabee.api_hr.enums.DepositStatus;
 
 /**
  * Repository cho quản lý yêu cầu nạp tiền
@@ -93,4 +95,11 @@ public interface DepositRequestRepository extends JpaRepository<DepositRequestEn
      * Kiểm tra deposit request có tồn tại và chưa bị xóa
      */
     boolean existsByIdAndDeletedFalse(Long id);
+
+    /**
+     * Xóa tất cả deposit requests theo companyId (dùng khi xóa company)
+     */
+    @Modifying
+    @Query("DELETE FROM DepositRequestEntity d WHERE d.companyId = :companyId")
+    void deleteAllByCompanyId(@Param("companyId") Long companyId);
 }

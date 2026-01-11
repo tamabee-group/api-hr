@@ -1,22 +1,36 @@
 package com.tamabee.api_hr.controller.core;
 
-import com.tamabee.api_hr.dto.auth.*;
+import org.springframework.beans.factory.annotation.Value;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.CookieValue;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.tamabee.api_hr.dto.auth.ForgotPasswordRequest;
+import com.tamabee.api_hr.dto.auth.LoginRequest;
+import com.tamabee.api_hr.dto.auth.LoginResponse;
+import com.tamabee.api_hr.dto.auth.RegisterRequest;
+import com.tamabee.api_hr.dto.auth.ResetPasswordRequest;
+import com.tamabee.api_hr.dto.auth.SendVerificationRequest;
+import com.tamabee.api_hr.dto.auth.VerifyEmailRequest;
+import com.tamabee.api_hr.dto.common.BaseResponse;
 import com.tamabee.api_hr.dto.response.company.DomainAvailabilityResponse;
 import com.tamabee.api_hr.dto.response.user.UserResponse;
 import com.tamabee.api_hr.enums.ErrorCode;
-import com.tamabee.api_hr.dto.common.BaseResponse;
-import com.tamabee.api_hr.service.core.interfaces.IAuthService;
-import com.tamabee.api_hr.service.core.interfaces.IEmailVerificationService;
 import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.UnauthorizedException;
+import com.tamabee.api_hr.service.core.interfaces.IAuthService;
+import com.tamabee.api_hr.service.core.interfaces.IEmailVerificationService;
+
 import jakarta.servlet.http.Cookie;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
 
 /**
  * Controller xử lý authentication
@@ -65,19 +79,35 @@ public class AuthController {
     }
 
     @PostMapping("/forgot-password")
-    public ResponseEntity<BaseResponse<Void>> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
-        authService.validateEmailExists(request.getEmail());
-        emailVerificationService.sendVerificationCode(request.getEmail(), "", "vi");
-        return ResponseEntity.ok(BaseResponse.success(null, "Mã đặt lại mật khẩu đã được gửi"));
+    public ResponseEntity<BaseResponse<Void>> forgotPassword(
+            @Valid @RequestBody ForgotPasswordRequest request) {
+        // Lấy thông tin user từ email
+        var user = authService.getUserByEmail(request.getEmail());
+        String language = request.getLanguage() != null ? request.getLanguage() : user.getLanguage();
+        if (language == null) language = "vi";
+        
+        // Lấy tên user từ profile
+        String userName = user.getProfile() != null ? user.getProfile().getName() : "";
+        
+        // Gửi email với link reset password
+        emailVerificationService.sendPasswordResetLink(
+            request.getEmail(), 
+            userName, 
+            language,
+            user.getTenantDomain()
+        );
+        return ResponseEntity.ok(BaseResponse.success(null, "Link đặt lại mật khẩu đã được gửi"));
     }
 
     @PostMapping("/reset-password")
-    public ResponseEntity<BaseResponse<Void>> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
-        boolean isValid = emailVerificationService.verifyAndMarkUsed(request.getEmail(), request.getCode());
-        if (!isValid) {
-            throw new BadRequestException(ErrorCode.INVALID_CODE);
+    public ResponseEntity<BaseResponse<Void>> resetPassword(
+            @Valid @RequestBody ResetPasswordRequest request) {
+        // Verify token và lấy email
+        String email = emailVerificationService.verifyResetTokenAndMarkUsed(request.getToken());
+        if (email == null) {
+            throw new BadRequestException(ErrorCode.INVALID_TOKEN);
         }
-        authService.resetPassword(request.getEmail(), request.getNewPassword());
+        authService.resetPassword(email, request.getNewPassword());
         return ResponseEntity.ok(BaseResponse.success(null, "Đặt lại mật khẩu thành công"));
     }
 

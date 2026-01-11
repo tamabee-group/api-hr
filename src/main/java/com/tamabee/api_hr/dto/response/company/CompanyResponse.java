@@ -1,7 +1,9 @@
 package com.tamabee.api_hr.dto.response.company;
 
-import lombok.Data;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import lombok.Data;
 
 @Data
 public class CompanyResponse {
@@ -19,6 +21,23 @@ public class CompanyResponse {
     private String referredByEmployeeName;
     private String logo;
     private Long ownerId;
+    private String tenantDomain;
+    private String status;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;
+
+    // Plan info
+    private Long planId;
+    private String planNameVi;
+    private String planNameEn;
+    private String planNameJa;
+    private BigDecimal planMonthlyPrice;
+    private Integer planMaxEmployees;
+
+    // Wallet info
+    private BigDecimal walletBalance;
+    private LocalDateTime lastBillingDate;
+    private LocalDateTime nextBillingDate;
+    private LocalDateTime freeTrialEndDate;
+    private Boolean isFreeTrialActive;
 }

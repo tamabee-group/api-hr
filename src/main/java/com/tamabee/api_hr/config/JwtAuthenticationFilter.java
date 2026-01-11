@@ -1,14 +1,9 @@
 package com.tamabee.api_hr.config;
 
-import com.tamabee.api_hr.datasource.TenantContext;
-import com.tamabee.api_hr.util.JwtUtil;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.io.IOException;
+import java.util.Collections;
+import java.util.Map;
+
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -16,9 +11,16 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import java.io.IOException;
-import java.util.Collections;
-import java.util.Map;
+import com.tamabee.api_hr.datasource.TenantContext;
+import com.tamabee.api_hr.util.JwtUtil;
+
+import jakarta.servlet.FilterChain;
+import jakarta.servlet.ServletException;
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import jakarta.servlet.http.HttpServletResponse;
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 @Component
 @RequiredArgsConstructor
@@ -74,8 +76,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
     }
 
     /**
-     * Kiểm tra có phải endpoint query master DB.
-     * Các endpoint này không cần tenant context.
+     * Kiểm tra có phải endpoint query master DB hoặc public endpoint.
+     * Các endpoint này không cần tenant context từ JWT.
      * Lưu ý: /api/auth/me cần tenant context vì query users table
      */
     private boolean isMasterEndpoint(HttpServletRequest request) {
@@ -86,9 +88,16 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             return false;
         }
 
+        // /api/auth/login và /api/auth/refresh-token: tenant được xác định từ user trong DB
+        if (path.equals("/api/auth/login") || path.equals("/api/auth/refresh-token")) {
+            return true;
+        }
+
         return path.startsWith("/api/plans/") ||
                 path.startsWith("/api/admin/") ||
                 path.startsWith("/api/public/") ||
+                path.startsWith("/api/company/deposits") ||
+                path.startsWith("/api/company/wallet") ||
                 path.startsWith("/swagger") ||
                 path.startsWith("/v3/api-docs") ||
                 path.startsWith("/actuator/");

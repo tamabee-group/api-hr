@@ -86,3 +86,23 @@ import com.tamabee.api_hr.datasource.TenantContext;
 
 - Dùng `.\mvnw` (Windows) hoặc `./mvnw` (Linux/Mac)
 - KHÔNG dùng `mvn` trực tiếp
+
+## File Upload
+
+- Khi update entity có file (avatar, logo, transfer_proof...): xóa file cũ nếu có file mới khác
+- Khi delete/cancel entity có file: xóa file đi kèm
+- Sử dụng `IUploadService.deleteFile(filePath)` để xóa file
+
+```java
+// Xóa file cũ khi update
+String oldImageUrl = entity.getImageUrl();
+String newImageUrl = request.getImageUrl();
+if (oldImageUrl != null && !oldImageUrl.equals(newImageUrl)) {
+    uploadService.deleteFile(oldImageUrl);
+}
+
+// Xóa file khi delete/cancel
+if (entity.getImageUrl() != null) {
+    uploadService.deleteFile(entity.getImageUrl());
+}
+```

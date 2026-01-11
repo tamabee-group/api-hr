@@ -1,15 +1,28 @@
 package com.tamabee.api_hr.mapper.core;
 
+import java.time.LocalDateTime;
+
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Component;
 
 import static com.tamabee.api_hr.constants.PlanConstants.FREE_PLAN_ID;
+import com.tamabee.api_hr.dto.auth.RegisterRequest;
 import com.tamabee.api_hr.dto.response.company.CompanyResponse;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
-import com.tamabee.api_hr.dto.auth.RegisterRequest;
+import com.tamabee.api_hr.repository.wallet.PlanRepository;
+import com.tamabee.api_hr.repository.wallet.WalletRepository;
 
 @Component
 public class CompanyMapper {
+
+    private final PlanRepository planRepository;
+    private final WalletRepository walletRepository;
+
+    public CompanyMapper(@Lazy PlanRepository planRepository, @Lazy WalletRepository walletRepository) {
+        this.planRepository = planRepository;
+        this.walletRepository = walletRepository;
+    }
 
     /**
      * Chuyển đổi RegisterRequest sang CompanyEntity
@@ -33,12 +46,7 @@ public class CompanyMapper {
         entity.setTenantDomain(request.getTenantDomain());
 
         // Tự động gán Free Plan khi đăng ký
-        // Free Plan cho phép dùng full tính năng trong thời gian trial
         entity.setPlanId(FREE_PLAN_ID);
-
-        // TODO: Xử lý referral code để tính commission sau
-        // Referral code nằm trong tenant DB (tamabee_tamabee.user_profiles)
-        // Cần implement cross-tenant query hoặc lưu referral code riêng
 
         return entity;
     }
@@ -62,6 +70,8 @@ public class CompanyMapper {
         response.setZipcode(entity.getZipcode());
         response.setLocale(entity.getLocale());
         response.setLanguage(entity.getLanguage());
+        response.setTenantDomain(entity.getTenantDomain());
+        response.setStatus(entity.getStatus() != null ? entity.getStatus().name() : null);
 
         // Lấy thông tin nhân viên tư vấn
         UserEntity referrer = entity.getReferredByEmployee();
@@ -76,6 +86,30 @@ public class CompanyMapper {
         response.setOwnerId(entity.getOwner() != null ? entity.getOwner().getId() : null);
         response.setCreatedAt(entity.getCreatedAt());
         response.setUpdatedAt(entity.getUpdatedAt());
+
+        // Map plan info
+        response.setPlanId(entity.getPlanId());
+        if (entity.getPlanId() != null) {
+            planRepository.findByIdAndDeletedFalse(entity.getPlanId()).ifPresent(plan -> {
+                response.setPlanNameVi(plan.getNameVi());
+                response.setPlanNameEn(plan.getNameEn());
+                response.setPlanNameJa(plan.getNameJa());
+                response.setPlanMonthlyPrice(plan.getMonthlyPrice());
+                response.setPlanMaxEmployees(plan.getMaxEmployees());
+            });
+        }
+
+        // Map wallet info
+        walletRepository.findByCompanyIdAndDeletedFalse(entity.getId()).ifPresent(wallet -> {
+            response.setWalletBalance(wallet.getBalance());
+            response.setLastBillingDate(wallet.getLastBillingDate());
+            response.setNextBillingDate(wallet.getNextBillingDate());
+            response.setFreeTrialEndDate(wallet.getFreeTrialEndDate());
+            // Tính toán free trial active
+            boolean isFreeTrialActive = wallet.getFreeTrialEndDate() != null 
+                && wallet.getFreeTrialEndDate().isAfter(LocalDateTime.now());
+            response.setIsFreeTrialActive(isFreeTrialActive);
+        });
 
         return response;
     }

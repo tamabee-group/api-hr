@@ -3,48 +3,132 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
-<body>
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <p><strong>{employeeName}</strong> 様</p>
-        <p><strong>{period}</strong>の給与が処理されました。</p>
-        <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">給与明細</p>
-            <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                    <td style="padding: 8px 0; color: #666;">基本給:</td>
-                    <td style="padding: 8px 0; text-align: right; font-weight: bold;">{baseSalary}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; color: #666;">残業代合計:</td>
-                    <td style="padding: 8px 0; text-align: right; font-weight: bold;">{totalOvertime}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; color: #666;">手当合計:</td>
-                    <td style="padding: 8px 0; text-align: right; font-weight: bold;">{totalAllowances}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 8px 0; color: #666;">控除合計:</td>
-                    <td style="padding: 8px 0; text-align: right; font-weight: bold; color: #dc3545;">{totalDeductions}
-                    </td>
-                </tr>
-                <tr style="border-top: 2px solid #00b1ce;">
-                    <td style="padding: 12px 0; color: #333; font-weight: bold; font-size: 16px;">手取り額:</td>
-                    <td style="padding: 12px 0; text-align: right; font-weight: bold; color: #00b1ce; font-size: 18px;">
-                        {netSalary}</td>
-                </tr>
-            </table>
-        </div>
-        <p>📅 支払予定日: <strong>{paymentDate}</strong></p>
-        <p style="color: #999; font-size: 13px;">給与明細についてご質問がある場合は、人事部までお問い合わせください。</p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-        <p>よろしくお願いいたします。<br><strong>Tamabee HRチーム</strong></p>
-        <p style="font-size: 13px; color: #666;">
-            🌐 ウェブサイト: <a href="https://tamabee.vn" style="color: #00b1ce;">https://tamabee.vn</a><br>
-            📧 メール: <a href="mailto:support@tamabee.vn" style="color: #00b1ce;">support@tamabee.vn</a>
-        </p>
-    </div>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4;">
+        <tr>
+            <td align="center" style="padding: 30px 0;">
+                <table width="600" cellpadding="0" cellspacing="0"
+                    style="background-color: #ffffff; border-radius: 4px; overflow: hidden;">
+                    <!-- Header với logo -->
+                    <tr>
+                        <td style="background-color: #232f3e; padding: 24px; text-align: center;">
+                            <span
+                                style="font-size: 28px; font-weight: bold; color: #00ddff; letter-spacing: 2px;">TAMABEE</span>
+                        </td>
+                    </tr>
+
+                    <!-- Nội dung chính -->
+                    <tr>
+                        <td style="padding: 30px 20px;">
+                            <h1 style="margin: 0 0 20px; font-size: 24px; font-weight: bold; color: #232f3e;">
+                                {period}の給与明細
+                            </h1>
+                            <p style="margin: 0 0 20px; font-size: 16px; color: #333;">
+                                {employeeName} 様
+                            </p>
+                            <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #333;">
+                                給与明細が処理されましたのでお知らせいたします。
+                            </p>
+
+                            <!-- 給与詳細 -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background-color: #f8f9fa; border-radius: 4px; margin: 20px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="margin: 0 0 15px; font-size: 14px; font-weight: bold; color: #666;">
+                                            給与詳細
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #666;">基本給：
+                                                </td>
+                                                <td
+                                                    style="padding: 8px 0; font-size: 14px; font-weight: bold; text-align: right;">
+                                                    {baseSalary}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #666;">残業代合計：
+                                                </td>
+                                                <td
+                                                    style="padding: 8px 0; font-size: 14px; font-weight: bold; text-align: right;">
+                                                    {totalOvertime}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #666;">手当合計：
+                                                </td>
+                                                <td
+                                                    style="padding: 8px 0; font-size: 14px; font-weight: bold; text-align: right;">
+                                                    {totalAllowances}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #666;">控除合計：
+                                                </td>
+                                                <td
+                                                    style="padding: 8px 0; font-size: 14px; font-weight: bold; color: #dc3545; text-align: right;">
+                                                    {totalDeductions}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2" style="padding: 8px 0;">
+                                                    <hr style="border: none; border-top: 2px solid #00b1ce; margin: 0;">
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td
+                                                    style="padding: 12px 0; font-size: 16px; font-weight: bold; color: #333;">
+                                                    差引支給額：
+                                                </td>
+                                                <td
+                                                    style="padding: 12px 0; font-size: 18px; font-weight: bold; color: #00b1ce; text-align: right;">
+                                                    {netSalary}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #666;">
+                                📅 支払予定日：<strong>{paymentDate}</strong>
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- 注意事項 -->
+                    <tr>
+                        <td style="padding: 0 40px 40px;">
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background-color: #f8f9fa; border-radius: 4px; border-left: 4px solid #00b1ce;">
+                                <tr>
+                                    <td style="padding: 16px 20px;">
+                                        <p style="margin: 0; font-size: 13px; color: #666; line-height: 1.5;">
+                                            給与明細についてご不明な点がございましたら、人事部までお問い合わせください。
+                                        </p>
+                                    </td>
+                                </tr>
+                            </table>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 20px 40px; background-color: #f8f9fa; border-top: 1px solid #eee;">
+                            <p style="margin: 0; font-size: 12px; color: #999; line-height: 1.5;">
+                                このメールはTamabee HRから送信されました。<br>
+                                © {year} Tamabee. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 
 </html>

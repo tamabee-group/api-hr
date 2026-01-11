@@ -1,16 +1,18 @@
 package com.tamabee.api_hr.repository.wallet;
 
-import com.tamabee.api_hr.entity.wallet.WalletTransactionEntity;
-import com.tamabee.api_hr.enums.TransactionType;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
+import com.tamabee.api_hr.entity.wallet.WalletTransactionEntity;
+import com.tamabee.api_hr.enums.TransactionType;
 
 /**
  * Repository cho quản lý lịch sử giao dịch ví
@@ -139,4 +141,11 @@ public interface WalletTransactionRepository extends JpaRepository<WalletTransac
                         "JOIN WalletEntity w ON t.walletId = w.id " +
                         "WHERE w.companyId = :companyId AND w.deleted = false AND t.transactionType = 'DEPOSIT'")
         BigDecimal sumDepositsByCompanyId(@Param("companyId") Long companyId);
+
+        /**
+         * Xóa tất cả transactions theo walletId (dùng khi xóa company)
+         */
+        @Modifying
+        @Query("DELETE FROM WalletTransactionEntity t WHERE t.walletId = :walletId")
+        void deleteAllByWalletId(@Param("walletId") Long walletId);
 }

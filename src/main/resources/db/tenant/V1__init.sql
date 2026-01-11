@@ -54,7 +54,7 @@ CREATE TABLE user_profiles (
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_user_profiles_user FOREIGN KEY (user_id) REFERENCES users(id) ON DELETE CASCADE
+    CONSTRAINT fk_user_profiles_user FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_user_profiles_user_id ON user_profiles(user_id);
@@ -116,7 +116,9 @@ CREATE TABLE work_schedule_assignments (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(50),
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by VARCHAR(50)
+    updated_by VARCHAR(50),
+    CONSTRAINT fk_work_schedule_assignments_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_work_schedule_assignments_schedule FOREIGN KEY (schedule_id) REFERENCES work_schedules(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_work_schedule_assignments_employee_id ON work_schedule_assignments(employee_id);
@@ -150,7 +152,9 @@ CREATE TABLE shift_assignments (
     swapped_with_employee_id BIGINT,
     swapped_from_assignment_id BIGINT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_shift_assignments_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_shift_assignments_template FOREIGN KEY (shift_template_id) REFERENCES shift_templates(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_shift_assign_employee_id ON shift_assignments(employee_id);
@@ -169,7 +173,11 @@ CREATE TABLE shift_swap_requests (
     approved_at TIMESTAMP,
     rejection_reason VARCHAR(500),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_shift_swap_requester FOREIGN KEY (requester_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_shift_swap_target FOREIGN KEY (target_employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_shift_swap_requester_assignment FOREIGN KEY (requester_assignment_id) REFERENCES shift_assignments(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_shift_swap_target_assignment FOREIGN KEY (target_assignment_id) REFERENCES shift_assignments(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_swap_request_requester_id ON shift_swap_requests(requester_id);
@@ -205,7 +213,8 @@ CREATE TABLE attendance_records (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(50),
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by VARCHAR(50)
+    updated_by VARCHAR(50),
+    CONSTRAINT fk_attendance_records_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_attendance_records_employee_id ON attendance_records(employee_id);
@@ -228,7 +237,9 @@ CREATE TABLE break_records (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(50),
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by VARCHAR(50)
+    updated_by VARCHAR(50),
+    CONSTRAINT fk_break_records_attendance FOREIGN KEY (attendance_record_id) REFERENCES attendance_records(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_break_records_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_break_records_attendance_id ON break_records(attendance_record_id);
@@ -260,7 +271,10 @@ CREATE TABLE attendance_adjustment_requests (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(50),
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by VARCHAR(50)
+    updated_by VARCHAR(50),
+    CONSTRAINT fk_adjustment_requests_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_adjustment_requests_attendance FOREIGN KEY (attendance_record_id) REFERENCES attendance_records(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT fk_adjustment_requests_break FOREIGN KEY (break_record_id) REFERENCES break_records(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE INDEX idx_adjustment_requests_employee_id ON attendance_adjustment_requests(employee_id);
@@ -283,7 +297,9 @@ CREATE TABLE schedule_selections (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(50),
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by VARCHAR(50)
+    updated_by VARCHAR(50),
+    CONSTRAINT fk_schedule_selections_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_schedule_selections_schedule FOREIGN KEY (schedule_id) REFERENCES work_schedules(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_schedule_selections_employee_id ON schedule_selections(employee_id);
@@ -323,7 +339,8 @@ CREATE TABLE leave_requests (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(50),
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by VARCHAR(50)
+    updated_by VARCHAR(50),
+    CONSTRAINT fk_leave_requests_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_leave_requests_employee_id ON leave_requests(employee_id);
@@ -343,7 +360,8 @@ CREATE TABLE leave_balances (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(50),
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by VARCHAR(50)
+    updated_by VARCHAR(50),
+    CONSTRAINT fk_leave_balances_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_leave_balances_employee_id ON leave_balances(employee_id);
@@ -366,7 +384,8 @@ CREATE TABLE employee_salaries (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(50),
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by VARCHAR(50)
+    updated_by VARCHAR(50),
+    CONSTRAINT fk_employee_salaries_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_emp_salary_deleted ON employee_salaries(deleted);
@@ -386,7 +405,8 @@ CREATE TABLE employee_allowances (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_employee_allowances_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_emp_allowance_employee_id ON employee_allowances(employee_id);
@@ -407,7 +427,8 @@ CREATE TABLE employee_deductions (
     is_active BOOLEAN NOT NULL DEFAULT TRUE,
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_employee_deductions_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_emp_deduction_employee_id ON employee_deductions(employee_id);
@@ -467,7 +488,9 @@ CREATE TABLE payroll_items (
     adjusted_at TIMESTAMP,
     status VARCHAR(50) NOT NULL DEFAULT 'CALCULATED',
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_payroll_items_period FOREIGN KEY (payroll_period_id) REFERENCES payroll_periods(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_payroll_items_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_payroll_item_period_id ON payroll_items(payroll_period_id);
@@ -512,7 +535,8 @@ CREATE TABLE payroll_records (
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(50),
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by VARCHAR(50)
+    updated_by VARCHAR(50),
+    CONSTRAINT fk_payroll_records_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_payroll_records_employee_id ON payroll_records(employee_id);
@@ -537,7 +561,9 @@ CREATE TABLE employment_contracts (
     notes VARCHAR(1000),
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_employment_contracts_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_employment_contracts_salary FOREIGN KEY (salary_config_id) REFERENCES employee_salaries(id) ON UPDATE CASCADE ON DELETE SET NULL
 );
 
 CREATE INDEX idx_contract_employee_id ON employment_contracts(employee_id);
@@ -583,3 +609,21 @@ CREATE TABLE work_mode_change_logs (
 );
 
 CREATE INDEX idx_work_mode_change_logs_changed_at ON work_mode_change_logs(changed_at DESC);
+
+
+-- =====================================================
+-- EMAIL VERIFICATIONS - Xác thực email (forgot password)
+-- =====================================================
+CREATE TABLE email_verifications (
+    id BIGSERIAL PRIMARY KEY,
+    email VARCHAR(255) NOT NULL,
+    code VARCHAR(64) NOT NULL,
+    company_name VARCHAR(255),
+    expired_at TIMESTAMP NOT NULL,
+    used BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
+);
+
+CREATE INDEX idx_email_verifications_email ON email_verifications(email);
+CREATE INDEX idx_email_verifications_expired ON email_verifications(expired_at);

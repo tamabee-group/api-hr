@@ -10,7 +10,7 @@
 CREATE TABLE email_verifications (
     id BIGSERIAL PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
-    code VARCHAR(6) NOT NULL,
+    code VARCHAR(64) NOT NULL,
     company_name VARCHAR(255),
     expired_at TIMESTAMP NOT NULL,
     used BOOLEAN NOT NULL DEFAULT FALSE,

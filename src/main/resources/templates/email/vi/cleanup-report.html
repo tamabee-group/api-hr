@@ -1,0 +1,96 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+
+<body style="margin:0;padding:0;font-family:'Segoe UI',Tahoma,Geneva,Verdana,sans-serif;background-color:#f4f4f4;">
+    <table role="presentation" width="100%" cellspacing="0" cellpadding="0" style="background-color:#f4f4f4;">
+        <tr>
+            <td align="center" style="padding:40px 20px;">
+                <table role="presentation" width="600" cellspacing="0" cellpadding="0"
+                    style="background-color:#ffffff;border-radius:8px;overflow:hidden;box-shadow:0 2px 8px rgba(0,0,0,0.1);">
+                    <!-- Header -->
+                    <tr>
+                        <td style="background-color:#232f3e;padding:30px 40px;text-align:center;">
+                            <h1 style="color:#ffffff;margin:0;font-size:24px;font-weight:600;">Tamabee HR</h1>
+                        </td>
+                    </tr>
+
+                    <!-- Content -->
+                    <tr>
+                        <td style="padding:40px;">
+                            <h2 style="color:#232f3e;margin:0 0 20px;font-size:20px;">Báo cáo xóa công ty INACTIVE</h2>
+
+                            <!-- Summary Box -->
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="background-color:#f0f8ff;border-radius:6px;margin-bottom:30px;">
+                                <tr>
+                                    <td style="padding:20px;">
+                                        <table role="presentation" width="100%" cellspacing="0" cellpadding="0">
+                                            <tr>
+                                                <td style="padding:8px 0;">
+                                                    <span style="color:#666;">Số công ty đã xóa:</span>
+                                                    <strong style="color:#d32f2f;float:right;">{count} công ty</strong>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:8px 0;border-top:1px solid #ddd;">
+                                                    <span style="color:#666;">Thời gian retention:</span>
+                                                    <strong style="color:#232f3e;float:right;">{retentionDays}
+                                                        ngày</strong>
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding:8px 0;border-top:1px solid #ddd;">
+                                                    <span style="color:#666;">Thời gian thực hiện:</span>
+                                                    <strong style="color:#232f3e;float:right;">{date}</strong>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <!-- Companies List -->
+                            <h3 style="color:#232f3e;margin:0 0 15px;font-size:16px;">Danh sách công ty đã xóa:</h3>
+                            <table role="presentation" width="100%" cellspacing="0" cellpadding="0"
+                                style="border-collapse:collapse;margin-bottom:30px;">
+                                <tr>
+                                    <th
+                                        style="background-color:#232f3e;color:#fff;padding:12px;text-align:left;border:1px solid #232f3e;width:60px;">
+                                        STT</th>
+                                    <th
+                                        style="background-color:#232f3e;color:#fff;padding:12px;text-align:left;border:1px solid #232f3e;">
+                                        Tên công ty</th>
+                                </tr>
+                                {companiesList}
+                            </table>
+
+                            <!-- Note -->
+                            <p style="color:#666;font-size:14px;margin:0;line-height:1.6;">
+                                Các công ty trên đã bị xóa vĩnh viễn do không gia hạn dịch vụ sau {retentionDays} ngày
+                                kể từ khi bị vô hiệu hóa.
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td
+                            style="background-color:#f8f9fa;padding:20px 40px;text-align:center;border-top:1px solid #eee;">
+                            <p style="color:#999;font-size:12px;margin:0;">
+                                Email này được gửi tự động từ hệ thống Tamabee HR.<br>
+                                © 2025 Tamabee. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
+</body>
+
+</html>

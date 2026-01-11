@@ -10,20 +10,21 @@ import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.multipart.MultipartFile;
 
+import com.tamabee.api_hr.dto.common.BaseResponse;
 import com.tamabee.api_hr.dto.request.wallet.DepositFilterRequest;
 import com.tamabee.api_hr.dto.request.wallet.DepositRequestCreateRequest;
 import com.tamabee.api_hr.dto.response.wallet.DepositRequestResponse;
 import com.tamabee.api_hr.enums.DepositStatus;
 import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.dto.common.BaseResponse;
-import com.tamabee.api_hr.service.admin.interfaces.IDepositRequestService;
+import com.tamabee.api_hr.service.admin.interfaces.ISettingService;
 import com.tamabee.api_hr.service.company.interfaces.ICompanyDepositService;
+import com.tamabee.api_hr.service.core.interfaces.IUploadService;
 
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
@@ -38,8 +39,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class CompanyDepositRequestController {
 
-    private final IDepositRequestService depositRequestService;
     private final ICompanyDepositService companyDepositService;
+    private final IUploadService uploadService;
+    private final ISettingService settingService;
 
     /**
      * Tạo yêu cầu nạp tiền mới
@@ -50,7 +52,7 @@ public class CompanyDepositRequestController {
     @PreAuthorize(RoleConstants.HAS_ADMIN_COMPANY)
     public ResponseEntity<BaseResponse<DepositRequestResponse>> create(
             @Valid @RequestBody DepositRequestCreateRequest request) {
-        DepositRequestResponse response = depositRequestService.create(request);
+        DepositRequestResponse response = companyDepositService.create(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.created(response, "Tạo yêu cầu nạp tiền thành công"));
     }
@@ -88,22 +90,31 @@ public class CompanyDepositRequestController {
     @DeleteMapping("/{id}")
     @PreAuthorize(RoleConstants.HAS_ADMIN_COMPANY)
     public ResponseEntity<BaseResponse<DepositRequestResponse>> cancel(@PathVariable Long id) {
-        DepositRequestResponse response = depositRequestService.cancel(id);
+        DepositRequestResponse response = companyDepositService.cancel(id);
         return ResponseEntity.ok(BaseResponse.success(response, "Hủy yêu cầu nạp tiền thành công"));
     }
 
     /**
-     * Cập nhật yêu cầu nạp tiền bị từ chối
-     * PUT /api/company/deposits/{id}
-     * Chỉ ADMIN_COMPANY có quyền, chỉ cập nhật được khi status = REJECTED
-     * Sau khi cập nhật, status sẽ chuyển về PENDING
+     * Upload ảnh chứng từ chuyển khoản
+     * POST /api/company/deposits/upload-proof
+     * Chỉ ADMIN_COMPANY có quyền
      */
-    @PutMapping("/{id}")
+    @PostMapping("/upload-proof")
     @PreAuthorize(RoleConstants.HAS_ADMIN_COMPANY)
-    public ResponseEntity<BaseResponse<DepositRequestResponse>> update(
-            @PathVariable Long id,
-            @Valid @RequestBody DepositRequestCreateRequest request) {
-        DepositRequestResponse response = depositRequestService.update(id, request);
-        return ResponseEntity.ok(BaseResponse.success(response, "Cập nhật yêu cầu nạp tiền thành công"));
+    public ResponseEntity<BaseResponse<String>> uploadTransferProof(
+            @RequestParam("file") MultipartFile file) {
+        String proofUrl = uploadService.uploadFile(file, "deposit", "proof");
+        return ResponseEntity.ok(BaseResponse.success(proofUrl, "Tải ảnh chứng từ thành công"));
+    }
+
+    /**
+     * Lấy số tiền nạp tối thiểu
+     * GET /api/company/deposits/min-amount
+     */
+    @GetMapping("/min-amount")
+    @PreAuthorize(RoleConstants.HAS_COMPANY_ACCESS)
+    public ResponseEntity<BaseResponse<Integer>> getMinDepositAmount() {
+        int minAmount = settingService.getMinDepositAmount();
+        return ResponseEntity.ok(BaseResponse.success(minAmount));
     }
 }

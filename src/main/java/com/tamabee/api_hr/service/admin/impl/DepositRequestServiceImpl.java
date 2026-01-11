@@ -1,36 +1,34 @@
 package com.tamabee.api_hr.service.admin.impl;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.tamabee.api_hr.dto.request.company.RejectRequest;
 import com.tamabee.api_hr.dto.request.wallet.DepositFilterRequest;
 import com.tamabee.api_hr.dto.request.wallet.DepositRequestCreateRequest;
-import com.tamabee.api_hr.dto.request.company.RejectRequest;
 import com.tamabee.api_hr.dto.response.wallet.DepositRequestResponse;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
-import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.entity.wallet.DepositRequestEntity;
 import com.tamabee.api_hr.enums.DepositStatus;
 import com.tamabee.api_hr.enums.ErrorCode;
 import com.tamabee.api_hr.enums.TransactionType;
 import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.exception.UnauthorizedException;
 import com.tamabee.api_hr.mapper.admin.DepositRequestMapper;
 import com.tamabee.api_hr.repository.company.CompanyRepository;
 import com.tamabee.api_hr.repository.wallet.DepositRequestRepository;
-import com.tamabee.api_hr.repository.user.UserRepository;
 import com.tamabee.api_hr.service.admin.interfaces.IDepositRequestService;
 import com.tamabee.api_hr.service.admin.interfaces.IWalletService;
 import com.tamabee.api_hr.service.core.interfaces.IEmailService;
 import com.tamabee.api_hr.util.SecurityUtil;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 /**
  * Service quản lý yêu cầu nạp tiền
@@ -43,7 +41,6 @@ public class DepositRequestServiceImpl implements IDepositRequestService {
 
     private final DepositRequestRepository depositRequestRepository;
     private final CompanyRepository companyRepository;
-    private final UserRepository userRepository;
     private final DepositRequestMapper depositRequestMapper;
     private final IWalletService walletService;
     private final IEmailService emailService;
@@ -65,12 +62,15 @@ public class DepositRequestServiceImpl implements IDepositRequestService {
         }
 
         // Lấy thông tin user hiện tại từ JWT
-        UserEntity currentUser = getCurrentUser();
         Long companyId = securityUtil.getCurrentUserCompanyId();
-        String requestedBy = currentUser.getEmployeeCode();
+        String requestedBy = securityUtil.getCurrentUserEmployeeCode();
+        String requesterName = securityUtil.getCurrentUserName();
+        String requesterRole = securityUtil.getCurrentUserRole();
+        String requesterEmail = securityUtil.getCurrentUserEmail();
 
         // Tạo entity
-        DepositRequestEntity entity = depositRequestMapper.toEntity(request, companyId, requestedBy);
+        DepositRequestEntity entity = depositRequestMapper.toEntity(request, companyId, 
+                requestedBy, requesterName, requesterRole, requesterEmail);
         DepositRequestEntity savedEntity = depositRequestRepository.save(entity);
 
         log.info("Tạo yêu cầu nạp tiền mới: id={}, companyId={}, amount={}, requestedBy={}",
@@ -142,13 +142,18 @@ public class DepositRequestServiceImpl implements IDepositRequestService {
             throw BadRequestException.depositAlreadyProcessed();
         }
 
-        // Lấy thông tin người duyệt
-        UserEntity currentUser = getCurrentUser();
-        String approvedBy = currentUser.getEmployeeCode();
+        // Lấy thông tin người duyệt từ JWT
+        String approvedBy = securityUtil.getCurrentUserEmployeeCode();
+        String approverName = securityUtil.getCurrentUserName();
+        String approverRole = securityUtil.getCurrentUserRole();
+        String approverEmail = securityUtil.getCurrentUserEmail();
 
-        // Cập nhật status
+        // Cập nhật status và thông tin người duyệt
         entity.setStatus(DepositStatus.APPROVED);
         entity.setApprovedBy(approvedBy);
+        entity.setApproverName(approverName);
+        entity.setApproverRole(approverRole);
+        entity.setApproverEmail(approverEmail);
         entity.setProcessedAt(LocalDateTime.now());
         depositRequestRepository.save(entity);
 
@@ -183,13 +188,18 @@ public class DepositRequestServiceImpl implements IDepositRequestService {
             throw BadRequestException.depositAlreadyProcessed();
         }
 
-        // Lấy thông tin người từ chối
-        UserEntity currentUser = getCurrentUser();
-        String approvedBy = currentUser.getEmployeeCode();
+        // Lấy thông tin người từ chối từ JWT
+        String approvedBy = securityUtil.getCurrentUserEmployeeCode();
+        String approverName = securityUtil.getCurrentUserName();
+        String approverRole = securityUtil.getCurrentUserRole();
+        String approverEmail = securityUtil.getCurrentUserEmail();
 
-        // Cập nhật status - KHÔNG thay đổi balance
+        // Cập nhật status và thông tin người từ chối
         entity.setStatus(DepositStatus.REJECTED);
         entity.setApprovedBy(approvedBy);
+        entity.setApproverName(approverName);
+        entity.setApproverRole(approverRole);
+        entity.setApproverEmail(approverEmail);
         entity.setRejectionReason(request.getRejectionReason());
         entity.setProcessedAt(LocalDateTime.now());
         depositRequestRepository.save(entity);
@@ -204,16 +214,10 @@ public class DepositRequestServiceImpl implements IDepositRequestService {
 
     /**
      * Lấy user hiện tại từ JWT token
+     * Dùng employeeCode từ JWT thay vì query DB
      */
-    private UserEntity getCurrentUser() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        if (authentication == null || !authentication.isAuthenticated()) {
-            throw UnauthorizedException.notAuthenticated();
-        }
-
-        String email = authentication.getName();
-        return userRepository.findByEmailAndDeletedFalse(email)
-                .orElseThrow(() -> NotFoundException.user(email));
+    private String getCurrentUserEmployeeCode() {
+        return securityUtil.getCurrentUserEmployeeCode();
     }
 
     /**
@@ -232,48 +236,7 @@ public class DepositRequestServiceImpl implements IDepositRequestService {
                 .map(CompanyEntity::getName)
                 .orElse("Unknown");
 
-        // Lấy thông tin người tạo yêu cầu (name và email)
-        String requesterName = getRequesterName(entity.getRequestedBy());
-        String requesterEmail = getRequesterEmail(entity.getRequestedBy());
-
-        // Lấy tên người duyệt/từ chối (nếu có)
-        String approvedByName = entity.getApprovedBy() != null
-                ? getRequesterName(entity.getApprovedBy())
-                : null;
-
-        return depositRequestMapper.toResponse(entity, companyName, requesterName, requesterEmail, approvedByName);
-    }
-
-    /**
-     * Lấy tên user theo employeeCode
-     * Fallback về employee code nếu không có name trong profile
-     */
-    private String getRequesterName(String employeeCode) {
-        if (employeeCode == null) {
-            return null;
-        }
-        return userRepository.findWithProfileByEmployeeCodeAndDeletedFalse(employeeCode)
-                .map(user -> {
-                    // Ưu tiên lấy name từ profile, nếu không có thì fallback về employee code
-                    if (user.getProfile() != null && user.getProfile().getName() != null
-                            && !user.getProfile().getName().trim().isEmpty()) {
-                        return user.getProfile().getName();
-                    }
-                    return employeeCode;
-                })
-                .orElse(employeeCode);
-    }
-
-    /**
-     * Lấy email user theo employeeCode
-     */
-    private String getRequesterEmail(String employeeCode) {
-        if (employeeCode == null) {
-            return null;
-        }
-        return userRepository.findWithProfileByEmployeeCodeAndDeletedFalse(employeeCode)
-                .map(UserEntity::getEmail)
-                .orElse(null);
+        return depositRequestMapper.toResponse(entity, companyName);
     }
 
     /**

@@ -65,4 +65,18 @@ public interface ISettingService {
      * @return giá mỗi nhân viên (JPY)
      */
     int getCustomPricePerEmployee();
+
+    /**
+     * Lấy số tiền nạp tối thiểu (cached)
+     *
+     * @return số tiền tối thiểu (JPY)
+     */
+    int getMinDepositAmount();
+
+    /**
+     * Lấy số ngày giữ lại company INACTIVE trước khi xóa vĩnh viễn (cached)
+     *
+     * @return số ngày retention (mặc định 30)
+     */
+    int getInactiveRetentionDays();
 }

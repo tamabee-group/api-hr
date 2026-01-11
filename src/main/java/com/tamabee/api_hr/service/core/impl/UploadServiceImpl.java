@@ -75,27 +75,49 @@ public class UploadServiceImpl implements IUploadService {
 
     /**
      * Xóa file trên server
+     * Thử xóa nhiều lần nếu file đang bị lock
      * 
      * @param filePath đường dẫn tương đối của file
      * @return true nếu xóa thành công, false nếu file không tồn tại hoặc lỗi
      */
     @Override
     public boolean deleteFile(String filePath) {
+        if (filePath == null || filePath.isEmpty()) {
+            return false;
+        }
+
         try {
             // Chuyển đường dẫn tương đối thành đường dẫn tuyệt đối
             String absolutePath = filePath.replace("/uploads/", uploadPath + "/");
             Path path = Paths.get(absolutePath);
 
-            if (Files.exists(path)) {
-                Files.delete(path);
-                log.info("File deleted successfully: {}", filePath);
-                return true;
+            if (!Files.exists(path)) {
+                log.warn("File not found: {}", filePath);
+                return false;
             }
 
-            log.warn("File not found: {}", filePath);
+            // Thử xóa file với retry (Windows có thể lock file khi đang serve)
+            int maxRetries = 3;
+            for (int i = 0; i < maxRetries; i++) {
+                try {
+                    Files.delete(path);
+                    log.info("File deleted successfully: {}", filePath);
+                    return true;
+                } catch (java.nio.file.FileSystemException e) {
+                    if (i < maxRetries - 1) {
+                        log.warn("File locked, retrying in 100ms: {}", filePath);
+                        Thread.sleep(100);
+                    } else {
+                        // Đánh dấu file để xóa khi JVM shutdown
+                        path.toFile().deleteOnExit();
+                        log.warn("File marked for deletion on exit: {}", filePath);
+                        return true;
+                    }
+                }
+            }
             return false;
-        } catch (IOException e) {
-            log.error("Error deleting file: {}", e.getMessage(), e);
+        } catch (IOException | InterruptedException e) {
+            log.error("Error deleting file: {}", e.getMessage());
             return false;
         }
     }

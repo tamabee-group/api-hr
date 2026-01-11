@@ -1,7 +1,8 @@
 package com.tamabee.api_hr.exception;
 
-import com.tamabee.api_hr.enums.ErrorCode;
 import org.springframework.http.HttpStatus;
+
+import com.tamabee.api_hr.enums.ErrorCode;
 
 /**
  * Exception cho lỗi 400 Bad Request
@@ -73,6 +74,37 @@ public class BadRequestException extends BaseException {
      */
     public static BadRequestException commissionNotEligible() {
         return new BadRequestException("Hoa hồng chưa đủ điều kiện thanh toán", ErrorCode.COMMISSION_NOT_ELIGIBLE);
+    }
+
+    /**
+     * Factory method cho lỗi số tiền nạp dưới mức tối thiểu
+     */
+    public static BadRequestException minDepositAmount(int minAmount) {
+        return new BadRequestException("Số tiền nạp tối thiểu là ¥" + minAmount, ErrorCode.MIN_DEPOSIT_AMOUNT);
+    }
+
+    /**
+     * Factory method cho lỗi plan không active
+     */
+    public static BadRequestException planNotActive() {
+        return new BadRequestException("Gói dịch vụ không còn hoạt động", ErrorCode.PLAN_NOT_ACTIVE);
+    }
+
+    /**
+     * Factory method cho lỗi vượt quá giới hạn nhân viên của plan
+     */
+    public static BadRequestException planExceedsEmployeeLimit(int currentCount, int maxAllowed) {
+        return new BadRequestException(
+                "Số nhân viên hiện tại (" + currentCount + ") vượt quá giới hạn của gói (" + maxAllowed + ")",
+                ErrorCode.PLAN_EXCEEDS_EMPLOYEE_LIMIT);
+    }
+
+    /**
+     * Factory method cho lỗi công ty đang hoạt động (không cần reactivate)
+     */
+    public static BadRequestException companyAlreadyActive() {
+        return new BadRequestException("Công ty đang hoạt động, không cần kích hoạt lại",
+                ErrorCode.COMPANY_ALREADY_ACTIVE);
     }
 
     /**

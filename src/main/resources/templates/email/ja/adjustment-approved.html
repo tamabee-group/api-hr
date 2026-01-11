@@ -3,60 +3,128 @@
 
 <head>
     <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
 </head>
 
-<body>
-    <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;">
-        <p><strong>{employeeName}</strong> 様</p>
-        <p>勤怠修正申請が<span style="color: #28a745; font-weight: bold;">承認</span>されました。</p>
-        <div style="background-color: #f8f9fa; border-radius: 8px; padding: 20px; margin: 20px 0;">
-            <p style="margin: 0 0 10px 0; color: #666; font-size: 14px;">修正詳細</p>
-            <table style="width: 100%; border-collapse: collapse;">
-                <tr>
-                    <td style="padding: 8px 0; color: #666;">勤務日:</td>
-                    <td style="padding: 8px 0; text-align: right; font-weight: bold;">{workDate}</td>
-                </tr>
-                <tr>
-                    <td colspan="2" style="padding: 12px 0 4px 0; color: #666; font-size: 13px; font-weight: bold;">
-                        元の時刻:</td>
-                </tr>
-                <tr>
-                    <td style="padding: 4px 0 4px 16px; color: #666;">出勤:</td>
-                    <td style="padding: 4px 0; text-align: right;">{originalCheckIn}</td>
-                </tr>
-                <tr>
-                    <td style="padding: 4px 0 4px 16px; color: #666;">退勤:</td>
-                    <td style="padding: 4px 0; text-align: right;">{originalCheckOut}</td>
-                </tr>
-                <tr>
-                    <td colspan="2" style="padding: 12px 0 4px 0; color: #28a745; font-size: 13px; font-weight: bold;">
-                        承認された時刻:</td>
-                </tr>
-                <tr>
-                    <td style="padding: 4px 0 4px 16px; color: #666;">出勤:</td>
-                    <td style="padding: 4px 0; text-align: right; font-weight: bold; color: #28a745;">{approvedCheckIn}
-                    </td>
-                </tr>
-                <tr>
-                    <td style="padding: 4px 0 4px 16px; color: #666;">退勤:</td>
-                    <td style="padding: 4px 0; text-align: right; font-weight: bold; color: #28a745;">{approvedCheckOut}
-                    </td>
-                </tr>
-                {breakSection}
-                <tr>
-                    <td style="padding: 12px 0 8px 0; color: #666;">承認者:</td>
-                    <td style="padding: 12px 0 8px 0; text-align: right; font-weight: bold;">{approverName}</td>
-                </tr>
-            </table>
-        </div>
-        <p style="color: #999; font-size: 13px;">勤怠記録が新しい時刻で更新されました。</p>
-        <hr style="border: none; border-top: 1px solid #eee; margin: 30px 0;">
-        <p>よろしくお願いいたします。<br><strong>Tamabee HRチーム</strong></p>
-        <p style="font-size: 13px; color: #666;">
-            🌐 ウェブサイト: <a href="https://tamabee.vn" style="color: #00b1ce;">https://tamabee.vn</a><br>
-            📧 メール: <a href="mailto:support@tamabee.vn" style="color: #00b1ce;">support@tamabee.vn</a>
-        </p>
-    </div>
+<body style="margin: 0; padding: 0; font-family: Arial, sans-serif; background-color: #f4f4f4;">
+    <table width="100%" cellpadding="0" cellspacing="0" style="background-color: #f4f4f4;">
+        <tr>
+            <td align="center" style="padding: 30px 0;">
+                <table width="600" cellpadding="0" cellspacing="0"
+                    style="background-color: #ffffff; border-radius: 4px; overflow: hidden;">
+                    <!-- Header với logo -->
+                    <tr>
+                        <td style="background-color: #232f3e; padding: 24px; text-align: center;">
+                            <span
+                                style="font-size: 28px; font-weight: bold; color: #00ddff; letter-spacing: 2px;">TAMABEE</span>
+                        </td>
+                    </tr>
+
+                    <!-- Nội dung chính -->
+                    <tr>
+                        <td style="padding: 30px 20px;">
+                            <h1 style="margin: 0 0 20px; font-size: 24px; font-weight: bold; color: #28a745;">
+                                ✅ 勤怠修正が承認されました
+                            </h1>
+                            <p style="margin: 0 0 20px; font-size: 16px; color: #333;">
+                                {employeeName} 様
+                            </p>
+                            <p style="margin: 0 0 20px; font-size: 14px; line-height: 1.6; color: #333;">
+                                勤怠修正申請が承認されました。
+                            </p>
+
+                            <!-- 修正詳細 -->
+                            <table width="100%" cellpadding="0" cellspacing="0"
+                                style="background-color: #f8f9fa; border-radius: 4px; margin: 20px 0;">
+                                <tr>
+                                    <td style="padding: 20px;">
+                                        <p style="margin: 0 0 15px; font-size: 14px; font-weight: bold; color: #666;">
+                                            修正詳細
+                                        </p>
+                                        <table width="100%" cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td style="padding: 8px 0; font-size: 14px; color: #666;">勤務日：
+                                                </td>
+                                                <td
+                                                    style="padding: 8px 0; font-size: 14px; font-weight: bold; text-align: right;">
+                                                    {workDate}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2"
+                                                    style="padding: 12px 0 4px 0; font-size: 13px; font-weight: bold; color: #666;">
+                                                    元の時間：
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 4px 0 4px 16px; font-size: 14px; color: #666;">
+                                                    出勤：</td>
+                                                <td style="padding: 4px 0; font-size: 14px; text-align: right;">
+                                                    {originalCheckIn}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 4px 0 4px 16px; font-size: 14px; color: #666;">
+                                                    退勤：</td>
+                                                <td style="padding: 4px 0; font-size: 14px; text-align: right;">
+                                                    {originalCheckOut}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td colspan="2"
+                                                    style="padding: 12px 0 4px 0; font-size: 13px; font-weight: bold; color: #28a745;">
+                                                    承認された時間：
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 4px 0 4px 16px; font-size: 14px; color: #666;">
+                                                    出勤：</td>
+                                                <td
+                                                    style="padding: 4px 0; font-size: 14px; font-weight: bold; color: #28a745; text-align: right;">
+                                                    {approvedCheckIn}
+                                                </td>
+                                            </tr>
+                                            <tr>
+                                                <td style="padding: 4px 0 4px 16px; font-size: 14px; color: #666;">
+                                                    退勤：</td>
+                                                <td
+                                                    style="padding: 4px 0; font-size: 14px; font-weight: bold; color: #28a745; text-align: right;">
+                                                    {approvedCheckOut}
+                                                </td>
+                                            </tr>
+                                            {breakSection}
+                                            <tr>
+                                                <td style="padding: 12px 0 8px 0; font-size: 14px; color: #666;">承認者：
+                                                </td>
+                                                <td
+                                                    style="padding: 12px 0 8px 0; font-size: 14px; font-weight: bold; text-align: right;">
+                                                    {approverName}
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+
+                            <p style="margin: 0; font-size: 14px; line-height: 1.6; color: #666;">
+                                勤怠記録が新しい時間で更新されました。
+                            </p>
+                        </td>
+                    </tr>
+
+                    <!-- Footer -->
+                    <tr>
+                        <td style="padding: 20px 40px; background-color: #f8f9fa; border-top: 1px solid #eee;">
+                            <p style="margin: 0; font-size: 12px; color: #999; line-height: 1.5;">
+                                このメールはTamabee HRから送信されました。<br>
+                                © {year} Tamabee. All rights reserved.
+                            </p>
+                        </td>
+                    </tr>
+                </table>
+            </td>
+        </tr>
+    </table>
 </body>
 
 </html>

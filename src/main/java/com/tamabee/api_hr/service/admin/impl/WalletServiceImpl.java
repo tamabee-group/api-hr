@@ -20,25 +20,29 @@ import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.entity.wallet.PlanEntity;
 import com.tamabee.api_hr.entity.wallet.WalletEntity;
 import com.tamabee.api_hr.entity.wallet.WalletTransactionEntity;
+import com.tamabee.api_hr.enums.CompanyStatus;
 import com.tamabee.api_hr.enums.TransactionType;
 import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.mapper.admin.WalletMapper;
 import com.tamabee.api_hr.mapper.admin.WalletTransactionMapper;
 import com.tamabee.api_hr.repository.company.CompanyRepository;
-import com.tamabee.api_hr.repository.wallet.PlanRepository;
 import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.repository.wallet.PlanRepository;
 import com.tamabee.api_hr.repository.wallet.WalletRepository;
 import com.tamabee.api_hr.repository.wallet.WalletTransactionRepository;
 import com.tamabee.api_hr.service.admin.interfaces.IWalletService;
+import com.tamabee.api_hr.service.core.interfaces.IEmailService;
 import com.tamabee.api_hr.util.SecurityUtil;
 
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Service quản lý ví tiền của công ty
  * Hỗ trợ xem thông tin ví, thêm/trừ số dư, hoàn tiền và thống kê
  */
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class WalletServiceImpl implements IWalletService {
@@ -51,6 +55,7 @@ public class WalletServiceImpl implements IWalletService {
     private final WalletMapper walletMapper;
     private final WalletTransactionMapper walletTransactionMapper;
     private final SecurityUtil securityUtil;
+    private final IEmailService emailService;
 
     // ==================== View Operations ====================
 
@@ -108,7 +113,103 @@ public class WalletServiceImpl implements IWalletService {
                 referenceId);
         WalletTransactionEntity savedTransaction = walletTransactionRepository.save(transaction);
 
+        // Auto-reactivate company nếu đang INACTIVE và balance đủ
+        tryAutoReactivateCompany(companyId, balanceAfter);
+
         return walletTransactionMapper.toResponse(savedTransaction);
+    }
+
+    /**
+     * Tự động reactivate company nếu đang INACTIVE và balance đủ để thanh toán plan
+     * Trừ tiền subscription và ghi lịch sử transaction
+     */
+    private void tryAutoReactivateCompany(Long companyId, BigDecimal newBalance) {
+        try {
+            CompanyEntity company = companyRepository.findById(companyId).orElse(null);
+            if (company == null || company.getStatus() != CompanyStatus.INACTIVE) {
+                return;
+            }
+
+            // Lấy giá plan
+            PlanEntity plan = getPlanFromCompany(company);
+            if (plan == null) {
+                return;
+            }
+
+            BigDecimal monthlyPrice = plan.getMonthlyPrice();
+            
+            // Nếu balance đủ để thanh toán ít nhất 1 tháng, tự động reactivate
+            if (newBalance.compareTo(monthlyPrice) >= 0) {
+                // Lấy wallet để trừ tiền
+                WalletEntity wallet = walletRepository.findByCompanyId(companyId).orElse(null);
+                if (wallet == null) {
+                    return;
+                }
+
+                // Trừ tiền subscription
+                BigDecimal balanceBefore = wallet.getBalance();
+                BigDecimal balanceAfter = balanceBefore.subtract(monthlyPrice);
+                wallet.setBalance(balanceAfter);
+                walletRepository.save(wallet);
+
+                // Ghi lịch sử transaction với description theo language của company
+                String language = company.getLanguage() != null ? company.getLanguage() : "vi";
+                String planName = getPlanNameByLanguage(plan, language);
+                String description = getReactivationBillingDescription(planName, language);
+                WalletTransactionEntity transaction = walletTransactionMapper.createEntity(
+                        wallet.getId(),
+                        TransactionType.BILLING,
+                        monthlyPrice,
+                        balanceBefore,
+                        balanceAfter,
+                        description,
+                        null);
+                walletTransactionRepository.save(transaction);
+
+                // Cập nhật nextBillingDate
+                wallet.setLastBillingDate(java.time.LocalDateTime.now());
+                wallet.setNextBillingDate(java.time.LocalDateTime.now().plusMonths(1));
+                walletRepository.save(wallet);
+
+                // Reactivate company
+                company.setStatus(CompanyStatus.ACTIVE);
+                company.setDeactivatedAt(null);
+                companyRepository.save(company);
+                
+                log.info("Auto-reactivated company {} after deposit. Charged: {}, Balance after: {}", 
+                        companyId, monthlyPrice, balanceAfter);
+                
+                // Gửi email thông báo reactivation
+                String companyEmail = company.getEmail();
+                String companyName = company.getName();
+                emailService.sendReactivationNotification(companyEmail, companyName, balanceAfter, language);
+            }
+        } catch (Exception e) {
+            log.error("Error auto-reactivating company {}: {}", companyId, e.getMessage());
+        }
+    }
+
+    /**
+     * Lấy tên plan theo ngôn ngữ
+     */
+    private String getPlanNameByLanguage(PlanEntity plan, String language) {
+        if (plan == null) return "N/A";
+        return switch (language) {
+            case "vi" -> plan.getNameVi();
+            case "ja" -> plan.getNameJa();
+            default -> plan.getNameEn();
+        };
+    }
+
+    /**
+     * Lấy description cho transaction billing khi reactivate theo ngôn ngữ
+     */
+    private String getReactivationBillingDescription(String planName, String language) {
+        return switch (language) {
+            case "vi" -> "Thanh toán subscription khi kích hoạt lại: " + planName;
+            case "ja" -> "再有効化時のサブスクリプション支払い: " + planName;
+            default -> "Subscription payment on reactivation: " + planName;
+        };
     }
 
     @Override

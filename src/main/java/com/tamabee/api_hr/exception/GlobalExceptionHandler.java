@@ -1,7 +1,9 @@
 package com.tamabee.api_hr.exception;
 
-import com.tamabee.api_hr.dto.common.BaseResponse;
-import lombok.extern.slf4j.Slf4j;
+import java.util.HashMap;
+import java.util.Map;
+
+import org.springframework.dao.InvalidDataAccessResourceUsageException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.AccessDeniedException;
@@ -13,8 +15,9 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
-import java.util.HashMap;
-import java.util.Map;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Global Exception Handler - Xử lý tất cả exception trong hệ thống
@@ -118,6 +121,30 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .badRequest()
                 .body(BaseResponse.error(ex.getMessage(), "INVALID_ARGUMENT"));
+    }
+
+    /**
+     * Xử lý lỗi database không tồn tại (tenant bị xóa hoặc chưa được tạo)
+     */
+    @ExceptionHandler(InvalidDataAccessResourceUsageException.class)
+    public ResponseEntity<BaseResponse<Void>> handleInvalidDataAccessResourceUsageException(
+            InvalidDataAccessResourceUsageException ex) {
+        String message = ex.getMessage();
+        log.error("Database access error: {}", message);
+        
+        // Kiểm tra nếu là lỗi table/relation không tồn tại (tenant database bị xóa)
+        if (message != null && (message.contains("does not exist") || message.contains("は存在しません") 
+                || message.contains("không tồn tại"))) {
+            return ResponseEntity
+                    .status(HttpStatus.NOT_FOUND)
+                    .body(BaseResponse.error(HttpStatus.NOT_FOUND.value(), 
+                            "Công ty không tồn tại hoặc đã bị xóa", "TENANT_NOT_FOUND"));
+        }
+        
+        // Các lỗi database khác
+        return ResponseEntity
+                .status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(BaseResponse.serverError("Có lỗi xảy ra, vui lòng thử lại sau"));
     }
 
     /**

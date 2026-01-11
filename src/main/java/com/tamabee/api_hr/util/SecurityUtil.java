@@ -1,14 +1,16 @@
 package com.tamabee.api_hr.util;
 
-import com.tamabee.api_hr.exception.UnauthorizedException;
-import jakarta.servlet.http.Cookie;
-import jakarta.servlet.http.HttpServletRequest;
-import lombok.RequiredArgsConstructor;
+import java.util.Map;
+
 import org.springframework.stereotype.Component;
 import org.springframework.web.context.request.RequestContextHolder;
 import org.springframework.web.context.request.ServletRequestAttributes;
 
-import java.util.Map;
+import com.tamabee.api_hr.exception.UnauthorizedException;
+
+import jakarta.servlet.http.Cookie;
+import jakarta.servlet.http.HttpServletRequest;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Utility class để lấy thông tin từ JWT token trong SecurityContext.
@@ -67,6 +69,30 @@ public class SecurityUtil {
             throw UnauthorizedException.notAuthenticated();
         }
         return ((Number) userIdObj).longValue();
+    }
+
+    /**
+     * Lấy employeeCode từ JWT token của user hiện tại.
+     */
+    public String getCurrentUserEmployeeCode() {
+        Map<String, Object> claims = getCurrentUserClaims();
+        return (String) claims.get("employeeCode");
+    }
+
+    /**
+     * Lấy name từ JWT token của user hiện tại.
+     */
+    public String getCurrentUserName() {
+        Map<String, Object> claims = getCurrentUserClaims();
+        return (String) claims.get("name");
+    }
+
+    /**
+     * Lấy language từ JWT token của user hiện tại.
+     */
+    public String getCurrentUserLanguage() {
+        Map<String, Object> claims = getCurrentUserClaims();
+        return (String) claims.get("language");
     }
 
     /**

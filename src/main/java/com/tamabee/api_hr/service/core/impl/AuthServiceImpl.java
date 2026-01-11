@@ -3,13 +3,13 @@ package com.tamabee.api_hr.service.core.impl;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.time.LocalDateTime;
 
 import javax.sql.DataSource;
 
-import com.tamabee.api_hr.datasource.TenantContext;
-import com.tamabee.api_hr.datasource.TenantDataSourceManager;
 import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -17,12 +17,19 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.tamabee.api_hr.datasource.TenantContext;
+import com.tamabee.api_hr.datasource.TenantDataSourceManager;
 import com.tamabee.api_hr.datasource.TenantProvisioningService;
+import com.tamabee.api_hr.dto.auth.LoginRequest;
+import com.tamabee.api_hr.dto.auth.LoginResponse;
+import com.tamabee.api_hr.dto.auth.RegisterRequest;
 import com.tamabee.api_hr.dto.response.company.DomainAvailabilityResponse;
+import com.tamabee.api_hr.dto.response.user.UserProfileResponse;
 import com.tamabee.api_hr.dto.response.user.UserResponse;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.entity.wallet.WalletEntity;
+import com.tamabee.api_hr.enums.CompanyStatus;
 import com.tamabee.api_hr.enums.ErrorCode;
 import com.tamabee.api_hr.enums.UserRole;
 import com.tamabee.api_hr.enums.UserStatus;
@@ -33,15 +40,13 @@ import com.tamabee.api_hr.exception.UnauthorizedException;
 import com.tamabee.api_hr.mapper.core.CompanyMapper;
 import com.tamabee.api_hr.mapper.core.UserMapper;
 import com.tamabee.api_hr.mapper.core.WalletFactory;
-import com.tamabee.api_hr.dto.auth.LoginRequest;
-import com.tamabee.api_hr.dto.auth.RegisterRequest;
-import com.tamabee.api_hr.dto.auth.LoginResponse;
 import com.tamabee.api_hr.repository.company.CompanyRepository;
 import com.tamabee.api_hr.repository.core.EmailVerificationRepository;
 import com.tamabee.api_hr.repository.user.UserRepository;
 import com.tamabee.api_hr.repository.wallet.WalletRepository;
 import com.tamabee.api_hr.service.admin.interfaces.ISettingService;
 import com.tamabee.api_hr.service.core.interfaces.IAuthService;
+import com.tamabee.api_hr.service.core.interfaces.IEmailService;
 import com.tamabee.api_hr.util.JwtUtil;
 import com.tamabee.api_hr.util.ReferralCodeGenerator;
 import com.tamabee.api_hr.util.TenantDomainValidator;
@@ -62,6 +67,7 @@ public class AuthServiceImpl implements IAuthService {
     private final WalletFactory walletFactory;
     private final JwtUtil jwtUtil;
     private final ISettingService settingService;
+    private final IEmailService emailService;
     private final TenantProvisioningService tenantProvisioningService;
     private final TenantDataSourceManager tenantDataSourceManager;
     private final JdbcTemplate masterJdbcTemplate;
@@ -78,6 +84,7 @@ public class AuthServiceImpl implements IAuthService {
             WalletFactory walletFactory,
             JwtUtil jwtUtil,
             ISettingService settingService,
+            IEmailService emailService,
             TenantProvisioningService tenantProvisioningService,
             TenantDataSourceManager tenantDataSourceManager,
             @Qualifier("masterJdbcTemplate") JdbcTemplate masterJdbcTemplate,
@@ -92,6 +99,7 @@ public class AuthServiceImpl implements IAuthService {
         this.walletFactory = walletFactory;
         this.jwtUtil = jwtUtil;
         this.settingService = settingService;
+        this.emailService = emailService;
         this.tenantProvisioningService = tenantProvisioningService;
         this.tenantDataSourceManager = tenantDataSourceManager;
         this.masterJdbcTemplate = masterJdbcTemplate;
@@ -129,7 +137,7 @@ public class AuthServiceImpl implements IAuthService {
         // 3. Tạo user admin trong tenant DB bằng JDBC trực tiếp
         String tenantDomain = request.getTenantDomain();
         try {
-            Long userId = createUserWithJdbc(request, company.getId(), tenantDomain);
+            Long userId = createUserWithJdbc(request, tenantDomain);
             
             // Cập nhật owner cho company (trong master DB)
             updateCompanyOwner(company.getId(), userId);
@@ -142,6 +150,108 @@ public class AuthServiceImpl implements IAuthService {
             deleteCompanyWithTransaction(company.getId());
             tenantProvisioningService.dropTenant(tenantDomain);
             throw new BadRequestException(ErrorCode.USER_CREATION_FAILED);
+        }
+
+        // 4. Gửi email thông báo (async, không ảnh hưởng đến flow chính)
+        sendRegistrationEmails(request, freeTrialEndDate);
+    }
+
+    /**
+     * Gửi các email thông báo sau khi đăng ký thành công
+     */
+    private void sendRegistrationEmails(RegisterRequest request, LocalDateTime freeTrialEndDate) {
+        try {
+            // Email chào mừng cho admin company
+            emailService.sendWelcomeCompany(
+                    request.getEmail(),
+                    request.getOwnerName(),
+                    request.getCompanyName(),
+                    request.getTenantDomain(),
+                    freeTrialEndDate,
+                    request.getLanguage());
+
+            // Lấy thông tin người giới thiệu (nếu có)
+            String referrerName = null;
+            if (request.getReferralCode() != null && !request.getReferralCode().isEmpty()) {
+                referrerName = getReferrerName(request.getReferralCode());
+            }
+
+            // Email thông báo cho Tamabee admin
+            emailService.sendNewCompanyNotification(
+                    request.getCompanyName(),
+                    request.getOwnerName(),
+                    request.getEmail(),
+                    request.getTenantDomain(),
+                    request.getReferralCode(),
+                    referrerName);
+
+            // Email thông báo hoa hồng cho người giới thiệu (nếu có)
+            if (request.getReferralCode() != null && !request.getReferralCode().isEmpty()) {
+                sendReferralNotification(request.getReferralCode(), request.getCompanyName());
+            }
+        } catch (Exception e) {
+            // Log lỗi nhưng không throw exception để không ảnh hưởng đến flow đăng ký
+            log.error("Error sending registration emails: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Lấy tên người giới thiệu từ referral code
+     */
+    private String getReferrerName(String referralCode) {
+        try {
+            DataSource tamabeeDs = tenantDataSourceManager.getDataSource("tamabee");
+            if (tamabeeDs == null) return null;
+
+            try (Connection conn = tamabeeDs.getConnection()) {
+                String sql = "SELECT up.name FROM user_profiles up WHERE UPPER(up.referral_code) = ? AND up.deleted = false";
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, referralCode.trim().toUpperCase());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            return rs.getString("name");
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Error getting referrer name: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Gửi email thông báo hoa hồng cho người giới thiệu
+     */
+    private void sendReferralNotification(String referralCode, String newCompanyName) {
+        try {
+            DataSource tamabeeDs = tenantDataSourceManager.getDataSource("tamabee");
+            if (tamabeeDs == null) {
+                log.warn("Tamabee DataSource not found, skipping referral notification");
+                return;
+            }
+
+            try (Connection conn = tamabeeDs.getConnection()) {
+                String sql = """
+                    SELECT u.email, up.name, u.language 
+                    FROM user_profiles up 
+                    JOIN users u ON up.user_id = u.id 
+                    WHERE UPPER(up.referral_code) = ? AND up.deleted = false AND u.deleted = false
+                    """;
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, referralCode.trim().toUpperCase());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            String email = rs.getString("email");
+                            String name = rs.getString("name");
+                            String language = rs.getString("language");
+                            emailService.sendReferralCommissionNotification(email, name, newCompanyName, language);
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Error sending referral notification: {}", e.getMessage());
         }
     }
 
@@ -187,7 +297,7 @@ public class AuthServiceImpl implements IAuthService {
      * Tạo user và profile trong tenant DB bằng JDBC trực tiếp
      * Không dùng JPA vì cần switch DataSource
      */
-    private Long createUserWithJdbc(RegisterRequest request, Long companyId, String tenantDomain) throws Exception {
+    private Long createUserWithJdbc(RegisterRequest request, String tenantDomain) throws Exception {
         log.info("Creating admin user in tenant DB: {}", tenantDomain);
         
         DataSource tenantDs = tenantDataSourceManager.getDataSource(tenantDomain);
@@ -312,15 +422,15 @@ public class AuthServiceImpl implements IAuthService {
                     // Format yyyy-MM-dd
                     String[] parts = dateOfBirth.split("-");
                     if (parts.length >= 3) {
-                        month = String.format("%02d", Integer.parseInt(parts[1]));
-                        day = String.format("%02d", Integer.parseInt(parts[2]));
+                        month = parts[1].length() == 1 ? "0" + parts[1] : parts[1];
+                        day = parts[2].length() == 1 ? "0" + parts[2] : parts[2];
                     }
                 } else if (dateOfBirth.contains("/")) {
                     // Format dd/MM/yyyy
                     String[] parts = dateOfBirth.split("/");
                     if (parts.length >= 2) {
-                        day = String.format("%02d", Integer.parseInt(parts[0]));
-                        month = String.format("%02d", Integer.parseInt(parts[1]));
+                        day = parts[0].length() == 1 ? "0" + parts[0] : parts[0];
+                        month = parts[1].length() == 1 ? "0" + parts[1] : parts[1];
                     }
                 }
             } catch (NumberFormatException e) {
@@ -464,7 +574,7 @@ public class AuthServiceImpl implements IAuthService {
 
         } catch (BadRequestException e) {
             throw e;
-        } catch (Exception e) {
+        } catch (SQLException e) {
             log.error("Error validating referral code '{}': {}", code, e.getMessage(), e);
             // Không throw exception, cho phép đăng ký tiếp
         }
@@ -492,15 +602,21 @@ public class AuthServiceImpl implements IAuthService {
         // Lấy companyId và planId từ master DB bằng JDBC
         Long companyId = getCompanyIdFromTenant(tenantDomain);
         Long planId = getPlanId(companyId);
+        CompanyStatus companyStatus = getCompanyStatus(companyId, tenantDomain);
 
         // Generate tokens
+        String userName = user.getProfile() != null ? user.getProfile().getName() : null;
+        String userLocale = user.getLocale() != null ? user.getLocale() : "vi";
         String accessToken = jwtUtil.generateAccessToken(
                 user.getId(),
                 user.getEmail(),
                 user.getRole().name(),
                 companyId,
                 tenantDomain,
-                planId);
+                planId,
+                user.getEmployeeCode(),
+                userName,
+                userLocale);
 
         String refreshToken = jwtUtil.generateRefreshToken(
                 user.getId(),
@@ -509,7 +625,7 @@ public class AuthServiceImpl implements IAuthService {
         // Lấy company name và logo từ master DB
         String companyName = getCompanyName(companyId, tenantDomain);
         String companyLogo = getCompanyLogo(companyId, tenantDomain);
-        UserResponse userResponse = userMapper.toResponse(user, companyName, companyLogo, tenantDomain, planId);
+        UserResponse userResponse = userMapper.toResponse(user, companyName, companyLogo, tenantDomain, planId, companyStatus);
 
         return new LoginResponse(accessToken, refreshToken, userResponse);
     }
@@ -530,6 +646,31 @@ public class AuthServiceImpl implements IAuthService {
         if (!userRepository.existsByEmailAndDeletedFalse(email)) {
             throw NotFoundException.email(email);
         }
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public UserResponse getUserByEmail(String email) {
+        UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
+                .orElseThrow(() -> NotFoundException.email(email));
+        
+        // Lấy thông tin cơ bản từ user
+        UserResponse response = new UserResponse();
+        response.setId(user.getId());
+        response.setEmail(user.getEmail());
+        response.setEmployeeCode(user.getEmployeeCode());
+        response.setRole(user.getRole());
+        response.setTenantDomain(user.getTenantDomain());
+        response.setLanguage(user.getLanguage());
+        
+        // Set profile nếu có
+        if (user.getProfile() != null) {
+            UserProfileResponse profileResponse = new UserProfileResponse();
+            profileResponse.setName(user.getProfile().getName());
+            response.setProfile(profileResponse);
+        }
+        
+        return response;
     }
 
     @Override
@@ -567,18 +708,24 @@ public class AuthServiceImpl implements IAuthService {
         Long companyId = getCompanyIdFromTenant(tenantDomain);
         Long planId = getPlanId(companyId);
 
+        String userName = user.getProfile() != null ? user.getProfile().getName() : null;
+        String userLocale = user.getLocale() != null ? user.getLocale() : "vi";
+        CompanyStatus companyStatus = getCompanyStatus(companyId, tenantDomain);
         String newAccessToken = jwtUtil.generateAccessToken(
                 user.getId(),
                 user.getEmail(),
                 user.getRole().name(),
                 companyId,
                 tenantDomain,
-                planId);
+                planId,
+                user.getEmployeeCode(),
+                userName,
+                userLocale);
 
         // Lấy tên và logo công ty
         String companyName = getCompanyName(companyId, tenantDomain);
         String companyLogo = getCompanyLogo(companyId, tenantDomain);
-        UserResponse userResponse = userMapper.toResponse(user, companyName, companyLogo, tenantDomain, planId);
+        UserResponse userResponse = userMapper.toResponse(user, companyName, companyLogo, tenantDomain, planId, companyStatus);
 
         return new LoginResponse(newAccessToken, refreshToken, userResponse);
     }
@@ -599,11 +746,12 @@ public class AuthServiceImpl implements IAuthService {
         String tenantDomain = user.getTenantDomain();
         Long companyId = getCompanyIdFromTenant(tenantDomain);
         Long planId = getPlanId(companyId);
+        CompanyStatus companyStatus = getCompanyStatus(companyId, tenantDomain);
 
         // Lấy tên và logo công ty
         String companyName = getCompanyName(companyId, tenantDomain);
         String companyLogo = getCompanyLogo(companyId, tenantDomain);
-        return userMapper.toResponse(user, companyName, companyLogo, tenantDomain, planId);
+        return userMapper.toResponse(user, companyName, companyLogo, tenantDomain, planId, companyStatus);
     }
 
     /**
@@ -625,7 +773,7 @@ public class AuthServiceImpl implements IAuthService {
         
         try {
             return masterJdbcTemplate.queryForObject(sql, String.class, param);
-        } catch (Exception e) {
+        } catch (EmptyResultDataAccessException e) {
             return null;
         }
     }
@@ -649,7 +797,7 @@ public class AuthServiceImpl implements IAuthService {
         
         try {
             return masterJdbcTemplate.queryForObject(sql, String.class, param);
-        } catch (Exception e) {
+        } catch (EmptyResultDataAccessException e) {
             return null;
         }
     }
@@ -666,7 +814,7 @@ public class AuthServiceImpl implements IAuthService {
         String sql = "SELECT id FROM companies WHERE tenant_domain = ? AND deleted = false";
         try {
             return masterJdbcTemplate.queryForObject(sql, Long.class, tenantDomain);
-        } catch (Exception e) {
+        } catch (EmptyResultDataAccessException e) {
             return 0L;
         }
     }
@@ -675,14 +823,32 @@ public class AuthServiceImpl implements IAuthService {
      * Lấy planId cho company từ master database.
      */
     private Long getPlanId(Long companyId) {
-        if (companyId == null) {
+        if (companyId == null || companyId == 0) {
             return null;
         }
         String sql = "SELECT plan_id FROM companies WHERE id = ? AND deleted = false";
         try {
             return masterJdbcTemplate.queryForObject(sql, Long.class, companyId);
-        } catch (Exception e) {
+        } catch (EmptyResultDataAccessException e) {
             return null;
+        }
+    }
+
+    /**
+     * Lấy trạng thái công ty từ master database.
+     * Tamabee tenant: luôn ACTIVE
+     * Company tenant: lấy từ company table
+     */
+    private CompanyStatus getCompanyStatus(Long companyId, String tenantDomain) {
+        if (companyId == null || companyId == 0 || "tamabee".equals(tenantDomain)) {
+            return CompanyStatus.ACTIVE;
+        }
+        String sql = "SELECT status FROM companies WHERE id = ? AND deleted = false";
+        try {
+            String status = masterJdbcTemplate.queryForObject(sql, String.class, companyId);
+            return status != null ? CompanyStatus.valueOf(status) : CompanyStatus.ACTIVE;
+        } catch (EmptyResultDataAccessException e) {
+            return CompanyStatus.ACTIVE;
         }
     }
 

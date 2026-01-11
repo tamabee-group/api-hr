@@ -1,10 +1,10 @@
 package com.tamabee.api_hr.service.core.interfaces;
 
+import com.tamabee.api_hr.dto.auth.LoginRequest;
+import com.tamabee.api_hr.dto.auth.LoginResponse;
+import com.tamabee.api_hr.dto.auth.RegisterRequest;
 import com.tamabee.api_hr.dto.response.company.DomainAvailabilityResponse;
 import com.tamabee.api_hr.dto.response.user.UserResponse;
-import com.tamabee.api_hr.dto.auth.LoginRequest;
-import com.tamabee.api_hr.dto.auth.RegisterRequest;
-import com.tamabee.api_hr.dto.auth.LoginResponse;
 
 public interface IAuthService {
 
@@ -29,6 +29,12 @@ public interface IAuthService {
      * Kiểm tra email có tồn tại trong hệ thống
      */
     void validateEmailExists(String email);
+
+    /**
+     * Lấy thông tin user từ email (dùng cho forgot password)
+     * @return UserResponse nếu tìm thấy
+     */
+    UserResponse getUserByEmail(String email);
 
     /**
      * Kiểm tra email chưa tồn tại trong hệ thống

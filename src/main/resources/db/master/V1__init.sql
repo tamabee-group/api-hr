@@ -1,7 +1,7 @@
 CREATE TABLE email_verifications (
     id BIGSERIAL PRIMARY KEY,
     email VARCHAR(255) NOT NULL,
-    code VARCHAR(6) NOT NULL,
+    code VARCHAR(64) NOT NULL,
     company_name VARCHAR(255),
     expired_at TIMESTAMP NOT NULL,
     used BOOLEAN NOT NULL DEFAULT FALSE,
@@ -44,7 +44,7 @@ CREATE TABLE plan_features (
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_plan_features_plan FOREIGN KEY (plan_id) REFERENCES plans(id)
+    CONSTRAINT fk_plan_features_plan FOREIGN KEY (plan_id) REFERENCES plans(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_plan_features_plan_id ON plan_features(plan_id);
@@ -59,7 +59,7 @@ CREATE TABLE plan_feature_codes (
     updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
     updated_by VARCHAR(255),
     deleted BOOLEAN DEFAULT FALSE,
-    CONSTRAINT fk_plan_feature_codes_plan FOREIGN KEY (plan_id) REFERENCES plans(id)
+    CONSTRAINT fk_plan_feature_codes_plan FOREIGN KEY (plan_id) REFERENCES plans(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_plan_feature_codes_plan_id ON plan_feature_codes(plan_id);
@@ -112,7 +112,7 @@ CREATE TABLE wallets (
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_wallets_company FOREIGN KEY (company_id) REFERENCES companies(id)
+    CONSTRAINT fk_wallets_company FOREIGN KEY (company_id) REFERENCES companies(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE UNIQUE INDEX idx_wallets_company_id ON wallets(company_id);
@@ -130,7 +130,7 @@ CREATE TABLE wallet_transactions (
     reference_id BIGINT,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_wallet_transactions_wallet FOREIGN KEY (wallet_id) REFERENCES wallets(id)
+    CONSTRAINT fk_wallet_transactions_wallet FOREIGN KEY (wallet_id) REFERENCES wallets(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_wallet_transactions_wallet_id ON wallet_transactions(wallet_id);
@@ -144,13 +144,20 @@ CREATE TABLE deposit_requests (
     transfer_proof_url VARCHAR(500) NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
     requested_by VARCHAR(50) NOT NULL,
+    requester_name VARCHAR(100),
+    requester_role VARCHAR(50),
+    requester_email VARCHAR(255),
+    requester_language VARCHAR(10),
     approved_by VARCHAR(50),
+    approver_name VARCHAR(100),
+    approver_role VARCHAR(50),
+    approver_email VARCHAR(255),
     rejection_reason VARCHAR(500),
     processed_at TIMESTAMP,
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_deposit_requests_company FOREIGN KEY (company_id) REFERENCES companies(id)
+    CONSTRAINT fk_deposit_requests_company FOREIGN KEY (company_id) REFERENCES companies(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_deposit_requests_company_id ON deposit_requests(company_id);
@@ -169,7 +176,7 @@ CREATE TABLE employee_commissions (
     paid_by VARCHAR(50),
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_employee_commissions_company FOREIGN KEY (company_id) REFERENCES companies(id)
+    CONSTRAINT fk_employee_commissions_company FOREIGN KEY (company_id) REFERENCES companies(id) ON UPDATE CASCADE ON DELETE CASCADE
 );
 
 CREATE INDEX idx_employee_commissions_employee_code ON employee_commissions(employee_code);

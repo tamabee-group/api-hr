@@ -10,12 +10,13 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tamabee.api_hr.datasource.TenantContext;
 import com.tamabee.api_hr.dto.request.company.UpdateCompanyProfileRequest;
 import com.tamabee.api_hr.dto.response.company.CompanyProfileResponse;
 import com.tamabee.api_hr.enums.CompanyStatus;
 import com.tamabee.api_hr.exception.ConflictException;
 import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.datasource.TenantContext;
+import com.tamabee.api_hr.repository.user.UserRepository;
 import com.tamabee.api_hr.service.company.interfaces.ICompanyProfileService;
 
 import lombok.RequiredArgsConstructor;
@@ -24,6 +25,7 @@ import lombok.extern.slf4j.Slf4j;
 /**
  * Service implementation cho company profile.
  * Sử dụng masterJdbcTemplate vì table companies nằm trong master database.
+ * Sử dụng userRepository để đếm employees từ tenant database.
  */
 @Slf4j
 @Service
@@ -32,6 +34,8 @@ public class CompanyProfileServiceImpl implements ICompanyProfileService {
 
     @Qualifier("masterJdbcTemplate")
     private final JdbcTemplate masterJdbcTemplate;
+    
+    private final UserRepository userRepository;
 
     @Override
     @Transactional(readOnly = true)
@@ -50,12 +54,18 @@ public class CompanyProfileServiceImpl implements ICompanyProfileService {
             WHERE c.tenant_domain = ? AND c.deleted = false
             """;
         
-        return masterJdbcTemplate.query(sql, rs -> {
+        CompanyProfileResponse response = masterJdbcTemplate.query(sql, rs -> {
             if (rs.next()) {
                 return mapToResponse(rs);
             }
             throw NotFoundException.company(tenantDomain);
         }, tenantDomain);
+        
+        // Đếm số employees từ tenant database
+        int employeeCount = (int) userRepository.countByDeletedFalse();
+        response.setEmployeeCount(employeeCount);
+        
+        return response;
     }
 
     @Override

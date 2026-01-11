@@ -1,5 +1,11 @@
 package com.tamabee.api_hr.service.admin.impl;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.multipart.MultipartFile;
+
 import com.tamabee.api_hr.datasource.TenantProvisioningService;
 import com.tamabee.api_hr.dto.request.company.UpdateCompanyRequest;
 import com.tamabee.api_hr.dto.response.company.CompanyResponse;
@@ -11,13 +17,9 @@ import com.tamabee.api_hr.mapper.core.CompanyMapper;
 import com.tamabee.api_hr.repository.company.CompanyRepository;
 import com.tamabee.api_hr.service.admin.interfaces.ICompanyManagerService;
 import com.tamabee.api_hr.service.core.interfaces.IUploadService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-import org.springframework.web.multipart.MultipartFile;
 
 /**
  * Service quản lý công ty cho admin Tamabee
@@ -167,5 +169,41 @@ public class CompanyManagerServiceImpl implements ICompanyManagerService {
         log.info("Reactivated company: {} (tenantDomain: {})", id, company.getTenantDomain());
 
         return companyMapper.toResponse(savedCompany);
+    }
+
+    @Override
+    @Transactional
+    public void deleteCompany(Long id, String confirmName) {
+        CompanyEntity company = companyRepository.findById(id)
+                .orElseThrow(() -> NotFoundException.company(id));
+
+        // Không cho phép xóa Tamabee company
+        if (TAMABEE_TENANT.equals(company.getTenantDomain())) {
+            throw BadRequestException.custom("CANNOT_DELETE_TAMABEE",
+                    "Không thể xóa Tamabee company");
+        }
+
+        // Xác nhận tên công ty
+        if (!company.getName().equals(confirmName)) {
+            throw BadRequestException.custom("COMPANY_NAME_MISMATCH",
+                    "Tên công ty không khớp");
+        }
+
+        String tenantDomain = company.getTenantDomain();
+        log.info("Deleting company: {} (tenantDomain: {})", id, tenantDomain);
+
+        // Xóa logo nếu có
+        if (company.getLogo() != null) {
+            uploadService.deleteFile(company.getLogo());
+        }
+
+        // Xóa company record - các related records sẽ tự động cascade delete
+        // (wallets, wallet_transactions, deposit_requests, employee_commissions)
+        companyRepository.delete(company);
+
+        // Drop tenant database hoàn toàn
+        tenantProvisioningService.dropTenant(tenantDomain);
+
+        log.info("Successfully deleted company: {} and dropped database: tamabee_{}", id, tenantDomain);
     }
 }

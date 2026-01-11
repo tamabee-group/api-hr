@@ -44,4 +44,7 @@ public class CompanyProfileResponse {
     private LocalDateTime nextBillingDate;
     private LocalDateTime freeTrialEndDate;
     private Boolean isFreeTrialActive;
+    
+    // Employee count
+    private Integer employeeCount;
 }

@@ -1,11 +1,12 @@
 package com.tamabee.api_hr.mapper.core;
 
+import com.tamabee.api_hr.enums.CompanyStatus;
 import org.springframework.stereotype.Component;
 
+import com.tamabee.api_hr.dto.auth.RegisterRequest;
 import com.tamabee.api_hr.dto.response.user.UserProfileResponse;
 import com.tamabee.api_hr.dto.response.user.UserResponse;
 import com.tamabee.api_hr.entity.user.UserEntity;
-import com.tamabee.api_hr.dto.auth.RegisterRequest;
 import com.tamabee.api_hr.util.LocaleUtil;
 
 @Component
@@ -33,26 +34,27 @@ public class UserMapper {
      * Convert UserEntity to UserResponse
      */
     public UserResponse toResponse(UserEntity entity) {
-        return toResponse(entity, null, null, null, null);
+        return toResponse(entity, null, null, null, null, null);
     }
 
     /**
      * Convert UserEntity to UserResponse với companyName
      */
     public UserResponse toResponse(UserEntity entity, String companyName) {
-        return toResponse(entity, companyName, null, null, null);
+        return toResponse(entity, companyName, null, null, null, null);
     }
 
     /**
      * Convert UserEntity to UserResponse với đầy đủ thông tin
      * 
-     * @param entity       UserEntity
-     * @param companyName  Tên công ty
-     * @param companyLogo  Logo công ty
-     * @param tenantDomain Tenant domain ("tamabee" cho Tamabee users)
-     * @param planId       Plan ID của company (null cho Tamabee users)
+     * @param entity        UserEntity
+     * @param companyName   Tên công ty
+     * @param companyLogo   Logo công ty
+     * @param tenantDomain  Tenant domain ("tamabee" cho Tamabee users)
+     * @param planId        Plan ID của company (null cho Tamabee users)
+     * @param companyStatus Trạng thái công ty (ACTIVE, INACTIVE)
      */
-    public UserResponse toResponse(UserEntity entity, String companyName, String companyLogo, String tenantDomain, Long planId) {
+    public UserResponse toResponse(UserEntity entity, String companyName, String companyLogo, String tenantDomain, Long planId, CompanyStatus companyStatus) {
         if (entity == null) {
             return null;
         }
@@ -69,6 +71,7 @@ public class UserMapper {
         response.setCompanyId(null);
         response.setCompanyName(companyName);
         response.setCompanyLogo(companyLogo);
+        response.setCompanyStatus(companyStatus);
         response.setTenantDomain(tenantDomain);
         response.setPlanId(planId);
         response.setProfileCompleteness(entity.getProfileCompleteness());

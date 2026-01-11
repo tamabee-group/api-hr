@@ -6,6 +6,8 @@ import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -17,33 +19,46 @@ import com.tamabee.api_hr.mapper.admin.TamabeeSettingMapper;
 import com.tamabee.api_hr.repository.wallet.TamabeeSettingRepository;
 import com.tamabee.api_hr.service.admin.interfaces.ISettingService;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * Service quản lý cấu hình hệ thống Tamabee
  * Sử dụng in-memory cache để tối ưu performance cho các giá trị thường xuyên
  * truy cập
+ * Sử dụng masterJdbcTemplate để query từ master DB (tamabee_settings nằm ở master)
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class SettingServiceImpl implements ISettingService {
 
     private final TamabeeSettingRepository settingRepository;
     private final TamabeeSettingMapper settingMapper;
+    private final JdbcTemplate masterJdbcTemplate;
+
+    public SettingServiceImpl(
+            TamabeeSettingRepository settingRepository,
+            TamabeeSettingMapper settingMapper,
+            @Qualifier("masterJdbcTemplate") JdbcTemplate masterJdbcTemplate) {
+        this.settingRepository = settingRepository;
+        this.settingMapper = settingMapper;
+        this.masterJdbcTemplate = masterJdbcTemplate;
+    }
 
     // Setting keys
     private static final String FREE_TRIAL_MONTHS = "FREE_TRIAL_MONTHS";
     private static final String REFERRAL_BONUS_MONTHS = "REFERRAL_BONUS_MONTHS";
     private static final String COMMISSION_RATE = "COMMISSION_RATE";
     private static final String CUSTOM_PRICE_PER_EMPLOYEE = "CUSTOM_PRICE_PER_EMPLOYEE";
+    private static final String MIN_DEPOSIT_AMOUNT = "MIN_DEPOSIT_AMOUNT";
+    private static final String INACTIVE_RETENTION_DAYS = "INACTIVE_RETENTION_DAYS";
 
     // Default values
     private static final int DEFAULT_FREE_TRIAL_MONTHS = 2;
     private static final int DEFAULT_REFERRAL_BONUS_MONTHS = 1;
     private static final BigDecimal DEFAULT_COMMISSION_RATE = new BigDecimal("0.10");
     private static final int DEFAULT_CUSTOM_PRICE_PER_EMPLOYEE = 400;
+    private static final int DEFAULT_MIN_DEPOSIT_AMOUNT = 5000;
+    private static final int DEFAULT_INACTIVE_RETENTION_DAYS = 30;
 
     // In-memory cache cho các giá trị thường xuyên truy cập
     private final Map<String, Object> cache = new ConcurrentHashMap<>();
@@ -102,6 +117,16 @@ public class SettingServiceImpl implements ISettingService {
         return getCachedIntValue(CUSTOM_PRICE_PER_EMPLOYEE, DEFAULT_CUSTOM_PRICE_PER_EMPLOYEE);
     }
 
+    @Override
+    public int getMinDepositAmount() {
+        return getCachedIntValue(MIN_DEPOSIT_AMOUNT, DEFAULT_MIN_DEPOSIT_AMOUNT);
+    }
+
+    @Override
+    public int getInactiveRetentionDays() {
+        return getCachedIntValue(INACTIVE_RETENTION_DAYS, DEFAULT_INACTIVE_RETENTION_DAYS);
+    }
+
     /**
      * Lấy giá trị integer từ cache, nếu không có thì load từ database
      */
@@ -117,37 +142,43 @@ public class SettingServiceImpl implements ISettingService {
     }
 
     /**
-     * Load giá trị integer từ database
+     * Load giá trị integer từ master database
      */
     private int loadIntValue(String key, int defaultValue) {
-        return settingRepository.findBySettingKeyAndDeletedFalse(key)
-                .map(entity -> {
-                    try {
-                        return Integer.parseInt(entity.getSettingValue());
-                    } catch (NumberFormatException e) {
-                        log.warn("Không thể parse giá trị {} cho key {}, sử dụng default: {}",
-                                entity.getSettingValue(), key, defaultValue);
-                        return defaultValue;
-                    }
-                })
-                .orElse(defaultValue);
+        String sql = "SELECT setting_value FROM tamabee_settings WHERE setting_key = ? AND deleted = false";
+        try {
+            String value = masterJdbcTemplate.queryForObject(sql, String.class, key);
+            if (value != null) {
+                return Integer.parseInt(value);
+            }
+            return defaultValue;
+        } catch (NumberFormatException e) {
+            log.warn("Không thể parse giá trị cho key {}, sử dụng default: {}", key, defaultValue);
+            return defaultValue;
+        } catch (Exception e) {
+            log.debug("Không tìm thấy setting key {}, sử dụng default: {}", key, defaultValue);
+            return defaultValue;
+        }
     }
 
     /**
-     * Load giá trị BigDecimal từ database
+     * Load giá trị BigDecimal từ master database
      */
     private BigDecimal loadDecimalValue(String key, BigDecimal defaultValue) {
-        return settingRepository.findBySettingKeyAndDeletedFalse(key)
-                .map(entity -> {
-                    try {
-                        return new BigDecimal(entity.getSettingValue());
-                    } catch (NumberFormatException e) {
-                        log.warn("Không thể parse giá trị {} cho key {}, sử dụng default: {}",
-                                entity.getSettingValue(), key, defaultValue);
-                        return defaultValue;
-                    }
-                })
-                .orElse(defaultValue);
+        String sql = "SELECT setting_value FROM tamabee_settings WHERE setting_key = ? AND deleted = false";
+        try {
+            String value = masterJdbcTemplate.queryForObject(sql, String.class, key);
+            if (value != null) {
+                return new BigDecimal(value);
+            }
+            return defaultValue;
+        } catch (NumberFormatException e) {
+            log.warn("Không thể parse giá trị cho key {}, sử dụng default: {}", key, defaultValue);
+            return defaultValue;
+        } catch (Exception e) {
+            log.debug("Không tìm thấy setting key {}, sử dụng default: {}", key, defaultValue);
+            return defaultValue;
+        }
     }
 
     /**
