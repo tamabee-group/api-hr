@@ -1,15 +1,19 @@
 package com.tamabee.api_hr.dto.response.attendance;
 
+import java.util.List;
+
+import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
-
-import java.util.List;
+import lombok.NoArgsConstructor;
 
 /**
  * Response DTO cho kết quả phân ca hàng loạt
  */
 @Data
 @Builder
+@NoArgsConstructor
+@AllArgsConstructor
 public class BatchAssignmentResult {
 
     private int totalRequested;
@@ -20,6 +24,8 @@ public class BatchAssignmentResult {
 
     @Data
     @Builder
+    @NoArgsConstructor
+    @AllArgsConstructor
     public static class FailedAssignment {
         private Long employeeId;
         private String employeeName;

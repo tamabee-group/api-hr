@@ -1,13 +1,14 @@
 package com.tamabee.api_hr.dto.response.attendance;
 
+import java.time.LocalDate;
+import java.util.List;
+
 import com.tamabee.api_hr.enums.BreakType;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
-import java.util.List;
 
 /**
  * Response chứa tổng hợp giờ giải lao của nhân viên trong ngày

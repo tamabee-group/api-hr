@@ -53,7 +53,6 @@ public class AuthController {
     @PostMapping("/send-verification")
     public ResponseEntity<BaseResponse<Void>> sendVerification(@Valid @RequestBody SendVerificationRequest request) {
         authService.validateEmailNotExists(request.getEmail());
-        authService.validateCompanyNameNotExists(request.getCompanyName());
         emailVerificationService.sendVerificationCode(
                 request.getEmail(),
                 request.getCompanyName(),

@@ -1,12 +1,11 @@
 package com.tamabee.api_hr.mapper.company;
 
+import org.springframework.stereotype.Component;
+
 import com.tamabee.api_hr.dto.request.payroll.SalaryConfigRequest;
 import com.tamabee.api_hr.dto.response.payroll.EmployeeSalaryConfigResponse;
 import com.tamabee.api_hr.entity.payroll.EmployeeSalaryEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
-import org.springframework.stereotype.Component;
-
-import java.time.LocalDate;
 
 /**
  * Mapper cho EmployeeSalary entities và DTOs.
@@ -30,6 +29,7 @@ public class EmployeeSalaryMapper {
         entity.setHourlyRate(request.getHourlyRate());
         entity.setShiftRate(request.getShiftRate());
         entity.setEffectiveFrom(request.getEffectiveFrom());
+        entity.setEffectiveTo(request.getEffectiveTo());
         entity.setNote(request.getNote());
 
         return entity;
@@ -42,10 +42,6 @@ public class EmployeeSalaryMapper {
         if (entity == null) {
             return null;
         }
-
-        LocalDate today = LocalDate.now();
-        boolean isActive = entity.getEffectiveFrom().isBefore(today.plusDays(1)) &&
-                (entity.getEffectiveTo() == null || entity.getEffectiveTo().isAfter(today.minusDays(1)));
 
         String employeeName = null;
         if (employee != null && employee.getProfile() != null) {
@@ -63,7 +59,8 @@ public class EmployeeSalaryMapper {
                 .shiftRate(entity.getShiftRate())
                 .effectiveFrom(entity.getEffectiveFrom())
                 .effectiveTo(entity.getEffectiveTo())
-                .isActive(isActive)
+                .isActive(entity.getActive())
+                .usedInPayroll(entity.getUsedInPayroll())
                 .note(entity.getNote())
                 .createdAt(entity.getCreatedAt())
                 .createdBy(null)

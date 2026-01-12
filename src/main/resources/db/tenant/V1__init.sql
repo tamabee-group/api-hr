@@ -379,6 +379,8 @@ CREATE TABLE employee_salaries (
     shift_rate DECIMAL(15, 2),
     effective_from DATE NOT NULL,
     effective_to DATE,
+    used_in_payroll BOOLEAN NOT NULL DEFAULT FALSE,
+    active BOOLEAN NOT NULL DEFAULT FALSE,
     note VARCHAR(500),
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -391,6 +393,7 @@ CREATE TABLE employee_salaries (
 CREATE INDEX idx_emp_salary_deleted ON employee_salaries(deleted);
 CREATE INDEX idx_emp_salary_employee_id ON employee_salaries(employee_id);
 CREATE INDEX idx_emp_salary_effective ON employee_salaries(employee_id, effective_from);
+CREATE INDEX idx_emp_salary_active ON employee_salaries(employee_id, active);
 
 CREATE TABLE employee_allowances (
     id BIGSERIAL PRIMARY KEY,

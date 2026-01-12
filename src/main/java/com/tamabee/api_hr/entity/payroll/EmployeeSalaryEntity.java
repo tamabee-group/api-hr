@@ -1,13 +1,19 @@
 package com.tamabee.api_hr.entity.payroll;
 
-import com.tamabee.api_hr.entity.BaseEntity;
-import com.tamabee.api_hr.enums.SalaryType;
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
+
+import com.tamabee.api_hr.entity.BaseEntity;
+import com.tamabee.api_hr.enums.SalaryType;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * Entity lưu trữ thông tin lương của nhân viên.
@@ -19,7 +25,8 @@ import java.time.LocalDate;
 @Table(name = "employee_salaries", indexes = {
         @Index(name = "idx_emp_salary_employee_id", columnList = "employeeId"),
         @Index(name = "idx_emp_salary_deleted", columnList = "deleted"),
-        @Index(name = "idx_emp_salary_effective", columnList = "employeeId, effectiveFrom")
+        @Index(name = "idx_emp_salary_effective", columnList = "employeeId, effectiveFrom"),
+        @Index(name = "idx_emp_salary_active", columnList = "employeeId, active")
 })
 public class EmployeeSalaryEntity extends BaseEntity {
 
@@ -57,6 +64,14 @@ public class EmployeeSalaryEntity extends BaseEntity {
 
     // Ngày kết thúc hiệu lực (null = vẫn còn hiệu lực)
     private LocalDate effectiveTo;
+
+    // Đánh dấu config đã được sử dụng để tính lương (không cho phép sửa/xóa)
+    @Column(nullable = false)
+    private Boolean usedInPayroll = false;
+
+    // Đánh dấu config đang được áp dụng (chỉ 1 config active cho mỗi employee)
+    @Column(nullable = false)
+    private Boolean active = false;
 
     // Ghi chú
     private String note;

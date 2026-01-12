@@ -14,6 +14,7 @@ public enum ErrorCode {
         BAD_REQUEST("BAD_REQUEST", "Yêu cầu không hợp lệ"),
         INVALID_REQUEST("INVALID_REQUEST", "Yêu cầu không hợp lệ"),
         VALIDATION_ERROR("VALIDATION_ERROR", "Dữ liệu không hợp lệ"),
+        INVALID_DATE_RANGE("INVALID_DATE_RANGE", "Ngày kết thúc phải sau ngày bắt đầu"),
         NOT_FOUND("NOT_FOUND", "Không tìm thấy"),
         CONFLICT("CONFLICT", "Xung đột dữ liệu"),
         INTERNAL_SERVER_ERROR("INTERNAL_SERVER_ERROR", "Lỗi hệ thống"),
@@ -219,6 +220,8 @@ public enum ErrorCode {
         INVALID_SALARY_TYPE("INVALID_SALARY_TYPE", "Loại lương không hợp lệ"),
         SALARY_CONFIG_OVERLAP("SALARY_CONFIG_OVERLAP", "Cấu hình lương bị trùng thời gian"),
         SALARY_AMOUNT_REQUIRED("SALARY_AMOUNT_REQUIRED", "Phải nhập mức lương tương ứng với loại lương"),
+        SALARY_CONFIG_CANNOT_MODIFY("SALARY_CONFIG_CANNOT_MODIFY", "Không thể sửa/xóa cấu hình lương đã được sử dụng"),
+        SALARY_CONFIG_EXPIRED("SALARY_CONFIG_EXPIRED", "Cấu hình lương đã hết hiệu lực"),
 
         // === ALLOWANCE & DEDUCTION ===
         ALLOWANCE_NOT_FOUND("ALLOWANCE_NOT_FOUND", "Không tìm thấy phụ cấp"),

@@ -532,6 +532,10 @@ CREATE TABLE employee_salaries (
     -- Thời gian hiệu lực
     effective_from DATE NOT NULL,
     effective_to DATE,
+    -- Đánh dấu đã được sử dụng để tính lương (không cho phép sửa/xóa)
+    used_in_payroll BOOLEAN NOT NULL DEFAULT FALSE,
+    -- Đánh dấu config đang được áp dụng (chỉ 1 config active cho mỗi employee)
+    active BOOLEAN NOT NULL DEFAULT FALSE,
     -- Ghi chú
     note VARCHAR(500),
     -- Audit
@@ -546,6 +550,7 @@ CREATE INDEX idx_emp_salary_deleted ON employee_salaries(deleted);
 CREATE INDEX idx_emp_salary_employee_id ON employee_salaries(employee_id);
 CREATE INDEX idx_emp_salary_company_id ON employee_salaries(company_id);
 CREATE INDEX idx_emp_salary_effective ON employee_salaries(employee_id, effective_from);
+CREATE INDEX idx_emp_salary_active ON employee_salaries(employee_id, active);
 
 -- =====================================================
 -- 16. ATTENDANCE_ADJUSTMENT_REQUESTS - Yêu cầu điều chỉnh chấm công

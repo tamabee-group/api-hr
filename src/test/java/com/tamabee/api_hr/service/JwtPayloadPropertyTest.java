@@ -30,6 +30,9 @@ class JwtPayloadPropertyTest {
     private static final String TEST_SECRET = "test-secret-key-for-jwt-testing-must-be-at-least-256-bits-long";
     private static final long ACCESS_TOKEN_EXPIRATION = 3600000L; // 1 hour
     private static final long REFRESH_TOKEN_EXPIRATION = 86400000L; // 24 hours
+    private static final String DEFAULT_EMPLOYEE_CODE = "EMP001";
+    private static final String DEFAULT_NAME = "Test User";
+    private static final String DEFAULT_LANGUAGE = "vi";
 
     /**
      * Tạo JwtUtil instance với test configuration
@@ -66,7 +69,8 @@ class JwtPayloadPropertyTest {
 
         JwtUtil jwtUtil = createJwtUtil();
 
-        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId);
+        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -89,7 +93,8 @@ class JwtPayloadPropertyTest {
 
         JwtUtil jwtUtil = createJwtUtil();
 
-        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId);
+        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -112,7 +117,8 @@ class JwtPayloadPropertyTest {
 
         JwtUtil jwtUtil = createJwtUtil();
 
-        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId);
+        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -134,7 +140,8 @@ class JwtPayloadPropertyTest {
 
         JwtUtil jwtUtil = createJwtUtil();
 
-        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId);
+        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -157,7 +164,8 @@ class JwtPayloadPropertyTest {
 
         JwtUtil jwtUtil = createJwtUtil();
 
-        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId);
+        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -179,7 +187,8 @@ class JwtPayloadPropertyTest {
 
         JwtUtil jwtUtil = createJwtUtil();
 
-        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId);
+        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -204,7 +213,8 @@ class JwtPayloadPropertyTest {
         String tenantDomain = "tamabee";
         Long planId = null; // Tamabee users have all features
 
-        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId);
+        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -228,7 +238,8 @@ class JwtPayloadPropertyTest {
 
         JwtUtil jwtUtil = createJwtUtil();
 
-        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId);
+        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -262,7 +273,8 @@ class JwtPayloadPropertyTest {
 
         JwtUtil jwtUtil = createJwtUtil();
 
-        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId);
+        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         // Tamper with token by modifying a character
         String tamperedToken = token.substring(0, token.length() - 5) + "XXXXX";
 
@@ -286,7 +298,8 @@ class JwtPayloadPropertyTest {
 
         // Create token with one secret
         JwtUtil jwtUtil1 = createJwtUtil();
-        String token = jwtUtil1.generateAccessToken(userId, email, role, companyId, tenantDomain, planId);
+        String token = jwtUtil1.generateAccessToken(userId, email, role, companyId, tenantDomain, planId,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
 
         // Try to validate with different secret
         JwtUtil jwtUtil2 = new JwtUtil();
@@ -314,7 +327,8 @@ class JwtPayloadPropertyTest {
 
         JwtUtil jwtUtil = createJwtUtil();
 
-        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId);
+        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -341,7 +355,8 @@ class JwtPayloadPropertyTest {
 
         JwtUtil jwtUtil = createJwtUtil();
 
-        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId);
+        String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();

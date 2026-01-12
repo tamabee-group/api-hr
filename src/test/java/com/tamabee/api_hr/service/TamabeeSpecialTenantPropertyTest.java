@@ -32,6 +32,9 @@ class TamabeeSpecialTenantPropertyTest {
     private static final String TAMABEE_TENANT_DOMAIN = "tamabee";
     private static final Long TAMABEE_COMPANY_ID = 0L;
     private static final String DATABASE_PREFIX = "tamabee_";
+    private static final String DEFAULT_EMPLOYEE_CODE = "EMP001";
+    private static final String DEFAULT_NAME = "Test User";
+    private static final String DEFAULT_LANGUAGE = "vi";
 
     /**
      * Tạo JwtUtil instance với test configuration
@@ -68,7 +71,8 @@ class TamabeeSpecialTenantPropertyTest {
 
         // Tamabee user: companyId = 0, tenantDomain = "tamabee", planId = null
         String token = jwtUtil.generateAccessToken(
-                userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null);
+                userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -89,7 +93,8 @@ class TamabeeSpecialTenantPropertyTest {
 
         // Tamabee user: planId = null means all features enabled
         String token = jwtUtil.generateAccessToken(
-                userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null);
+                userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -109,7 +114,8 @@ class TamabeeSpecialTenantPropertyTest {
         JwtUtil jwtUtil = createJwtUtil();
 
         String token = jwtUtil.generateAccessToken(
-                userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null);
+                userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -145,7 +151,8 @@ class TamabeeSpecialTenantPropertyTest {
         JwtUtil jwtUtil = createJwtUtil();
 
         String token = jwtUtil.generateAccessToken(
-                userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null);
+                userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -168,7 +175,8 @@ class TamabeeSpecialTenantPropertyTest {
         JwtUtil jwtUtil = createJwtUtil();
 
         String token = jwtUtil.generateAccessToken(
-                userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null);
+                userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -202,12 +210,14 @@ class TamabeeSpecialTenantPropertyTest {
 
         // Tamabee user JWT
         String tamabeeToken = jwtUtil.generateAccessToken(
-                userId, email, "ADMIN_TAMABEE", TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null);
+                userId, email, "ADMIN_TAMABEE", TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         Map<String, Object> tamabeeClaims = jwtUtil.validateToken(tamabeeToken);
 
         // Company user JWT
         String companyToken = jwtUtil.generateAccessToken(
-                userId, email, "ADMIN_COMPANY", companyId, companyTenantDomain, planId);
+                userId, email, "ADMIN_COMPANY", companyId, companyTenantDomain, planId,
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
         Map<String, Object> companyClaims = jwtUtil.validateToken(companyToken);
 
         // Verify differences

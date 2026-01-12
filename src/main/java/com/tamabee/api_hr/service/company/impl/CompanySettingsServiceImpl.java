@@ -1,8 +1,23 @@
 package com.tamabee.api_hr.service.company.impl;
 
+import java.time.LocalDateTime;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.beans.factory.ObjectProvider;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tamabee.api_hr.dto.config.*;
+import com.tamabee.api_hr.dto.config.AllowanceConfig;
+import com.tamabee.api_hr.dto.config.AttendanceConfig;
+import com.tamabee.api_hr.dto.config.BreakConfig;
+import com.tamabee.api_hr.dto.config.DeductionConfig;
+import com.tamabee.api_hr.dto.config.OvertimeConfig;
+import com.tamabee.api_hr.dto.config.OvertimeMultipliers;
+import com.tamabee.api_hr.dto.config.PayrollConfig;
+import com.tamabee.api_hr.dto.config.WorkModeConfig;
 import com.tamabee.api_hr.dto.request.attendance.AttendanceConfigRequest;
 import com.tamabee.api_hr.dto.request.attendance.BreakConfigRequest;
 import com.tamabee.api_hr.dto.request.payroll.AllowanceConfigRequest;
@@ -20,22 +35,16 @@ import com.tamabee.api_hr.enums.WorkMode;
 import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.ConflictException;
 import com.tamabee.api_hr.exception.InternalServerException;
-import com.tamabee.api_hr.repository.company.CompanySettingsRepository;
 import com.tamabee.api_hr.repository.attendance.WorkModeChangeLogRepository;
 import com.tamabee.api_hr.repository.attendance.WorkScheduleRepository;
-import com.tamabee.api_hr.service.company.cache.CompanySettingsCache;
+import com.tamabee.api_hr.repository.company.CompanySettingsRepository;
 import com.tamabee.api_hr.service.calculator.LegalBreakRequirements;
 import com.tamabee.api_hr.service.calculator.LegalOvertimeRequirements;
+import com.tamabee.api_hr.service.company.cache.CompanySettingsCache;
 import com.tamabee.api_hr.service.company.interfaces.ICompanySettingsService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.beans.factory.ObjectProvider;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Service implementation quản lý cấu hình chấm công và tính lương của công ty.
@@ -355,6 +364,7 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
      * Tìm settings của tenant hiện tại, tự động tạo nếu chưa có
      */
     private CompanySettingEntity findSettings() {
+        log.info("[DATABASE] Loading CompanySettings from database");
         return companySettingsRepository.findFirstByDeletedFalse()
                 .orElseGet(this::createDefaultSettings);
     }
@@ -440,12 +450,15 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
                 .lastModeChangeBy(lastModeChangeBy)
                 .build();
 
+        PayrollConfig payrollConfig = deserializeConfig(entity.getPayrollConfig(), PayrollConfig.class);
+        log.info("[RESPONSE] PayrollConfig cutoffDay: {}", payrollConfig != null ? payrollConfig.getCutoffDay() : "null");
+
         return CompanySettingsResponse.builder()
                 .id(entity.getId())
                 .workModeConfig(workModeConfig)
                 .attendanceConfig(deserializeConfig(entity.getAttendanceConfig(), AttendanceConfig.class))
                 .breakConfig(deserializeConfig(entity.getBreakConfig(), BreakConfig.class))
-                .payrollConfig(deserializeConfig(entity.getPayrollConfig(), PayrollConfig.class))
+                .payrollConfig(payrollConfig)
                 .overtimeConfig(deserializeConfig(entity.getOvertimeConfig(), OvertimeConfig.class))
                 .allowanceConfig(deserializeConfig(entity.getAllowanceConfig(), AllowanceConfig.class))
                 .deductionConfig(deserializeConfig(entity.getDeductionConfig(), DeductionConfig.class))

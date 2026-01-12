@@ -25,7 +25,7 @@ import com.tamabee.api_hr.repository.user.UserRepository;
 import com.tamabee.api_hr.service.calculator.interfaces.IBreakCalculator;
 import com.tamabee.api_hr.service.calculator.interfaces.IOvertimeCalculator;
 import com.tamabee.api_hr.service.calculator.interfaces.IPayrollCalculator;
-import com.tamabee.api_hr.service.company.interfaces.ICompanySettingsService;
+import com.tamabee.api_hr.service.company.cache.ICachedCompanySettingsService;
 import com.tamabee.api_hr.service.company.interfaces.IPayrollService;
 import com.tamabee.api_hr.service.core.interfaces.INotificationEmailService;
 import com.tamabee.api_hr.service.core.PayslipPdfGenerator;
@@ -61,7 +61,7 @@ public class PayrollServiceImpl implements IPayrollService {
     private final UserRepository userRepository;
     private final HolidayRepository holidayRepository;
     private final CompanyRepository companyRepository;
-    private final ICompanySettingsService companySettingsService;
+    private final ICachedCompanySettingsService cachedSettingsService;
     private final IPayrollCalculator payrollCalculator;
     private final IBreakCalculator breakCalculator;
     private final IOvertimeCalculator overtimeCalculator;
@@ -81,11 +81,11 @@ public class PayrollServiceImpl implements IPayrollService {
         List<UserEntity> employees = userRepository.findByDeletedFalse();
 
         // Lấy cấu hình
-        PayrollConfig payrollConfig = companySettingsService.getPayrollConfig();
-        OvertimeConfig overtimeConfig = companySettingsService.getOvertimeConfig();
-        AllowanceConfig allowanceConfig = companySettingsService.getAllowanceConfig();
-        DeductionConfig deductionConfig = companySettingsService.getDeductionConfig();
-        BreakConfig breakConfig = companySettingsService.getBreakConfig();
+        PayrollConfig payrollConfig = cachedSettingsService.getPayrollConfig();
+        OvertimeConfig overtimeConfig = cachedSettingsService.getOvertimeConfig();
+        AllowanceConfig allowanceConfig = cachedSettingsService.getAllowanceConfig();
+        DeductionConfig deductionConfig = cachedSettingsService.getDeductionConfig();
+        BreakConfig breakConfig = cachedSettingsService.getBreakConfig();
 
         List<PayrollRecordResponse> records = new ArrayList<>();
         BigDecimal totalBaseSalary = BigDecimal.ZERO;
@@ -134,11 +134,11 @@ public class PayrollServiceImpl implements IPayrollService {
         UserEntity employee = userRepository.findByIdAndDeletedFalse(employeeId)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy nhân viên", ErrorCode.USER_NOT_FOUND));
 
-        PayrollConfig payrollConfig = companySettingsService.getPayrollConfig();
-        OvertimeConfig overtimeConfig = companySettingsService.getOvertimeConfig();
-        AllowanceConfig allowanceConfig = companySettingsService.getAllowanceConfig();
-        DeductionConfig deductionConfig = companySettingsService.getDeductionConfig();
-        BreakConfig breakConfig = companySettingsService.getBreakConfig();
+        PayrollConfig payrollConfig = cachedSettingsService.getPayrollConfig();
+        OvertimeConfig overtimeConfig = cachedSettingsService.getOvertimeConfig();
+        AllowanceConfig allowanceConfig = cachedSettingsService.getAllowanceConfig();
+        DeductionConfig deductionConfig = cachedSettingsService.getDeductionConfig();
+        BreakConfig breakConfig = cachedSettingsService.getBreakConfig();
 
         return calculateEmployeePayroll(
                 employee, period,
@@ -165,11 +165,11 @@ public class PayrollServiceImpl implements IPayrollService {
         List<UserEntity> employees = userRepository.findByDeletedFalse();
 
         // Lấy cấu hình
-        PayrollConfig payrollConfig = companySettingsService.getPayrollConfig();
-        OvertimeConfig overtimeConfig = companySettingsService.getOvertimeConfig();
-        AllowanceConfig allowanceConfig = companySettingsService.getAllowanceConfig();
-        DeductionConfig deductionConfig = companySettingsService.getDeductionConfig();
-        BreakConfig breakConfig = companySettingsService.getBreakConfig();
+        PayrollConfig payrollConfig = cachedSettingsService.getPayrollConfig();
+        OvertimeConfig overtimeConfig = cachedSettingsService.getOvertimeConfig();
+        AllowanceConfig allowanceConfig = cachedSettingsService.getAllowanceConfig();
+        DeductionConfig deductionConfig = cachedSettingsService.getDeductionConfig();
+        BreakConfig breakConfig = cachedSettingsService.getBreakConfig();
 
         LocalDateTime now = LocalDateTime.now();
         List<PayrollRecordEntity> savedRecords = new ArrayList<>();

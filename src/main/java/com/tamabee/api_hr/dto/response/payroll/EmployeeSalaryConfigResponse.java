@@ -1,12 +1,13 @@
 package com.tamabee.api_hr.dto.response.payroll;
 
-import com.tamabee.api_hr.enums.SalaryType;
-import lombok.Builder;
-import lombok.Data;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
+import com.tamabee.api_hr.enums.SalaryType;
+
+import lombok.Builder;
+import lombok.Data;
 
 /**
  * Response DTO cho thông tin cấu hình lương nhân viên
@@ -33,6 +34,9 @@ public class EmployeeSalaryConfigResponse {
 
     // Trạng thái
     private Boolean isActive;
+
+    // Đã được sử dụng để tính lương (không cho phép sửa/xóa)
+    private Boolean usedInPayroll;
 
     // Ghi chú
     private String note;

@@ -1,5 +1,15 @@
 package com.tamabee.api_hr.service.company.impl;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.tamabee.api_hr.dto.request.payroll.SalaryConfigRequest;
 import com.tamabee.api_hr.dto.response.payroll.EmployeeSalaryConfigResponse;
 import com.tamabee.api_hr.dto.response.payroll.SalaryConfigValidationResponse;
@@ -13,16 +23,8 @@ import com.tamabee.api_hr.mapper.company.EmployeeSalaryMapper;
 import com.tamabee.api_hr.repository.payroll.EmployeeSalaryRepository;
 import com.tamabee.api_hr.repository.user.UserRepository;
 import com.tamabee.api_hr.service.company.interfaces.IEmployeeSalaryConfigService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Service implementation cho quản lý cấu hình lương nhân viên
@@ -45,22 +47,13 @@ public class EmployeeSalaryConfigServiceImpl implements IEmployeeSalaryConfigSer
         // Validate salary amount based on salary type
         validateSalaryAmount(request);
 
-        // Xóa/vô hiệu hóa các config cũ bị trùng thời gian
-        deactivateOverlappingConfigs(employeeId, request.getEffectiveFrom());
-
-        // Tạo entity mới
+        // Tạo entity mới (không xóa config cũ, để người dùng tự quản lý)
         EmployeeSalaryEntity entity = salaryMapper.toEntity(request, employeeId);
 
         // Lưu vào database
         entity = salaryRepository.save(entity);
 
         return salaryMapper.toResponse(entity, employee);
-    }
-
-    private void deactivateOverlappingConfigs(Long employeeId, LocalDate newEffectiveFrom) {
-        List<EmployeeSalaryEntity> existingConfigs = salaryRepository.findEffectiveSalaries(employeeId,
-                newEffectiveFrom);
-        salaryRepository.deleteAll(existingConfigs);
     }
 
     @Override
@@ -70,6 +63,12 @@ public class EmployeeSalaryConfigServiceImpl implements IEmployeeSalaryConfigSer
         EmployeeSalaryEntity currentConfig = salaryRepository.findById(configId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.SALARY_CONFIG_NOT_FOUND));
 
+        // Kiểm tra quyền sửa (chỉ cho phép nếu chưa được sử dụng để tính lương)
+        if (Boolean.TRUE.equals(currentConfig.getUsedInPayroll())) {
+            throw new BadRequestException("Không thể sửa cấu hình lương đã được sử dụng để tính lương",
+                    ErrorCode.SALARY_CONFIG_CANNOT_MODIFY);
+        }
+
         // Validate employee exists
         UserEntity employee = userRepository.findById(currentConfig.getEmployeeId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
@@ -77,19 +76,19 @@ public class EmployeeSalaryConfigServiceImpl implements IEmployeeSalaryConfigSer
         // Validate salary amount based on salary type
         validateSalaryAmount(request);
 
-        // Đóng config cũ (set effectiveTo = ngày trước ngày bắt đầu của config mới)
-        LocalDate newEffectiveFrom = request.getEffectiveFrom();
-        currentConfig.setEffectiveTo(newEffectiveFrom.minusDays(1));
-        salaryRepository.save(currentConfig);
+        // Cập nhật config hiện tại (không tạo mới)
+        currentConfig.setSalaryType(request.getSalaryType());
+        currentConfig.setMonthlySalary(request.getMonthlySalary());
+        currentConfig.setDailyRate(request.getDailyRate());
+        currentConfig.setHourlyRate(request.getHourlyRate());
+        currentConfig.setShiftRate(request.getShiftRate());
+        currentConfig.setEffectiveFrom(request.getEffectiveFrom());
+        currentConfig.setEffectiveTo(request.getEffectiveTo());
+        currentConfig.setNote(request.getNote());
 
-        // Tạo config mới
-        EmployeeSalaryEntity newConfig = salaryMapper.toEntity(
-                request,
-                currentConfig.getEmployeeId());
+        currentConfig = salaryRepository.save(currentConfig);
 
-        newConfig = salaryRepository.save(newConfig);
-
-        return salaryMapper.toResponse(newConfig, employee);
+        return salaryMapper.toResponse(currentConfig, employee);
     }
 
     @Override
@@ -99,10 +98,12 @@ public class EmployeeSalaryConfigServiceImpl implements IEmployeeSalaryConfigSer
         UserEntity employee = userRepository.findById(employeeId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
 
-        // Tìm config hiện tại (effectiveFrom <= today AND (effectiveTo IS NULL OR
-        // effectiveTo >= today))
-        LocalDate today = LocalDate.now();
-        EmployeeSalaryEntity currentConfig = salaryRepository.findEffectiveSalary(employeeId, today)
+        // Tìm config đang active
+        EmployeeSalaryEntity currentConfig = salaryRepository.findAll().stream()
+                .filter(config -> !config.getDeleted() 
+                        && config.getEmployeeId().equals(employeeId) 
+                        && Boolean.TRUE.equals(config.getActive()))
+                .findFirst()
                 .orElseThrow(() -> new NotFoundException(ErrorCode.SALARY_CONFIG_NOT_FOUND));
 
         return salaryMapper.toResponse(currentConfig, employee);
@@ -115,10 +116,14 @@ public class EmployeeSalaryConfigServiceImpl implements IEmployeeSalaryConfigSer
         UserEntity employee = userRepository.findById(employeeId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
 
-        // Lấy tất cả config của employee, sắp xếp theo effectiveFrom giảm dần
+        // Lấy tất cả config của employee, sắp xếp theo effectiveFrom giảm dần, sau đó createdAt giảm dần
         List<EmployeeSalaryEntity> configs = salaryRepository.findAll().stream()
                 .filter(config -> !config.getDeleted() && config.getEmployeeId().equals(employeeId))
-                .sorted((a, b) -> b.getEffectiveFrom().compareTo(a.getEffectiveFrom()))
+                .sorted((a, b) -> {
+                    int cmp = b.getEffectiveFrom().compareTo(a.getEffectiveFrom());
+                    if (cmp != 0) return cmp;
+                    return b.getCreatedAt().compareTo(a.getCreatedAt());
+                })
                 .collect(Collectors.toList());
 
         return configs.stream()
@@ -127,7 +132,7 @@ public class EmployeeSalaryConfigServiceImpl implements IEmployeeSalaryConfigSer
     }
 
     /**
-     * Validate rằng mức lương phù hợp với loại lương
+     * Validate rằng mức lương phù hợp với loại lương và ngày hiệu lực hợp lệ
      */
     private void validateSalaryAmount(SalaryConfigRequest request) {
         SalaryType salaryType = request.getSalaryType();
@@ -163,6 +168,14 @@ public class EmployeeSalaryConfigServiceImpl implements IEmployeeSalaryConfigSer
                 break;
             default:
                 throw new BadRequestException(ErrorCode.INVALID_SALARY_TYPE);
+        }
+
+        // Validate effectiveTo > effectiveFrom
+        LocalDate effectiveFrom = request.getEffectiveFrom();
+        LocalDate effectiveTo = request.getEffectiveTo();
+        if (effectiveFrom != null && effectiveTo != null && !effectiveTo.isAfter(effectiveFrom)) {
+            throw new BadRequestException("Ngày kết thúc phải sau ngày bắt đầu",
+                    ErrorCode.INVALID_DATE_RANGE);
         }
     }
 
@@ -216,6 +229,55 @@ public class EmployeeSalaryConfigServiceImpl implements IEmployeeSalaryConfigSer
     public void deleteSalaryConfig(Long configId) {
         EmployeeSalaryEntity config = salaryRepository.findById(configId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.SALARY_CONFIG_NOT_FOUND));
+
+        // Kiểm tra quyền xóa (chỉ cho phép nếu chưa được sử dụng để tính lương)
+        if (Boolean.TRUE.equals(config.getUsedInPayroll())) {
+            throw new BadRequestException("Không thể xóa cấu hình lương đã được sử dụng để tính lương",
+                    ErrorCode.SALARY_CONFIG_CANNOT_MODIFY);
+        }
+
         salaryRepository.delete(config);
+    }
+
+    @Override
+    @Transactional
+    public EmployeeSalaryConfigResponse applySalaryConfig(Long configId) {
+        EmployeeSalaryEntity config = salaryRepository.findById(configId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.SALARY_CONFIG_NOT_FOUND));
+
+        // Kiểm tra quyền sửa (chỉ cho phép nếu chưa được sử dụng để tính lương)
+        if (Boolean.TRUE.equals(config.getUsedInPayroll())) {
+            throw new BadRequestException("Không thể áp dụng cấu hình lương đã được sử dụng để tính lương",
+                    ErrorCode.SALARY_CONFIG_CANNOT_MODIFY);
+        }
+
+        // Kiểm tra config có quá hạn không (effectiveTo < today)
+        LocalDate today = LocalDate.now();
+        if (config.getEffectiveTo() != null && config.getEffectiveTo().isBefore(today)) {
+            throw new BadRequestException("Không thể áp dụng cấu hình lương đã hết hiệu lực",
+                    ErrorCode.SALARY_CONFIG_EXPIRED);
+        }
+
+        // Validate employee exists
+        UserEntity employee = userRepository.findById(config.getEmployeeId())
+                .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
+
+        // Deactivate tất cả config khác của employee
+        Long employeeIdToDeactivate = config.getEmployeeId();
+        salaryRepository.findAll().stream()
+                .filter(c -> !c.getDeleted() 
+                        && c.getEmployeeId().equals(employeeIdToDeactivate) 
+                        && Boolean.TRUE.equals(c.getActive())
+                        && !c.getId().equals(configId))
+                .forEach(c -> {
+                    c.setActive(false);
+                    salaryRepository.save(c);
+                });
+
+        // Activate config này
+        config.setActive(true);
+        EmployeeSalaryEntity savedConfig = salaryRepository.save(config);
+
+        return salaryMapper.toResponse(savedConfig, employee);
     }
 }

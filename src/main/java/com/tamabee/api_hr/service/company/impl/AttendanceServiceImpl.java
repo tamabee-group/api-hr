@@ -31,8 +31,8 @@ import com.tamabee.api_hr.repository.attendance.ShiftTemplateRepository;
 import com.tamabee.api_hr.repository.user.UserRepository;
 import com.tamabee.api_hr.service.calculator.interfaces.IBreakCalculator;
 import com.tamabee.api_hr.service.calculator.interfaces.ITimeRoundingCalculator;
+import com.tamabee.api_hr.service.company.cache.ICachedCompanySettingsService;
 import com.tamabee.api_hr.service.company.interfaces.IAttendanceService;
-import com.tamabee.api_hr.service.company.interfaces.ICompanySettingsService;
 import com.tamabee.api_hr.service.company.interfaces.IWorkScheduleService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -66,7 +66,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
     private final UserRepository userRepository;
     private final ShiftAssignmentRepository shiftAssignmentRepository;
     private final ShiftTemplateRepository shiftTemplateRepository;
-    private final ICompanySettingsService companySettingsService;
+    private final ICachedCompanySettingsService cachedSettingsService;
     private final IWorkScheduleService workScheduleService;
     private final ITimeRoundingCalculator timeRoundingCalculator;
     private final IBreakCalculator breakCalculator;
@@ -86,7 +86,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
             throw new ConflictException("Đã check-in hôm nay", ErrorCode.ALREADY_CHECKED_IN);
         }
 
-        AttendanceConfig config = companySettingsService.getAttendanceConfig();
+        AttendanceConfig config = cachedSettingsService.getAttendanceConfig();
 
         // Validate device nếu yêu cầu
         if (Boolean.TRUE.equals(config.getRequireDeviceRegistration())) {
@@ -153,7 +153,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
         }
 
         // Lấy cấu hình chấm công
-        AttendanceConfig config = companySettingsService.getAttendanceConfig();
+        AttendanceConfig config = cachedSettingsService.getAttendanceConfig();
 
         // Validate device nếu yêu cầu
         if (Boolean.TRUE.equals(config.getRequireDeviceRegistration())) {
@@ -225,7 +225,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
         }
 
         // Lấy cấu hình và tính toán lại
-        AttendanceConfig config = companySettingsService.getAttendanceConfig();
+        AttendanceConfig config = cachedSettingsService.getAttendanceConfig();
 
         // Áp dụng làm tròn
         if (Boolean.TRUE.equals(config.getEnableRounding())) {
@@ -526,7 +526,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
         }
 
         // Lấy break config
-        BreakConfig breakConfig = companySettingsService.getBreakConfig();
+        BreakConfig breakConfig = cachedSettingsService.getBreakConfig();
 
         // Tính tổng số phút làm việc (gross)
         long totalMinutes = ChronoUnit.MINUTES.between(checkIn, checkOut);
@@ -739,7 +739,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
         }
 
         // Lấy break config
-        BreakConfig breakConfig = companySettingsService.getBreakConfig();
+        BreakConfig breakConfig = cachedSettingsService.getBreakConfig();
 
         // Kiểm tra break có được bật không
         if (breakConfig == null || !Boolean.TRUE.equals(breakConfig.getBreakEnabled())) {
@@ -828,7 +828,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
         }
 
         // Lấy break config
-        BreakConfig breakConfig = companySettingsService.getBreakConfig();
+        BreakConfig breakConfig = cachedSettingsService.getBreakConfig();
 
         // Update break record
         breakRecord.setBreakEnd(now);
@@ -892,8 +892,8 @@ public class AttendanceServiceImpl implements IAttendanceService {
         ShiftInfoResponse shiftInfo = getShiftInfo(entity.getEmployeeId(), entity.getWorkDate());
 
         // Lấy configs
-        AttendanceConfig attendanceConfig = companySettingsService.getAttendanceConfig();
-        BreakConfig breakConfig = companySettingsService.getBreakConfig();
+        AttendanceConfig attendanceConfig = cachedSettingsService.getAttendanceConfig();
+        BreakConfig breakConfig = cachedSettingsService.getBreakConfig();
 
         return attendanceMapper.toFullResponse(entity, employeeName, breakRecords, shiftInfo,
                 attendanceConfig, breakConfig);

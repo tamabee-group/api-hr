@@ -1,12 +1,13 @@
 package com.tamabee.api_hr.dto.request.payroll;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+
 import com.tamabee.api_hr.enums.SalaryType;
+
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Positive;
 import lombok.Data;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
 
 /**
  * Request DTO cho việc tạo/cập nhật cấu hình lương nhân viên
@@ -35,6 +36,9 @@ public class SalaryConfigRequest {
 
     @NotNull(message = "Ngày bắt đầu hiệu lực không được để trống")
     private LocalDate effectiveFrom;
+
+    // Ngày kết thúc hiệu lực (optional)
+    private LocalDate effectiveTo;
 
     // Ghi chú
     private String note;

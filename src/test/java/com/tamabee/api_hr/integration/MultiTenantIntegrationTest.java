@@ -1,5 +1,21 @@
 package com.tamabee.api_hr.integration;
 
+import java.lang.reflect.Field;
+import java.util.List;
+import java.util.Map;
+
+import static org.assertj.core.api.Assertions.assertThat;
+import org.junit.jupiter.api.AfterEach;
+import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.extension.ExtendWith;
+import org.mockito.Mock;
+import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.when;
+import org.mockito.junit.jupiter.MockitoExtension;
+
 import com.tamabee.api_hr.datasource.TenantContext;
 import com.tamabee.api_hr.datasource.TenantDataSourceManager;
 import com.tamabee.api_hr.dto.response.wallet.PlanFeaturesResponse;
@@ -8,17 +24,6 @@ import com.tamabee.api_hr.enums.UserRole;
 import com.tamabee.api_hr.service.core.interfaces.IPlanFeaturesService;
 import com.tamabee.api_hr.util.JwtUtil;
 import com.tamabee.api_hr.util.TenantDomainValidator;
-import org.junit.jupiter.api.*;
-import org.junit.jupiter.api.extension.ExtendWith;
-import org.mockito.Mock;
-import org.mockito.junit.jupiter.MockitoExtension;
-
-import java.lang.reflect.Field;
-import java.util.List;
-import java.util.Map;
-
-import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.*;
 
 /**
  * Integration tests cho Multi-Tenant Refactor.
@@ -34,6 +39,9 @@ class MultiTenantIntegrationTest {
     private static final long REFRESH_TOKEN_EXPIRATION = 2592000000L;
     private static final String TAMABEE_TENANT = "tamabee";
     private static final Long TAMABEE_COMPANY_ID = 0L;
+    private static final String DEFAULT_EMPLOYEE_CODE = "EMP001";
+    private static final String DEFAULT_NAME = "Test User";
+    private static final String DEFAULT_LANGUAGE = "vi";
 
     @Mock
     private TenantDataSourceManager tenantDataSourceManager;
@@ -139,7 +147,8 @@ class MultiTenantIntegrationTest {
             Long planId = 1L;
 
             // When
-            String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId);
+            String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId,
+                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
             Map<String, Object> claims = jwtUtil.validateToken(token);
 
             // Then
@@ -219,8 +228,10 @@ class MultiTenantIntegrationTest {
             String tenant2 = "company-b";
 
             // When
-            String token1 = jwtUtil.generateAccessToken(1L, "user1@a.com", "ADMIN_COMPANY", 1L, tenant1, 1L);
-            String token2 = jwtUtil.generateAccessToken(2L, "user2@b.com", "ADMIN_COMPANY", 2L, tenant2, 1L);
+            String token1 = jwtUtil.generateAccessToken(1L, "user1@a.com", "ADMIN_COMPANY", 1L, tenant1, 1L,
+                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
+            String token2 = jwtUtil.generateAccessToken(2L, "user2@b.com", "ADMIN_COMPANY", 2L, tenant2, 1L,
+                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
 
             Map<String, Object> claims1 = jwtUtil.validateToken(token1);
             Map<String, Object> claims2 = jwtUtil.validateToken(token2);
@@ -262,7 +273,8 @@ class MultiTenantIntegrationTest {
             String role = UserRole.ADMIN_TAMABEE.name();
 
             // When
-            String token = jwtUtil.generateAccessToken(userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT, null);
+            String token = jwtUtil.generateAccessToken(userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT, null,
+                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
             Map<String, Object> claims = jwtUtil.validateToken(token);
 
             // Then
@@ -278,7 +290,8 @@ class MultiTenantIntegrationTest {
             String role = UserRole.ADMIN_TAMABEE.name();
 
             // When
-            String token = jwtUtil.generateAccessToken(userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT, null);
+            String token = jwtUtil.generateAccessToken(userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT, null,
+                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
             Map<String, Object> claims = jwtUtil.validateToken(token);
 
             // Then
@@ -294,7 +307,8 @@ class MultiTenantIntegrationTest {
             String role = UserRole.ADMIN_TAMABEE.name();
 
             // When
-            String token = jwtUtil.generateAccessToken(userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT, null);
+            String token = jwtUtil.generateAccessToken(userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT, null,
+                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
             Map<String, Object> claims = jwtUtil.validateToken(token);
 
             // Then
@@ -323,7 +337,7 @@ class MultiTenantIntegrationTest {
             // When & Then
             for (String role : tamabeeRoles) {
                 String token = jwtUtil.generateAccessToken(1L, "user@tamabee.vn", role, TAMABEE_COMPANY_ID,
-                        TAMABEE_TENANT, null);
+                        TAMABEE_TENANT, null, DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
                 Map<String, Object> claims = jwtUtil.validateToken(token);
 
                 assertThat(claims.get("tenantDomain"))

@@ -6,6 +6,7 @@ import java.util.Optional;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
@@ -62,4 +63,28 @@ public interface CompanyRepository extends JpaRepository<CompanyEntity, Long> {
                         "AND c.deactivatedAt IS NOT NULL " +
                         "AND c.deactivatedAt < :cutoffDate")
         List<CompanyEntity> findInactiveCompaniesForCleanup(@Param("cutoffDate") java.time.LocalDateTime cutoffDate);
+
+        /**
+         * Insert Tamabee company với id = 0 (đặc biệt)
+         * Dùng native query vì JPA không cho phép set id thủ công
+         */
+        @Modifying
+        @Query(value = "INSERT INTO companies (id, name, owner_name, email, phone, address, industry, zipcode, " +
+                        "locale, language, tenant_domain, plan_id, status, deleted, created_at, updated_at) " +
+                        "VALUES (0, :name, :ownerName, :email, :phone, :address, :industry, :zipcode, " +
+                        ":locale, :language, :tenantDomain, :planId, :status, false, NOW(), NOW()) " +
+                        "ON CONFLICT (id) DO NOTHING", nativeQuery = true)
+        void insertTamabeeCompany(
+                        @Param("name") String name,
+                        @Param("ownerName") String ownerName,
+                        @Param("email") String email,
+                        @Param("phone") String phone,
+                        @Param("address") String address,
+                        @Param("industry") String industry,
+                        @Param("zipcode") String zipcode,
+                        @Param("locale") String locale,
+                        @Param("language") String language,
+                        @Param("tenantDomain") String tenantDomain,
+                        @Param("planId") Long planId,
+                        @Param("status") String status);
 }

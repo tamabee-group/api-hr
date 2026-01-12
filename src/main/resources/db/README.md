@@ -10,7 +10,6 @@ Hệ thống sử dụng kiến trúc multi-tenant với database riêng cho m�
 PostgreSQL Server
 ├── tamabee_hr (Master DB)
 │   ├── companies
-│   ├── users
 │   ├── plans
 │   ├── plan_features
 │   ├── plan_feature_codes
@@ -22,6 +21,7 @@ PostgreSQL Server
 │   └── mail_history
 │
 ├── tamabee_tamabee (Tamabee Tenant DB)
+│   ├── users
 │   ├── user_profiles
 │   ├── company_settings
 │   ├── attendance_records
@@ -29,6 +29,7 @@ PostgreSQL Server
 │   └── ... (HR data)
 │
 └── tamabee_{tenantDomain} (Customer Tenant DBs)
+    ├── users
     ├── user_profiles
     ├── company_settings
     ├── attendance_records
@@ -42,13 +43,10 @@ PostgreSQL Server
 db/
 ├── master/                    # Master DB migrations
 │   ├── V1__init.sql          # Schema
-│   └── V2__init_settings.sql # Config data
+│   └── V2__init_settings.sql # Config data (plans, features)
 │
-├── tenant/                    # Tenant DB template
-│   └── V1__init.sql          # Schema template
-│
-├── scripts/                   # Setup scripts
-│   └── create_tamabee_database.sql
+├── tenant/                    # Tenant DB migrations (dùng chung cho tất cả tenants)
+│   └── V1__init.sql          # Schema cho tenant (bao gồm Tamabee)
 │
 └── migration/                 # Legacy (single DB) - sẽ bị xóa
     ├── V1__init_schema.sql
@@ -68,19 +66,16 @@ createdb -U postgres tamabee_hr
 psql -U postgres -c "CREATE DATABASE tamabee_hr;"
 ```
 
-#### 2. Tạo Tamabee Tenant Database
+#### 2. Khởi động Application
 
-```bash
-# Chạy script tạo database
-psql -U postgres -f src/main/resources/db/scripts/create_tamabee_database.sql
-```
+Khi application khởi động:
 
-#### 3. Chạy Migrations
+1. Flyway chạy migrations cho Master DB (`db/master/`)
+2. `TenantDataSourceLoader` tự động tạo database `tamabee_tamabee` nếu chưa có
+3. Flyway chạy migrations cho Tamabee tenant (`db/tenant/`)
+4. `DataInitializer` tạo Tamabee company (id=0) và admin user
 
-Flyway sẽ tự động chạy migrations khi application khởi động:
-
-- Master DB: `db/master/V1__init.sql`, `V2__init_settings.sql`
-- Tenant DB: `db/tenant/V1__init.sql`
+**Không cần chạy script thủ công!**
 
 ### Soft Delete Strategy
 
@@ -98,4 +93,5 @@ Flyway sẽ tự động chạy migrations khi application khởi động:
 - Company ID: 0
 - Tenant Domain: "tamabee"
 - Database: tamabee_tamabee
-- Plan ID: null (all features enabled)
+- Plan ID: FREE_PLAN_ID (all features enabled)
+- **Dùng chung Flyway migrations với các tenant khác** (`db/tenant/`)

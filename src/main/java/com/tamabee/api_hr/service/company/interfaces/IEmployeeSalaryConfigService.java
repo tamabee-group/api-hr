@@ -1,10 +1,10 @@
 package com.tamabee.api_hr.service.company.interfaces;
 
+import java.util.List;
+
 import com.tamabee.api_hr.dto.request.payroll.SalaryConfigRequest;
 import com.tamabee.api_hr.dto.response.payroll.EmployeeSalaryConfigResponse;
 import com.tamabee.api_hr.dto.response.payroll.SalaryConfigValidationResponse;
-
-import java.util.List;
 
 /**
  * Service interface cho quản lý cấu hình lương nhân viên
@@ -61,4 +61,12 @@ public interface IEmployeeSalaryConfigService {
      * @param configId ID cấu hình lương
      */
     void deleteSalaryConfig(Long configId);
+
+    /**
+     * Áp dụng cấu hình lương (set effectiveFrom = today)
+     * 
+     * @param configId ID cấu hình lương
+     * @return Thông tin cấu hình lương đã áp dụng
+     */
+    EmployeeSalaryConfigResponse applySalaryConfig(Long configId);
 }

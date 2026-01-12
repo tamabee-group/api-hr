@@ -99,4 +99,16 @@ public class EmployeeSalaryConfigController {
         salaryConfigService.deleteSalaryConfig(configId);
         return ResponseEntity.ok(BaseResponse.success(null, "Xóa cấu hình lương thành công"));
     }
+
+    /**
+     * Áp dụng cấu hình lương (set effectiveFrom = today)
+     * POST /api/company/employees/{employeeId}/salary-config/{configId}/apply
+     */
+    @PostMapping("/{configId}/apply")
+    public ResponseEntity<BaseResponse<EmployeeSalaryConfigResponse>> applySalaryConfig(
+            @PathVariable Long employeeId,
+            @PathVariable Long configId) {
+        EmployeeSalaryConfigResponse response = salaryConfigService.applySalaryConfig(configId);
+        return ResponseEntity.ok(BaseResponse.success(response, "Áp dụng cấu hình lương thành công"));
+    }
 }
