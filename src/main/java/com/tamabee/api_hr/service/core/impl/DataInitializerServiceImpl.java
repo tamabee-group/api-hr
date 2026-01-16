@@ -1,5 +1,6 @@
 package com.tamabee.api_hr.service.core.impl;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -110,7 +111,7 @@ public class DataInitializerServiceImpl implements IDataInitializerService {
     @Transactional
     public void createDefaultAdminIfNotExists() {
         String adminEmail = "hiepdeptrai0908@gmail.com";
-        String adminDateOfBirth = "1997-09-08";
+        LocalDate adminDateOfBirth = LocalDate.of(1997, 9, 8);
 
         if (!userRepository.existsByEmail(adminEmail)) {
             UserEntity admin = new UserEntity();

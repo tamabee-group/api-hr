@@ -23,6 +23,8 @@ public class UserResponse {
     private CompanyStatus companyStatus; // Trạng thái công ty (ACTIVE, INACTIVE)
     private String tenantDomain; // Tenant domain cho multi-tenant ("tamabee" cho Tamabee users)
     private Long planId; // Plan ID của company (null cho Tamabee users)
+    private Long departmentId; // ID phòng ban
+    private String departmentName; // Tên phòng ban
     private Integer profileCompleteness;
     private LocalDateTime createdAt;
     private LocalDateTime updatedAt;

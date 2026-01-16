@@ -8,6 +8,7 @@ import org.springframework.web.multipart.MultipartFile;
 
 import com.tamabee.api_hr.dto.request.user.CreateCompanyEmployeeRequest;
 import com.tamabee.api_hr.dto.request.user.UpdateUserProfileRequest;
+import com.tamabee.api_hr.dto.response.employee.EmployeePersonalInfoResponse;
 import com.tamabee.api_hr.dto.response.user.ApproverResponse;
 import com.tamabee.api_hr.dto.response.user.UserResponse;
 
@@ -73,4 +74,13 @@ public interface ICompanyEmployeeService {
      * @param email địa chỉ email cần kiểm tra
      */
     void validateEmailNotExists(String email);
+
+    /**
+     * Lấy personal info đầy đủ của nhân viên.
+     * Bao gồm: basic info, work info, contact info, bank details, emergency contact.
+     * 
+     * @param employeeId ID nhân viên
+     * @return EmployeePersonalInfoResponse chứa tất cả sections
+     */
+    EmployeePersonalInfoResponse getEmployeePersonalInfo(Long employeeId);
 }

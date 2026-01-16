@@ -1,14 +1,15 @@
 package com.tamabee.api_hr.dto.request.leave;
 
+import java.time.LocalDate;
+
 import com.tamabee.api_hr.enums.LeaveType;
+
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
 
 /**
  * Request tạo yêu cầu nghỉ phép mới.
@@ -42,4 +43,9 @@ public class CreateLeaveRequest {
      */
     @Size(max = 500, message = "Lý do nghỉ không được vượt quá 500 ký tự")
     private String reason;
+
+    /**
+     * ID người duyệt (optional - nếu không truyền sẽ lấy department manager)
+     */
+    private Long approverId;
 }

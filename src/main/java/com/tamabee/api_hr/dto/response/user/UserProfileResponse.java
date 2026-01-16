@@ -1,5 +1,7 @@
 package com.tamabee.api_hr.dto.response.user;
 
+import java.time.LocalDate;
+
 import lombok.Data;
 
 @Data
@@ -8,7 +10,7 @@ public class UserProfileResponse {
     private String phone;
     private String address;
     private String zipCode;
-    private String dateOfBirth;
+    private LocalDate dateOfBirth;
     private String gender;
     private String avatar;
     private String referralCode;

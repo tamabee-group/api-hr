@@ -1,9 +1,19 @@
 package com.tamabee.api_hr.entity.user;
 
+import java.time.LocalDate;
+
 import com.tamabee.api_hr.entity.BaseEntity;
 import com.tamabee.api_hr.enums.UserRole;
 import com.tamabee.api_hr.enums.UserStatus;
-import jakarta.persistence.*;
+
+import jakarta.persistence.CascadeType;
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
@@ -102,5 +112,9 @@ public class UserEntity extends BaseEntity {
 
     private boolean hasValue(String value) {
         return value != null && !value.trim().isEmpty();
+    }
+
+    private boolean hasValue(LocalDate value) {
+        return value != null;
     }
 }

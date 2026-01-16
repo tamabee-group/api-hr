@@ -154,6 +154,10 @@ public enum ErrorCode {
         FILE_TOO_LARGE("FILE_TOO_LARGE", "File tải lên quá lớn"),
         FILE_NOT_FOUND("FILE_NOT_FOUND", "Không tìm thấy file"),
         INVALID_FILE_TYPE("INVALID_FILE_TYPE", "Loại file không hợp lệ"),
+        INVALID_FILE("INVALID_FILE", "File không hợp lệ"),
+
+        // === DOCUMENT ===
+        DOCUMENT_NOT_FOUND("DOCUMENT_NOT_FOUND", "Không tìm thấy tài liệu"),
 
         // === EMAIL ===
         EMAIL_SEND_FAILED("EMAIL_SEND_FAILED", "Không thể gửi email"),
@@ -241,7 +245,17 @@ public enum ErrorCode {
         FEATURE_NOT_SUPPORTED("FEATURE_NOT_SUPPORTED", "Tính năng chưa được hỗ trợ"),
 
         // === LOCATION ===
-        INVALID_LOCATION("INVALID_LOCATION", "Tọa độ vị trí không hợp lệ");
+        INVALID_LOCATION("INVALID_LOCATION", "Tọa độ vị trí không hợp lệ"),
+
+        // === DEPARTMENT ===
+        DEPARTMENT_NOT_FOUND("DEPARTMENT_NOT_FOUND", "Không tìm thấy phòng ban"),
+        DEPARTMENT_CODE_EXISTS("DEPARTMENT_CODE_EXISTS", "Mã phòng ban đã tồn tại"),
+        DEPARTMENT_NAME_REQUIRED("DEPARTMENT_NAME_REQUIRED", "Tên phòng ban không được để trống"),
+        DEPARTMENT_CODE_REQUIRED("DEPARTMENT_CODE_REQUIRED", "Mã phòng ban không được để trống"),
+        DEPARTMENT_HAS_EMPLOYEES("DEPARTMENT_HAS_EMPLOYEES", "Không thể xóa phòng ban có nhân viên"),
+        DEPARTMENT_HAS_CHILDREN("DEPARTMENT_HAS_CHILDREN", "Không thể xóa phòng ban có phòng ban con"),
+        DEPARTMENT_CIRCULAR_REFERENCE("DEPARTMENT_CIRCULAR_REFERENCE", "Không thể tạo vòng lặp trong cấu trúc phòng ban"),
+        DEPARTMENT_MANAGER_NOT_FOUND("DEPARTMENT_MANAGER_NOT_FOUND", "Không tìm thấy người quản lý phòng ban");
 
         private final String code;
         private final String message;

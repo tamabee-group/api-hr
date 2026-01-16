@@ -1,7 +1,7 @@
 package com.tamabee.api_hr.repository.user;
 
-import com.tamabee.api_hr.entity.user.UserEntity;
-import com.tamabee.api_hr.enums.UserRole;
+import java.util.List;
+import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -9,8 +9,8 @@ import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.tamabee.api_hr.entity.user.UserEntity;
+import com.tamabee.api_hr.enums.UserRole;
 
 @Repository
 public interface UserRepository extends JpaRepository<UserEntity, Long> {
@@ -45,6 +45,13 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     // Multi-tenant: Lấy danh sách user theo roles (dùng cho lấy approvers)
     @EntityGraph(attributePaths = { "profile" })
     List<UserEntity> findByRoleInAndDeletedFalse(List<UserRole> roles);
+
+    // Đếm số nhân viên trong phòng ban
+    long countByProfileDepartmentEntityIdAndDeletedFalse(Long departmentId);
+
+    // Lấy danh sách nhân viên trong phòng ban
+    @EntityGraph(attributePaths = { "profile" })
+    List<UserEntity> findByProfileDepartmentEntityIdAndDeletedFalse(Long departmentId);
 
     // Legacy methods (không filter deleted - dùng cho internal)
     Optional<UserEntity> findByEmail(String email);

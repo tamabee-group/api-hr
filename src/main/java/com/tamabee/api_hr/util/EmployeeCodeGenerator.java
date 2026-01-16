@@ -36,11 +36,11 @@ public class EmployeeCodeGenerator {
      * Tạo mã nhân viên cho user thường: năm đăng ký + tháng sinh + ngày sinh
      * Nếu trùng thì năm + 1
      * 
-     * @param dateOfBirth format yyyy-MM-dd hoặc dd/MM/yyyy
+     * @param dateOfBirth LocalDate ngày sinh
      * @param userRepository Repository để kiểm tra trùng mã
      * @return Mã nhân viên 8 số duy nhất
      */
-    public static String generateForUser(String dateOfBirth, UserRepository userRepository) {
+    public static String generateForUser(LocalDate dateOfBirth, UserRepository userRepository) {
         LocalDate today = LocalDate.now();
         int year = today.getYear();
         
@@ -48,26 +48,9 @@ public class EmployeeCodeGenerator {
         String month = "01";
         String day = "01";
         
-        if (dateOfBirth != null && !dateOfBirth.isEmpty()) {
-            try {
-                if (dateOfBirth.contains("-")) {
-                    // Format yyyy-MM-dd
-                    String[] parts = dateOfBirth.split("-");
-                    if (parts.length >= 3) {
-                        month = String.format("%02d", Integer.parseInt(parts[1]));
-                        day = String.format("%02d", Integer.parseInt(parts[2]));
-                    }
-                } else if (dateOfBirth.contains("/")) {
-                    // Format dd/MM/yyyy
-                    String[] parts = dateOfBirth.split("/");
-                    if (parts.length >= 2) {
-                        day = String.format("%02d", Integer.parseInt(parts[0]));
-                        month = String.format("%02d", Integer.parseInt(parts[1]));
-                    }
-                }
-            } catch (NumberFormatException e) {
-                // Giữ giá trị mặc định
-            }
+        if (dateOfBirth != null) {
+            month = String.format("%02d", dateOfBirth.getMonthValue());
+            day = String.format("%02d", dateOfBirth.getDayOfMonth());
         }
         
         // Thử từ năm hiện tại, nếu trùng thì tăng năm
@@ -87,8 +70,8 @@ public class EmployeeCodeGenerator {
      * @deprecated Dùng generateForAdmin() hoặc generateForUser() thay thế
      */
     @Deprecated
-    public static String generateUnique(Long companyId, String dateOfBirth, UserRepository userRepository) {
-        if (dateOfBirth == null || dateOfBirth.isEmpty()) {
+    public static String generateUnique(Long companyId, LocalDate dateOfBirth, UserRepository userRepository) {
+        if (dateOfBirth == null) {
             return generateForAdmin(userRepository);
         }
         return generateForUser(dateOfBirth, userRepository);

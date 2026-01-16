@@ -1,6 +1,9 @@
 package com.tamabee.api_hr.dto.request.user;
 
+import java.time.LocalDate;
+
 import com.tamabee.api_hr.enums.UserRole;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
@@ -25,7 +28,7 @@ public class CreateTamabeeUserRequest {
     
     private String zipCode;
     
-    private String dateOfBirth;
+    private LocalDate dateOfBirth;
     
     private String gender;
     

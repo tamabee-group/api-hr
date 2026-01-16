@@ -1,14 +1,22 @@
 package com.tamabee.api_hr.entity.user;
 
 import com.tamabee.api_hr.entity.BaseEntity;
-import jakarta.persistence.*;
+import com.tamabee.api_hr.entity.company.DepartmentEntity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.FetchType;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.OneToOne;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
 
 @Data
 @Entity
 @Table(name = "user_profiles")
-@EqualsAndHashCode(callSuper = true)
+@EqualsAndHashCode(callSuper = true, exclude = {"departmentEntity"})
 public class UserProfileEntity extends BaseEntity {
 
     // Soft delete flag
@@ -19,13 +27,28 @@ public class UserProfileEntity extends BaseEntity {
     @JoinColumn(name = "user_id", nullable = false)
     private UserEntity user;
 
+    // Basic info
     private String name;
     private String phone;
     private String address;
     private String zipCode;
-    private String dateOfBirth;
+    private java.time.LocalDate dateOfBirth;
     private String gender;
     private String avatar;
+    private String nationality;
+    private String maritalStatus;
+    private String nationalId;
+
+    // Work info
+    private String jobTitle;
+    
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "department_id")
+    private DepartmentEntity departmentEntity;
+    
+    private String employmentType;
+    private java.time.LocalDate joiningDate;
+    private String workLocation;
 
     @Column(unique = true, length = 8)
     private String referralCode;

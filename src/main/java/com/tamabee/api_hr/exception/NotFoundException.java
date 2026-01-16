@@ -75,4 +75,8 @@ public class NotFoundException extends BaseException {
         return new NotFoundException("Không tìm thấy bản ghi lương với id: " + id,
                 ErrorCode.PAYROLL_NOT_FOUND);
     }
+
+    public static NotFoundException document(Long id) {
+        return new NotFoundException("Không tìm thấy tài liệu với id: " + id, ErrorCode.DOCUMENT_NOT_FOUND);
+    }
 }

@@ -1,25 +1,11 @@
 package com.tamabee.api_hr.service.company.impl;
 
-import com.tamabee.api_hr.dto.request.user.CreateCompanyEmployeeRequest;
-import com.tamabee.api_hr.dto.request.user.UpdateUserProfileRequest;
-import com.tamabee.api_hr.dto.response.user.ApproverResponse;
-import com.tamabee.api_hr.dto.response.user.UserResponse;
-import com.tamabee.api_hr.entity.user.UserEntity;
-import com.tamabee.api_hr.entity.user.UserProfileEntity;
-import com.tamabee.api_hr.enums.UserRole;
-import com.tamabee.api_hr.enums.UserStatus;
-import com.tamabee.api_hr.exception.BadRequestException;
-import com.tamabee.api_hr.exception.ConflictException;
-import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.datasource.TenantContext;
-import com.tamabee.api_hr.mapper.core.UserMapper;
-import com.tamabee.api_hr.repository.user.UserRepository;
-import com.tamabee.api_hr.service.company.interfaces.ICompanyEmployeeService;
-import com.tamabee.api_hr.service.core.interfaces.IEmailService;
-import com.tamabee.api_hr.service.core.interfaces.IUploadService;
-import com.tamabee.api_hr.util.EmployeeCodeGenerator;
-import com.tamabee.api_hr.util.ReferralCodeGenerator;
-import lombok.RequiredArgsConstructor;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.security.crypto.password.PasswordEncoder;
@@ -27,11 +13,32 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
-import java.util.stream.Collectors;
+import com.tamabee.api_hr.datasource.TenantContext;
+import com.tamabee.api_hr.dto.request.user.CreateCompanyEmployeeRequest;
+import com.tamabee.api_hr.dto.request.user.UpdateUserProfileRequest;
+import com.tamabee.api_hr.dto.response.employee.EmployeePersonalInfoResponse;
+import com.tamabee.api_hr.dto.response.employee.UserSummaryResponse;
+import com.tamabee.api_hr.dto.response.user.ApproverResponse;
+import com.tamabee.api_hr.dto.response.user.UserResponse;
+import com.tamabee.api_hr.entity.company.DepartmentEntity;
+import com.tamabee.api_hr.entity.user.UserEntity;
+import com.tamabee.api_hr.entity.user.UserProfileEntity;
+import com.tamabee.api_hr.enums.ErrorCode;
+import com.tamabee.api_hr.enums.UserRole;
+import com.tamabee.api_hr.enums.UserStatus;
+import com.tamabee.api_hr.exception.BadRequestException;
+import com.tamabee.api_hr.exception.ConflictException;
+import com.tamabee.api_hr.exception.NotFoundException;
+import com.tamabee.api_hr.mapper.core.UserMapper;
+import com.tamabee.api_hr.repository.company.DepartmentRepository;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.ICompanyEmployeeService;
+import com.tamabee.api_hr.service.core.interfaces.IEmailService;
+import com.tamabee.api_hr.service.core.interfaces.IUploadService;
+import com.tamabee.api_hr.util.EmployeeCodeGenerator;
+import com.tamabee.api_hr.util.ReferralCodeGenerator;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Service implementation quản lý nhân viên công ty
@@ -47,6 +54,7 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
             UserRole.EMPLOYEE_COMPANY);
 
     private final UserRepository userRepository;
+    private final DepartmentRepository departmentRepository;
     private final UserMapper userMapper;
     private final PasswordEncoder passwordEncoder;
     private final IEmailService emailService;
@@ -208,6 +216,81 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
         }
     }
 
+    @Override
+    @Transactional(readOnly = true)
+    public EmployeePersonalInfoResponse getEmployeePersonalInfo(Long employeeId) {
+        UserEntity employee = findEmployeeById(employeeId);
+        UserProfileEntity profile = employee.getProfile();
+
+        // Build basic info section
+        EmployeePersonalInfoResponse.BasicInfoSection basicInfo = EmployeePersonalInfoResponse.BasicInfoSection.builder()
+                .avatar(profile != null ? profile.getAvatar() : null)
+                .name(profile != null ? profile.getName() : null)
+                .dateOfBirth(profile != null && profile.getDateOfBirth() != null 
+                        ? profile.getDateOfBirth().toString() : null)
+                .gender(profile != null ? profile.getGender() : null)
+                .nationality(profile != null ? profile.getNationality() : null)
+                .maritalStatus(profile != null ? profile.getMaritalStatus() : null)
+                .nationalId(profile != null ? profile.getNationalId() : null)
+                .build();
+
+        // Build work info section
+        EmployeePersonalInfoResponse.WorkInfoSection workInfo = EmployeePersonalInfoResponse.WorkInfoSection.builder()
+                .jobTitle(profile != null ? profile.getJobTitle() : null)
+                .department(profile != null && profile.getDepartmentEntity() != null 
+                        ? profile.getDepartmentEntity().getName() : null)
+                .departmentId(profile != null && profile.getDepartmentEntity() != null 
+                        ? profile.getDepartmentEntity().getId() : null)
+                .directManager(buildDirectManager(profile))
+                .employmentType(profile != null ? profile.getEmploymentType() : null)
+                .joiningDate(profile != null && profile.getJoiningDate() != null 
+                        ? profile.getJoiningDate().toString() : null)
+                .workLocation(profile != null ? profile.getWorkLocation() : null)
+                .build();
+
+        // Build contact info section
+        EmployeePersonalInfoResponse.ContactInfoSection contactInfo = EmployeePersonalInfoResponse.ContactInfoSection
+                .builder()
+                .phone(profile != null ? profile.getPhone() : null)
+                .email(employee.getEmail())
+                .address(profile != null ? profile.getAddress() : null)
+                .zipCode(profile != null ? profile.getZipCode() : null)
+                .build();
+
+        // Build bank details section
+        EmployeePersonalInfoResponse.BankDetailsSection bankDetails = EmployeePersonalInfoResponse.BankDetailsSection
+                .builder()
+                .bankAccountType(profile != null ? profile.getBankAccountType() : null)
+                .japanBankType(profile != null ? profile.getJapanBankType() : null)
+                .bankName(profile != null ? profile.getBankName() : null)
+                .bankAccount(profile != null ? profile.getBankAccount() : null)
+                .bankAccountName(profile != null ? profile.getBankAccountName() : null)
+                .bankCode(profile != null ? profile.getBankCode() : null)
+                .bankBranchCode(profile != null ? profile.getBankBranchCode() : null)
+                .bankBranchName(profile != null ? profile.getBankBranchName() : null)
+                .bankAccountCategory(profile != null ? profile.getBankAccountCategory() : null)
+                .bankSymbol(profile != null ? profile.getBankSymbol() : null)
+                .bankNumber(profile != null ? profile.getBankNumber() : null)
+                .build();
+
+        // Build emergency contact section
+        EmployeePersonalInfoResponse.EmergencyContactSection emergencyContact = EmployeePersonalInfoResponse.EmergencyContactSection
+                .builder()
+                .name(profile != null ? profile.getEmergencyContactName() : null)
+                .phone(profile != null ? profile.getEmergencyContactPhone() : null)
+                .relation(profile != null ? profile.getEmergencyContactRelation() : null)
+                .address(profile != null ? profile.getEmergencyContactAddress() : null)
+                .build();
+
+        return EmployeePersonalInfoResponse.builder()
+                .basicInfo(basicInfo)
+                .workInfo(workInfo)
+                .contactInfo(contactInfo)
+                .bankDetails(bankDetails)
+                .emergencyContact(emergencyContact)
+                .build();
+    }
+
     // ==================== Private helper methods ====================
 
     /**
@@ -257,6 +340,31 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
             profile.setZipCode(request.getZipCode());
         if (request.getAddress() != null)
             profile.setAddress(request.getAddress());
+        // Basic info
+        if (request.getDateOfBirth() != null)
+            profile.setDateOfBirth(request.getDateOfBirth());
+        if (request.getGender() != null)
+            profile.setGender(request.getGender());
+        if (request.getNationality() != null)
+            profile.setNationality(request.getNationality());
+        if (request.getMaritalStatus() != null)
+            profile.setMaritalStatus(request.getMaritalStatus());
+        if (request.getNationalId() != null)
+            profile.setNationalId(request.getNationalId());
+        // Work info
+        if (request.getJobTitle() != null)
+            profile.setJobTitle(request.getJobTitle());
+        if (request.getDepartmentId() != null) {
+            DepartmentEntity department = departmentRepository.findByIdAndDeletedFalse(request.getDepartmentId())
+                    .orElseThrow(() -> new NotFoundException("Không tìm thấy phòng ban", ErrorCode.DEPARTMENT_NOT_FOUND));
+            profile.setDepartmentEntity(department);
+        }
+        if (request.getEmploymentType() != null)
+            profile.setEmploymentType(request.getEmploymentType());
+        if (request.getJoiningDate() != null)
+            profile.setJoiningDate(request.getJoiningDate());
+        if (request.getWorkLocation() != null)
+            profile.setWorkLocation(request.getWorkLocation());
         // Bank info - Common
         if (request.getBankAccountType() != null)
             profile.setBankAccountType(request.getBankAccountType());
@@ -290,5 +398,29 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
             profile.setEmergencyContactRelation(request.getEmergencyContactRelation());
         if (request.getEmergencyContactAddress() != null)
             profile.setEmergencyContactAddress(request.getEmergencyContactAddress());
+    }
+
+    /**
+     * Build direct manager info từ department manager
+     */
+    private UserSummaryResponse buildDirectManager(UserProfileEntity profile) {
+        if (profile == null || profile.getDepartmentEntity() == null) {
+            return null;
+        }
+        
+        DepartmentEntity department = profile.getDepartmentEntity();
+        if (department.getManager() == null) {
+            return null;
+        }
+        
+        UserEntity manager = department.getManager();
+        UserProfileEntity managerProfile = manager.getProfile();
+        
+        return UserSummaryResponse.builder()
+                .id(manager.getId())
+                .name(managerProfile != null ? managerProfile.getName() : null)
+                .jobTitle(managerProfile != null ? managerProfile.getJobTitle() : null)
+                .avatar(managerProfile != null ? managerProfile.getAvatar() : null)
+                .build();
     }
 }

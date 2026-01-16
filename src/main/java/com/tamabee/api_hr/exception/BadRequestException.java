@@ -113,4 +113,26 @@ public class BadRequestException extends BaseException {
     public static BadRequestException custom(String errorCode, String message) {
         return new BadRequestException(message, errorCode);
     }
+
+    /**
+     * Factory method cho lỗi file không hợp lệ
+     */
+    public static BadRequestException invalidFile(String reason) {
+        return new BadRequestException("File không hợp lệ: " + reason, ErrorCode.INVALID_FILE);
+    }
+
+    /**
+     * Factory method cho lỗi file quá lớn
+     */
+    public static BadRequestException fileTooLarge(long maxSize) {
+        long maxSizeMB = maxSize / (1024 * 1024);
+        return new BadRequestException("File vượt quá kích thước cho phép (" + maxSizeMB + "MB)", ErrorCode.FILE_TOO_LARGE);
+    }
+
+    /**
+     * Factory method cho lỗi loại file không được phép
+     */
+    public static BadRequestException invalidFileType(String allowedTypes) {
+        return new BadRequestException("Loại file không được phép. Các loại cho phép: " + allowedTypes, ErrorCode.INVALID_FILE_TYPE);
+    }
 }

@@ -1,6 +1,18 @@
 package com.tamabee.api_hr.service.company.impl;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.tamabee.api_hr.dto.request.leave.CreateLeaveRequest;
+import com.tamabee.api_hr.dto.response.department.DefaultApproverResponse;
 import com.tamabee.api_hr.dto.response.leave.LeaveBalanceResponse;
 import com.tamabee.api_hr.dto.response.leave.LeaveRequestResponse;
 import com.tamabee.api_hr.entity.leave.LeaveBalanceEntity;
@@ -15,19 +27,11 @@ import com.tamabee.api_hr.mapper.company.LeaveMapper;
 import com.tamabee.api_hr.repository.leave.LeaveBalanceRepository;
 import com.tamabee.api_hr.repository.leave.LeaveRequestRepository;
 import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.IDepartmentService;
 import com.tamabee.api_hr.service.company.interfaces.ILeaveService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Service implementation quản lý nghỉ phép.
@@ -42,6 +46,7 @@ public class LeaveServiceImpl implements ILeaveService {
     private final LeaveBalanceRepository leaveBalanceRepository;
     private final UserRepository userRepository;
     private final LeaveMapper leaveMapper;
+    private final IDepartmentService departmentService;
 
     // ==================== Employee Operations ====================
 
@@ -79,8 +84,17 @@ public class LeaveServiceImpl implements ILeaveService {
             }
         }
 
+        // Xác định người duyệt: ưu tiên từ request, nếu không có thì lấy từ department manager
+        Long approverId = request.getApproverId();
+        if (approverId == null) {
+            DefaultApproverResponse defaultApprover = departmentService.getDefaultApprover(employeeId);
+            if (defaultApprover != null) {
+                approverId = defaultApprover.getId();
+            }
+        }
+
         // Tạo yêu cầu nghỉ phép
-        LeaveRequestEntity entity = leaveMapper.toEntity(employeeId, request);
+        LeaveRequestEntity entity = leaveMapper.toEntity(employeeId, request, approverId);
         entity.setTotalDays(totalDays);
         entity.setStatus(LeaveStatus.PENDING);
 

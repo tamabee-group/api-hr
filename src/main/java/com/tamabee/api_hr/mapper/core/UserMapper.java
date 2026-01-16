@@ -1,12 +1,12 @@
 package com.tamabee.api_hr.mapper.core;
 
-import com.tamabee.api_hr.enums.CompanyStatus;
 import org.springframework.stereotype.Component;
 
 import com.tamabee.api_hr.dto.auth.RegisterRequest;
 import com.tamabee.api_hr.dto.response.user.UserProfileResponse;
 import com.tamabee.api_hr.dto.response.user.UserResponse;
 import com.tamabee.api_hr.entity.user.UserEntity;
+import com.tamabee.api_hr.enums.CompanyStatus;
 import com.tamabee.api_hr.util.LocaleUtil;
 
 @Component
@@ -74,6 +74,13 @@ public class UserMapper {
         response.setCompanyStatus(companyStatus);
         response.setTenantDomain(tenantDomain);
         response.setPlanId(planId);
+        
+        // Department info
+        if (entity.getProfile() != null && entity.getProfile().getDepartmentEntity() != null) {
+            response.setDepartmentId(entity.getProfile().getDepartmentEntity().getId());
+            response.setDepartmentName(entity.getProfile().getDepartmentEntity().getName());
+        }
+        
         response.setProfileCompleteness(entity.getProfileCompleteness());
         response.setCreatedAt(entity.getCreatedAt());
         response.setUpdatedAt(entity.getUpdatedAt());

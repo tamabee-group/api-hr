@@ -10,6 +10,7 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -25,6 +26,11 @@ import com.tamabee.api_hr.dto.request.user.CreateCompanyEmployeeRequest;
 import com.tamabee.api_hr.dto.request.user.UpdateUserProfileRequest;
 import com.tamabee.api_hr.dto.response.attendance.AttendanceRecordResponse;
 import com.tamabee.api_hr.dto.response.attendance.AttendanceSummaryResponse;
+import com.tamabee.api_hr.dto.response.department.DefaultApproverResponse;
+import com.tamabee.api_hr.dto.response.employee.EmployeeDocumentResponse;
+import com.tamabee.api_hr.dto.response.employee.EmployeePersonalInfoResponse;
+import com.tamabee.api_hr.dto.response.leave.LeaveBalanceResponse;
+import com.tamabee.api_hr.dto.response.leave.LeaveRequestResponse;
 import com.tamabee.api_hr.dto.response.payroll.PayrollRecordResponse;
 import com.tamabee.api_hr.dto.response.schedule.WorkScheduleResponse;
 import com.tamabee.api_hr.dto.response.user.ApproverResponse;
@@ -32,6 +38,9 @@ import com.tamabee.api_hr.dto.response.user.UserResponse;
 import com.tamabee.api_hr.enums.RoleConstants;
 import com.tamabee.api_hr.service.company.interfaces.IAttendanceService;
 import com.tamabee.api_hr.service.company.interfaces.ICompanyEmployeeService;
+import com.tamabee.api_hr.service.company.interfaces.IDepartmentService;
+import com.tamabee.api_hr.service.company.interfaces.IEmployeeDocumentService;
+import com.tamabee.api_hr.service.company.interfaces.ILeaveService;
 import com.tamabee.api_hr.service.company.interfaces.IPayrollService;
 import com.tamabee.api_hr.service.company.interfaces.IWorkScheduleService;
 import com.tamabee.api_hr.service.core.interfaces.IEmailVerificationService;
@@ -52,10 +61,13 @@ import lombok.RequiredArgsConstructor;
 public class CompanyEmployeeController {
 
     private final ICompanyEmployeeService companyEmployeeService;
+    private final IDepartmentService departmentService;
     private final IWorkScheduleService workScheduleService;
     private final IAttendanceService attendanceService;
     private final IPayrollService payrollService;
+    private final ILeaveService leaveService;
     private final IEmailVerificationService emailVerificationService;
+    private final IEmployeeDocumentService employeeDocumentService;
 
     /**
      * Lấy danh sách nhân viên công ty (phân trang)
@@ -167,6 +179,17 @@ public class CompanyEmployeeController {
     }
 
     /**
+     * Lấy người duyệt mặc định cho nhân viên (department manager)
+     * GET /api/company/employees/{id}/default-approver
+     */
+    @GetMapping("/{id}/default-approver")
+    @PreAuthorize(RoleConstants.HAS_ALL_COMPANY_ACCESS)
+    public ResponseEntity<BaseResponse<DefaultApproverResponse>> getDefaultApprover(@PathVariable Long id) {
+        DefaultApproverResponse approver = departmentService.getDefaultApprover(id);
+        return ResponseEntity.ok(BaseResponse.success(approver, "Lấy người duyệt mặc định thành công"));
+    }
+
+    /**
      * Lấy lịch sử bảng lương của nhân viên (phân trang)
      * GET /api/company/employees/{id}/payroll
      */
@@ -206,5 +229,79 @@ public class CompanyEmployeeController {
         boolean verified = emailVerificationService.verifyCode(email, code);
         String message = verified ? "Xác thực email thành công" : "Mã xác thực không hợp lệ";
         return ResponseEntity.ok(BaseResponse.success(verified, message));
+    }
+
+    /**
+     * Lấy personal info đầy đủ của nhân viên
+     * GET /api/company/employees/{id}/personal-info
+     */
+    @GetMapping("/{id}/personal-info")
+    public ResponseEntity<BaseResponse<EmployeePersonalInfoResponse>> getEmployeePersonalInfo(@PathVariable Long id) {
+        EmployeePersonalInfoResponse personalInfo = companyEmployeeService.getEmployeePersonalInfo(id);
+        return ResponseEntity.ok(BaseResponse.success(personalInfo, "Lấy thông tin cá nhân thành công"));
+    }
+
+    /**
+     * Lấy danh sách documents của nhân viên (phân trang)
+     * GET /api/company/employees/{id}/documents
+     */
+    @GetMapping("/{id}/documents")
+    public ResponseEntity<BaseResponse<Page<EmployeeDocumentResponse>>> getEmployeeDocuments(
+            @PathVariable Long id,
+            Pageable pageable) {
+        Page<EmployeeDocumentResponse> documents = employeeDocumentService.getEmployeeDocuments(id, pageable);
+        return ResponseEntity.ok(BaseResponse.success(documents, "Lấy danh sách tài liệu thành công"));
+    }
+
+    /**
+     * Upload document mới cho nhân viên
+     * POST /api/company/employees/{id}/documents
+     */
+    @PostMapping("/{id}/documents")
+    public ResponseEntity<BaseResponse<EmployeeDocumentResponse>> uploadDocument(
+            @PathVariable Long id,
+            @RequestParam("file") MultipartFile file,
+            @RequestParam(required = false, defaultValue = "OTHER") String documentType) {
+        EmployeeDocumentResponse document = employeeDocumentService.uploadDocument(id, file, documentType);
+        return ResponseEntity
+                .status(HttpStatus.CREATED)
+                .body(BaseResponse.created(document, "Tải tài liệu thành công"));
+    }
+
+    /**
+     * Xóa document của nhân viên
+     * DELETE /api/company/employees/{id}/documents/{docId}
+     */
+    @DeleteMapping("/{id}/documents/{docId}")
+    public ResponseEntity<BaseResponse<Void>> deleteDocument(
+            @PathVariable Long id,
+            @PathVariable Long docId) {
+        employeeDocumentService.deleteDocument(id, docId);
+        return ResponseEntity.ok(BaseResponse.success(null, "Xóa tài liệu thành công"));
+    }
+
+    /**
+     * Lấy danh sách yêu cầu nghỉ phép của nhân viên (phân trang)
+     * GET /api/company/employees/{id}/leave-requests
+     */
+    @GetMapping("/{id}/leave-requests")
+    public ResponseEntity<BaseResponse<Page<LeaveRequestResponse>>> getEmployeeLeaveRequests(
+            @PathVariable Long id,
+            Pageable pageable) {
+        Page<LeaveRequestResponse> leaveRequests = leaveService.getEmployeeLeaveRequests(id, pageable);
+        return ResponseEntity.ok(BaseResponse.success(leaveRequests, "Lấy danh sách yêu cầu nghỉ phép thành công"));
+    }
+
+    /**
+     * Lấy số ngày phép còn lại của nhân viên
+     * GET /api/company/employees/{id}/leave-balance
+     */
+    @GetMapping("/{id}/leave-balance")
+    public ResponseEntity<BaseResponse<List<LeaveBalanceResponse>>> getEmployeeLeaveBalance(
+            @PathVariable Long id,
+            @RequestParam(required = false) Integer year) {
+        Integer effectiveYear = year != null ? year : java.time.Year.now().getValue();
+        List<LeaveBalanceResponse> leaveBalance = leaveService.getLeaveBalance(id, effectiveYear);
+        return ResponseEntity.ok(BaseResponse.success(leaveBalance, "Lấy số ngày phép còn lại thành công"));
     }
 }

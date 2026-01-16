@@ -1,4 +1,26 @@
 -- =====================================================
+-- DEPARTMENTS - Phòng ban trong công ty
+-- =====================================================
+CREATE TABLE departments (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(100) NOT NULL,
+    code VARCHAR(50) NOT NULL,
+    description TEXT,
+    parent_id BIGINT,
+    manager_id BIGINT,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by VARCHAR(50)
+);
+
+CREATE INDEX idx_departments_parent_id ON departments(parent_id);
+CREATE INDEX idx_departments_manager_id ON departments(manager_id);
+CREATE INDEX idx_departments_deleted ON departments(deleted);
+CREATE INDEX idx_departments_code ON departments(code);
+
+-- =====================================================
 -- USERS & USER PROFILES - Người dùng trong tenant
 -- Không cần company_id vì mỗi tenant DB đại diện cho 1 company
 -- =====================================================
@@ -32,10 +54,21 @@ CREATE TABLE user_profiles (
     phone VARCHAR(50),
     address TEXT,
     zip_code VARCHAR(20),
-    date_of_birth VARCHAR(20),
+    date_of_birth DATE,
     gender VARCHAR(20),
     avatar VARCHAR(500),
     referral_code VARCHAR(10) UNIQUE,
+    -- Basic info
+    nationality VARCHAR(100),
+    marital_status VARCHAR(50),
+    national_id VARCHAR(50),
+    -- Work info
+    job_title VARCHAR(255),
+    department_id BIGINT,
+    employment_type VARCHAR(50),
+    joining_date DATE,
+    work_location VARCHAR(255),
+    -- Bank info - Common
     bank_account_type VARCHAR(10) DEFAULT 'VN',
     japan_bank_type VARCHAR(10) DEFAULT 'normal',
     bank_name VARCHAR(255),
@@ -47,6 +80,7 @@ CREATE TABLE user_profiles (
     bank_account_category VARCHAR(20),
     bank_symbol VARCHAR(10),
     bank_number VARCHAR(15),
+    -- Emergency contact
     emergency_contact_name VARCHAR(255),
     emergency_contact_phone VARCHAR(50),
     emergency_contact_relation VARCHAR(100),
@@ -60,6 +94,7 @@ CREATE TABLE user_profiles (
 CREATE INDEX idx_user_profiles_user_id ON user_profiles(user_id);
 CREATE INDEX idx_user_profiles_referral_code ON user_profiles(referral_code);
 CREATE INDEX idx_user_profiles_bank_type ON user_profiles(bank_account_type);
+CREATE INDEX idx_user_profiles_department_id ON user_profiles(department_id);
 CREATE INDEX idx_user_profiles_deleted ON user_profiles(deleted);
 
 -- =====================================================
@@ -630,3 +665,25 @@ CREATE TABLE email_verifications (
 
 CREATE INDEX idx_email_verifications_email ON email_verifications(email);
 CREATE INDEX idx_email_verifications_expired ON email_verifications(expired_at);
+
+-- =====================================================
+-- EMPLOYEE DOCUMENTS - Tài liệu nhân viên
+-- Không có soft delete (data lớn, xóa thẳng)
+-- =====================================================
+CREATE TABLE employee_documents (
+    id BIGSERIAL PRIMARY KEY,
+    employee_id BIGINT NOT NULL,
+    file_name VARCHAR(255) NOT NULL,
+    file_url VARCHAR(500) NOT NULL,
+    file_type VARCHAR(20) NOT NULL,
+    file_size BIGINT NOT NULL,
+    document_type VARCHAR(50) NOT NULL,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by VARCHAR(50),
+    CONSTRAINT fk_employee_documents_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE INDEX idx_employee_documents_employee_id ON employee_documents(employee_id);
+CREATE INDEX idx_employee_documents_document_type ON employee_documents(document_type);

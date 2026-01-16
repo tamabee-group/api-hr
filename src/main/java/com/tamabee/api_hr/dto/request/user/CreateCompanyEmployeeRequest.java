@@ -1,15 +1,22 @@
 package com.tamabee.api_hr.dto.request.user;
 
+import java.time.LocalDate;
+
 import com.tamabee.api_hr.enums.UserRole;
+
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
+import lombok.AllArgsConstructor;
 import lombok.Data;
+import lombok.NoArgsConstructor;
 
 /**
  * Request DTO để tạo nhân viên công ty mới
  */
 @Data
+@NoArgsConstructor
+@AllArgsConstructor
 public class CreateCompanyEmployeeRequest {
 
     @NotBlank(message = "Email không được để trống")
@@ -28,7 +35,7 @@ public class CreateCompanyEmployeeRequest {
 
     private String zipCode;
 
-    private String dateOfBirth;
+    private LocalDate dateOfBirth;
 
     private String gender;
 

@@ -8,7 +8,7 @@ public interface IUploadService {
      * @param file File cần upload
      * @param folder Thư mục đích (vd: "avatar", "documents")
      * @param subFolder Thư mục con (vd: employeeCode)
-     * @return Đường dẫn tương đối của file (vd: /uploads/avatar/ABC123/file.webp)
+     * @return Đường dẫn tương đối của file (vd: /uploads/avatar/ABC123/file.svg)
      */
     String uploadFile(MultipartFile file, String folder, String subFolder);
     

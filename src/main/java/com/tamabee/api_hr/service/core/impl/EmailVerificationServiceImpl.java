@@ -2,10 +2,12 @@ package com.tamabee.api_hr.service.core.impl;
 
 import java.time.LocalDateTime;
 import java.time.Year;
+import java.util.Base64;
 import java.util.Random;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -32,6 +34,14 @@ public class EmailVerificationServiceImpl implements IEmailVerificationService {
     private final EmailVerificationRepository emailVerificationRepository;
     private final JavaMailSender mailSender;
     private final String frontendUrl;
+    
+    // Base64 encoded logos - được cache khi khởi động
+    private String logoBase64;
+    private String logoTextBase64;
+    
+    // Đường dẫn đến logo images
+    private static final String LOGO_PATH = "templates/images/logo.png";
+    private static final String LOGO_TEXT_PATH = "templates/images/logo-text-light.png";
 
     public EmailVerificationServiceImpl(
             EmailVerificationRepository emailVerificationRepository,
@@ -40,6 +50,44 @@ public class EmailVerificationServiceImpl implements IEmailVerificationService {
         this.emailVerificationRepository = emailVerificationRepository;
         this.mailSender = mailSender;
         this.frontendUrl = frontendUrl;
+        
+        // Load và cache base64 logos khi khởi động
+        loadBase64Logos();
+    }
+    
+    /**
+     * Load và cache base64 encoded logos
+     */
+    private void loadBase64Logos() {
+        try {
+            ClassPathResource logoResource = new ClassPathResource(LOGO_PATH);
+            ClassPathResource logoTextResource = new ClassPathResource(LOGO_TEXT_PATH);
+            
+            if (logoResource.exists()) {
+                byte[] logoBytes = logoResource.getInputStream().readAllBytes();
+                logoBase64 = "data:image/png;base64," + Base64.getEncoder().encodeToString(logoBytes);
+            }
+            if (logoTextResource.exists()) {
+                byte[] logoTextBytes = logoTextResource.getInputStream().readAllBytes();
+                logoTextBase64 = "data:image/png;base64," + Base64.getEncoder().encodeToString(logoTextBytes);
+            }
+            log.info("EmailVerificationService: Đã load base64 logos thành công");
+        } catch (Exception e) {
+            log.warn("Không thể load base64 logos: {}", e.getMessage());
+        }
+    }
+    
+    /**
+     * Thay thế CID references bằng base64 data URIs trong template
+     */
+    private String replaceLogoWithBase64(String content) {
+        if (logoBase64 != null) {
+            content = content.replace("cid:logo", logoBase64);
+        }
+        if (logoTextBase64 != null) {
+            content = content.replace("cid:logoText", logoTextBase64);
+        }
+        return content;
     }
 
     /**
@@ -209,7 +257,7 @@ public class EmailVerificationServiceImpl implements IEmailVerificationService {
             helper.setSubject(subject);
 
             String htmlContent = loadTemplate(language, companyName, code);
-            helper.setText(htmlContent, true);
+            helper.setText(replaceLogoWithBase64(htmlContent), true);
 
             mailSender.send(mimeMessage);
         } catch (MessagingException e) {
@@ -276,7 +324,7 @@ public class EmailVerificationServiceImpl implements IEmailVerificationService {
             helper.setSubject(subject);
 
             String htmlContent = loadPasswordResetTemplate(language, userName, token, tenantDomain);
-            helper.setText(htmlContent, true);
+            helper.setText(replaceLogoWithBase64(htmlContent), true);
 
             mailSender.send(mimeMessage);
         } catch (MessagingException e) {
