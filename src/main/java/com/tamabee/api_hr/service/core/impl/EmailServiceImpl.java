@@ -39,10 +39,11 @@ public class EmailServiceImpl implements IEmailService {
     
     /**
      * Thay thế CID references bằng URL trong template
+     * Lưu ý: replace logoText trước logo để tránh conflict
      */
     private String replaceLogoWithUrl(String content) {
-        content = content.replace("cid:logo", LOGO_URL);
         content = content.replace("cid:logoText", LOGO_TEXT_URL);
+        content = content.replace("cid:logo", LOGO_URL);
         return content;
     }
 
@@ -92,9 +93,6 @@ public class EmailServiceImpl implements IEmailService {
             String referralInfo = "Không có";
             if (referralCode != null && !referralCode.isEmpty()) {
                 referralInfo = referralCode;
-                if (referrerName != null && !referrerName.isEmpty()) {
-                    referralInfo += " (" + referrerName + ")";
-                }
             }
             
             String content = template
@@ -103,6 +101,7 @@ public class EmailServiceImpl implements IEmailService {
                     .replace("{email}", email)
                     .replace("{tenantDomain}", tenantDomain)
                     .replace("{referralCode}", referralInfo)
+                    .replace("{referrerName}", referrerName != null ? referrerName : "Không có")
                     .replace("{date}", formatDate(LocalDateTime.now(), "vi"));
 
             helper.setText(replaceLogoWithUrl(content), true);

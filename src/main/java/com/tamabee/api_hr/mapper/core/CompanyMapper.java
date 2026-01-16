@@ -9,7 +9,6 @@ import static com.tamabee.api_hr.constants.PlanConstants.FREE_PLAN_ID;
 import com.tamabee.api_hr.dto.auth.RegisterRequest;
 import com.tamabee.api_hr.dto.response.company.CompanyResponse;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
-import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.repository.wallet.PlanRepository;
 import com.tamabee.api_hr.repository.wallet.WalletRepository;
 
@@ -73,14 +72,8 @@ public class CompanyMapper {
         response.setTenantDomain(entity.getTenantDomain());
         response.setStatus(entity.getStatus() != null ? entity.getStatus().name() : null);
 
-        // Lấy thông tin nhân viên tư vấn
-        UserEntity referrer = entity.getReferredByEmployee();
-        if (referrer != null) {
-            response.setReferredByEmployeeCode(referrer.getEmployeeCode());
-            if (referrer.getProfile() != null) {
-                response.setReferredByEmployeeName(referrer.getProfile().getName());
-            }
-        }
+        // referredByEmployeeId - thông tin chi tiết được lấy riêng qua EmployeeReferralService
+        response.setReferredByEmployeeId(entity.getReferredByEmployeeId());
 
         response.setLogo(entity.getLogo());
         response.setOwnerId(entity.getOwner() != null ? entity.getOwner().getId() : null);

@@ -47,7 +47,7 @@ public class SettingServiceImpl implements ISettingService {
     // Setting keys
     private static final String FREE_TRIAL_MONTHS = "FREE_TRIAL_MONTHS";
     private static final String REFERRAL_BONUS_MONTHS = "REFERRAL_BONUS_MONTHS";
-    private static final String COMMISSION_RATE = "COMMISSION_RATE";
+    private static final String COMMISSION_AMOUNT = "COMMISSION_AMOUNT";
     private static final String CUSTOM_PRICE_PER_EMPLOYEE = "CUSTOM_PRICE_PER_EMPLOYEE";
     private static final String MIN_DEPOSIT_AMOUNT = "MIN_DEPOSIT_AMOUNT";
     private static final String INACTIVE_RETENTION_DAYS = "INACTIVE_RETENTION_DAYS";
@@ -55,7 +55,7 @@ public class SettingServiceImpl implements ISettingService {
     // Default values
     private static final int DEFAULT_FREE_TRIAL_MONTHS = 2;
     private static final int DEFAULT_REFERRAL_BONUS_MONTHS = 1;
-    private static final BigDecimal DEFAULT_COMMISSION_RATE = new BigDecimal("0.10");
+    private static final int DEFAULT_COMMISSION_AMOUNT = 5000;
     private static final int DEFAULT_CUSTOM_PRICE_PER_EMPLOYEE = 400;
     private static final int DEFAULT_MIN_DEPOSIT_AMOUNT = 5000;
     private static final int DEFAULT_INACTIVE_RETENTION_DAYS = 30;
@@ -108,8 +108,8 @@ public class SettingServiceImpl implements ISettingService {
     }
 
     @Override
-    public BigDecimal getCommissionRate() {
-        return getCachedDecimalValue(COMMISSION_RATE, DEFAULT_COMMISSION_RATE);
+    public int getCommissionAmount() {
+        return getCachedIntValue(COMMISSION_AMOUNT, DEFAULT_COMMISSION_AMOUNT);
     }
 
     @Override

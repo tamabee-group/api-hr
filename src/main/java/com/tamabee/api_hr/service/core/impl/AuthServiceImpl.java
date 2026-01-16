@@ -152,7 +152,12 @@ public class AuthServiceImpl implements IAuthService {
             throw new BadRequestException(ErrorCode.USER_CREATION_FAILED);
         }
 
-        // 4. Gửi email thông báo (async, không ảnh hưởng đến flow chính)
+        // 4. Tạo commission record nếu có referral code (không ảnh hưởng đến flow chính)
+        if (request.getReferralCode() != null && !request.getReferralCode().isEmpty()) {
+            createCommissionForReferral(company.getId(), request.getReferralCode());
+        }
+
+        // 5. Gửi email thông báo (async, không ảnh hưởng đến flow chính)
         sendRegistrationEmails(request, freeTrialEndDate);
     }
 
@@ -221,6 +226,102 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     /**
+     * Lấy employee ID từ referral code (query tenant tamabee)
+     */
+    private Long getReferrerEmployeeId(String referralCode) {
+        try {
+            DataSource tamabeeDs = tenantDataSourceManager.getDataSource("tamabee");
+            if (tamabeeDs == null) return null;
+
+            try (Connection conn = tamabeeDs.getConnection()) {
+                String sql = "SELECT up.user_id FROM user_profiles up WHERE UPPER(up.referral_code) = ? AND up.deleted = false";
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, referralCode.trim().toUpperCase());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            return rs.getLong("user_id");
+                        }
+                    }
+                }
+            }
+        } catch (SQLException e) {
+            log.error("Error getting referrer employee id: {}", e.getMessage());
+        }
+        return null;
+    }
+
+    /**
+     * Tạo commission record cho người giới thiệu khi company đăng ký
+     * Commission status = PENDING, sẽ chuyển sang ELIGIBLE khi company thanh toán đủ
+     */
+    private void createCommissionForReferral(Long companyId, String referralCode) {
+        try {
+            // Lấy thông tin người giới thiệu từ tenant tamabee
+            DataSource tamabeeDs = tenantDataSourceManager.getDataSource("tamabee");
+            if (tamabeeDs == null) {
+                log.warn("Tamabee DataSource not found, skipping commission creation");
+                return;
+            }
+
+            String employeeCode = null;
+            String role = null;
+            try (Connection conn = tamabeeDs.getConnection()) {
+                String sql = """
+                    SELECT u.employee_code, u.role 
+                    FROM user_profiles up 
+                    JOIN users u ON up.user_id = u.id 
+                    WHERE UPPER(up.referral_code) = ? AND up.deleted = false AND u.deleted = false
+                    """;
+                try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                    ps.setString(1, referralCode.trim().toUpperCase());
+                    try (ResultSet rs = ps.executeQuery()) {
+                        if (rs.next()) {
+                            employeeCode = rs.getString("employee_code");
+                            role = rs.getString("role");
+                        }
+                    }
+                }
+            }
+
+            if (employeeCode == null) {
+                log.warn("Referrer not found for code: {}", referralCode);
+                return;
+            }
+
+            // Chỉ tạo commission cho nhân viên Tamabee
+            if (!isTamabeeEmployee(role)) {
+                log.debug("Referrer {} is not Tamabee employee, skipping commission", employeeCode);
+                return;
+            }
+
+            // Tạo commission record trong master DB
+            int commissionAmount = settingService.getCommissionAmount();
+            String insertSql = """
+                INSERT INTO employee_commissions (employee_code, company_id, amount, status, created_at, updated_at)
+                VALUES (?, ?, ?, 'PENDING', NOW(), NOW())
+                """;
+            masterJdbcTemplate.update(insertSql, employeeCode, companyId, commissionAmount);
+
+            log.info("Created PENDING commission {} JPY for employee {} from company {}", 
+                    commissionAmount, employeeCode, companyId);
+        } catch (Exception e) {
+            // Log lỗi nhưng không throw để không ảnh hưởng đến flow đăng ký
+            log.error("Error creating commission for referral: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Kiểm tra role có phải nhân viên Tamabee không
+     */
+    private boolean isTamabeeEmployee(String role) {
+        return role != null && (
+            role.equals("ADMIN_TAMABEE") || 
+            role.equals("MANAGER_TAMABEE") || 
+            role.equals("EMPLOYEE_TAMABEE")
+        );
+    }
+
+    /**
      * Gửi email thông báo hoa hồng cho người giới thiệu
      */
     private void sendReferralNotification(String referralCode, String newCompanyName) {
@@ -261,6 +362,15 @@ public class AuthServiceImpl implements IAuthService {
     private CompanyEntity createCompanyWithTransaction(RegisterRequest request) {
         return transactionTemplate.execute(status -> {
             CompanyEntity company = companyMapper.toEntity(request);
+            
+            // Set referred_by_employee_id nếu có referral code
+            if (request.getReferralCode() != null && !request.getReferralCode().isEmpty()) {
+                Long referrerId = getReferrerEmployeeId(request.getReferralCode());
+                if (referrerId != null) {
+                    company.setReferredByEmployeeId(referrerId);
+                }
+            }
+            
             return companyRepository.save(company);
         });
     }

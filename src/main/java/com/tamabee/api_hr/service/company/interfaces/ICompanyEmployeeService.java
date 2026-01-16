@@ -83,4 +83,12 @@ public interface ICompanyEmployeeService {
      * @return EmployeePersonalInfoResponse chứa tất cả sections
      */
     EmployeePersonalInfoResponse getEmployeePersonalInfo(Long employeeId);
+
+    /**
+     * Xóa nhân viên vĩnh viễn (hard delete)
+     * Chỉ Admin có quyền thực hiện
+     * 
+     * @param employeeId ID nhân viên cần xóa
+     */
+    void deleteEmployee(Long employeeId);
 }

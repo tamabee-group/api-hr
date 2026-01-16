@@ -44,14 +44,14 @@ public interface CompanyRepository extends JpaRepository<CompanyEntity, Long> {
          * Lấy danh sách companies được giới thiệu bởi employee (phân trang)
          */
         @Query("SELECT c FROM CompanyEntity c WHERE c.deleted = false " +
-                        "AND c.referredByEmployee.id = :employeeId ORDER BY c.createdAt DESC")
+                        "AND c.referredByEmployeeId = :employeeId ORDER BY c.createdAt DESC")
         Page<CompanyEntity> findByReferredByEmployeeId(@Param("employeeId") Long employeeId, Pageable pageable);
 
         /**
          * Đếm số companies được giới thiệu bởi employee
          */
         @Query("SELECT COUNT(c) FROM CompanyEntity c WHERE c.deleted = false " +
-                        "AND c.referredByEmployee.id = :employeeId")
+                        "AND c.referredByEmployeeId = :employeeId")
         int countByReferredByEmployeeId(@Param("employeeId") Long employeeId);
 
         /**

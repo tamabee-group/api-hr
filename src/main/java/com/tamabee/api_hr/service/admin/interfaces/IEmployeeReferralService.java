@@ -1,9 +1,10 @@
 package com.tamabee.api_hr.service.admin.interfaces;
 
-import com.tamabee.api_hr.dto.response.wallet.CommissionSummaryResponse;
-import com.tamabee.api_hr.dto.response.wallet.ReferredCompanyResponse;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+
+import com.tamabee.api_hr.dto.response.wallet.CommissionSummaryResponse;
+import com.tamabee.api_hr.dto.response.wallet.ReferredCompanyResponse;
 
 /**
  * Service cho Employee Tamabee xem và theo dõi company đã giới thiệu
@@ -22,6 +23,16 @@ public interface IEmployeeReferralService {
     Page<ReferredCompanyResponse> getReferredCompanies(String employeeCode, Pageable pageable);
 
     /**
+     * Lấy danh sách companies mà employee đã giới thiệu theo employeeId
+     * Dành cho Admin/Manager xem referrals của employee khác
+     *
+     * @param employeeId ID nhân viên Tamabee
+     * @param pageable   Thông tin phân trang
+     * @return Page of referred companies with service usage
+     */
+    Page<ReferredCompanyResponse> getReferredCompaniesByEmployeeId(Long employeeId, Pageable pageable);
+
+    /**
      * Lấy thống kê commission của employee
      * Bao gồm: total pending, eligible, paid amounts
      *
@@ -29,4 +40,13 @@ public interface IEmployeeReferralService {
      * @return Commission summary
      */
     CommissionSummaryResponse getCommissionSummary(String employeeCode);
+
+    /**
+     * Lấy thống kê commission của employee theo employeeId
+     * Dành cho Admin/Manager xem commission summary của employee khác
+     *
+     * @param employeeId ID nhân viên Tamabee
+     * @return Commission summary
+     */
+    CommissionSummaryResponse getCommissionSummaryByEmployeeId(Long employeeId);
 }

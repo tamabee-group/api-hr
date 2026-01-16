@@ -1,6 +1,5 @@
 package com.tamabee.api_hr.service.admin.interfaces;
 
-import java.math.BigDecimal;
 import java.util.List;
 
 import com.tamabee.api_hr.dto.request.SettingUpdateRequest;
@@ -53,11 +52,11 @@ public interface ISettingService {
     int getReferralBonusMonths();
 
     /**
-     * Lấy tỷ lệ hoa hồng giới thiệu (cached)
+     * Lấy số tiền hoa hồng giới thiệu cố định (cached)
      *
-     * @return tỷ lệ hoa hồng (ví dụ: 0.10 = 10%)
+     * @return số tiền hoa hồng (JPY)
      */
-    BigDecimal getCommissionRate();
+    int getCommissionAmount();
 
     /**
      * Lấy giá mỗi nhân viên cho gói Custom (cached)

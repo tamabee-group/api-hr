@@ -53,6 +53,12 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
             UserRole.MANAGER_COMPANY,
             UserRole.EMPLOYEE_COMPANY);
 
+    // Các role được phép tạo cho nhân viên Tamabee
+    private static final Set<UserRole> ALLOWED_TAMABEE_ROLES = Set.of(
+            UserRole.ADMIN_TAMABEE,
+            UserRole.MANAGER_TAMABEE,
+            UserRole.EMPLOYEE_TAMABEE);
+
     private final UserRepository userRepository;
     private final DepartmentRepository departmentRepository;
     private final UserMapper userMapper;
@@ -82,20 +88,21 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
             throw ConflictException.emailExists(request.getEmail());
         }
 
-        // Kiểm tra role hợp lệ cho nhân viên công ty
-        validateCompanyRole(request.getRole());
+        // Lấy tenant hiện tại
+        String currentTenant = TenantContext.getCurrentTenant();
+        boolean isTamabeeTenant = "tamabee".equals(currentTenant);
+
+        // Xác định role phù hợp dựa trên tenant
+        UserRole assignedRole = determineRole(request.getRole(), isTamabeeTenant);
 
         // Tạo mật khẩu tạm thời
         String temporaryPassword = UUID.randomUUID().toString().substring(0, 8);
-
-        // Lấy tenant hiện tại
-        String currentTenant = TenantContext.getCurrentTenant();
 
         // Tạo user entity
         UserEntity employee = new UserEntity();
         employee.setEmail(request.getEmail());
         employee.setPassword(passwordEncoder.encode(temporaryPassword));
-        employee.setRole(request.getRole());
+        employee.setRole(assignedRole);
         employee.setStatus(UserStatus.ACTIVE);
         employee.setLanguage(request.getLanguage());
         employee.setLocale(request.getLanguage()); // Dùng language làm locale
@@ -303,6 +310,33 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
     }
 
     /**
+     * Xác định role phù hợp dựa trên tenant
+     * - Tenant "tamabee": chuyển đổi role COMPANY sang TAMABEE tương ứng
+     * - Tenant khác: giữ nguyên role COMPANY
+     */
+    private UserRole determineRole(UserRole requestedRole, boolean isTamabeeTenant) {
+        if (isTamabeeTenant) {
+            // Chuyển đổi role COMPANY sang TAMABEE tương ứng
+            UserRole tamabeeRole = switch (requestedRole) {
+                case ADMIN_COMPANY -> UserRole.ADMIN_TAMABEE;
+                case MANAGER_COMPANY -> UserRole.MANAGER_TAMABEE;
+                case EMPLOYEE_COMPANY -> UserRole.EMPLOYEE_TAMABEE;
+                // Nếu đã là role TAMABEE thì giữ nguyên
+                case ADMIN_TAMABEE, MANAGER_TAMABEE, EMPLOYEE_TAMABEE -> requestedRole;
+            };
+            // Validate role TAMABEE
+            if (!ALLOWED_TAMABEE_ROLES.contains(tamabeeRole)) {
+                throw BadRequestException.invalidRole(tamabeeRole.name());
+            }
+            return tamabeeRole;
+        } else {
+            // Validate role COMPANY
+            validateCompanyRole(requestedRole);
+            return requestedRole;
+        }
+    }
+
+    /**
      * Tìm nhân viên theo ID trong tenant hiện tại
      */
     private UserEntity findEmployeeById(Long employeeId) {
@@ -422,5 +456,19 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
                 .jobTitle(managerProfile != null ? managerProfile.getJobTitle() : null)
                 .avatar(managerProfile != null ? managerProfile.getAvatar() : null)
                 .build();
+    }
+
+    @Override
+    @Transactional
+    public void deleteEmployee(Long employeeId) {
+        UserEntity employee = findEmployeeById(employeeId);
+
+        // Xóa avatar nếu có
+        if (employee.getProfile() != null && employee.getProfile().getAvatar() != null) {
+            uploadService.deleteFile(employee.getProfile().getAvatar());
+        }
+
+        // Hard delete user (cascade sẽ xóa profile)
+        userRepository.delete(employee);
     }
 }

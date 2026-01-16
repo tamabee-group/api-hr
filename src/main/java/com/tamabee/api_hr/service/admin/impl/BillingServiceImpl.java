@@ -90,7 +90,7 @@ public class BillingServiceImpl implements IBillingService {
         CompanyEntity company = companyRepository.findById(companyId)
                 .orElseThrow(() -> NotFoundException.company(companyId));
 
-        boolean hasReferral = company.getReferredByEmployee() != null;
+        boolean hasReferral = company.getReferredByEmployeeId() != null;
         return calculateFreeTrialEndDate(company.getCreatedAt(), hasReferral);
     }
 

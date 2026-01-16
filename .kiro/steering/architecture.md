@@ -87,3 +87,55 @@ Controller → Service (Interface + Impl) → Mapper → Repository → Entity
 | `ADMIN_COMPANY`    | ID        | Full company access       |
 | `MANAGER_COMPANY`  | ID        | Manage employees          |
 | `EMPLOYEE_COMPANY` | ID        | Basic employee access     |
+
+## Multi-Tenant Database
+
+### Database Structure
+
+- **Master DB**: `companies`, `wallets`, `plans`, `employee_commissions`, `tamabee_settings`, `deposits`
+- **Tenant DB** (per company): `users`, `user_profiles`, `attendance_records`, `payroll_records`...
+
+### TenantFilter Routing (datasource/TenantFilter.java)
+
+```java
+// MASTER_ONLY_PATHS - chỉ query master DB, không set tenant
+"/api/admin/settings", "/api/admin/plans", "/api/admin/companies",
+"/api/admin/deposits", "/api/admin/commissions", "/api/admin/commission-settings"
+
+// TAMABEE_TENANT_PATHS - set tenant = "tamabee" để query users từ tenant DB
+"/api/admin/employees"
+```
+
+### Cross-Database Query Pattern
+
+Khi service cần query cả master DB và tenant DB:
+
+```java
+@Service
+public class MyServiceImpl {
+    private final UserRepository userRepository;  // Tenant DB
+    private final JdbcTemplate masterJdbcTemplate;  // Master DB
+
+    public MyServiceImpl(
+            UserRepository userRepository,
+            @Qualifier("masterJdbcTemplate") JdbcTemplate masterJdbcTemplate) {
+        this.userRepository = userRepository;
+        this.masterJdbcTemplate = masterJdbcTemplate;
+    }
+
+    public void myMethod(Long userId) {
+        // Query tenant DB (users)
+        UserEntity user = userRepository.findByIdAndDeletedFalse(userId);
+
+        // Query master DB (companies, wallets, employee_commissions...)
+        String sql = "SELECT * FROM companies WHERE referred_by_employee_id = ?";
+        masterJdbcTemplate.query(sql, mapper, userId);
+    }
+}
+```
+
+### Rules
+
+- **KHÔNG** dùng Repository cho master DB tables trong service cần cross-database query
+- Dùng `@Qualifier("masterJdbcTemplate")` để inject JdbcTemplate cho master DB
+- Endpoint phải được thêm vào `TAMABEE_TENANT_PATHS` nếu cần query users table

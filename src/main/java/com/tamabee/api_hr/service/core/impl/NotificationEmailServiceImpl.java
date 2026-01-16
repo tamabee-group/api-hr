@@ -54,10 +54,11 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
     
     /**
      * Thay thế CID references bằng URL trong template
+     * Lưu ý: replace logoText trước logo để tránh conflict
      */
     private String replaceLogoWithUrl(String content) {
-        content = content.replace("cid:logo", LOGO_URL);
         content = content.replace("cid:logoText", LOGO_TEXT_URL);
+        content = content.replace("cid:logo", LOGO_URL);
         return content;
     }
 

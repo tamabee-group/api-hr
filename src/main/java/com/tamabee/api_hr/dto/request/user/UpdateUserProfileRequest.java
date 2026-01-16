@@ -3,6 +3,7 @@ package com.tamabee.api_hr.dto.request.user;
 import java.time.LocalDate;
 
 import com.tamabee.api_hr.enums.UserStatus;
+import com.tamabee.api_hr.validation.MinAge;
 
 import jakarta.validation.constraints.Email;
 import lombok.Data;
@@ -21,6 +22,7 @@ public class UpdateUserProfileRequest {
     private String address;
 
     // Basic info
+    @MinAge(value = 15, message = "Nhân viên phải từ 15 tuổi trở lên theo luật lao động")
     private LocalDate dateOfBirth;
     private String gender;
     private String nationality;

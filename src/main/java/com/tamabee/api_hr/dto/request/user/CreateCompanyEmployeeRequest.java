@@ -3,6 +3,7 @@ package com.tamabee.api_hr.dto.request.user;
 import java.time.LocalDate;
 
 import com.tamabee.api_hr.enums.UserRole;
+import com.tamabee.api_hr.validation.MinAge;
 
 import jakarta.validation.constraints.Email;
 import jakarta.validation.constraints.NotBlank;
@@ -35,6 +36,7 @@ public class CreateCompanyEmployeeRequest {
 
     private String zipCode;
 
+    @MinAge(value = 15, message = "Nhân viên phải từ 15 tuổi trở lên theo luật lao động")
     private LocalDate dateOfBirth;
 
     private String gender;

@@ -30,7 +30,7 @@ public class TenantFilter extends OncePerRequestFilter {
 
     /**
      * Các path prefix cần query từ master DB (không set tenant).
-     * Bao gồm: plans, admin APIs, register/check-domain (companies ở master)
+     * Bao gồm: plans, settings, register/check-domain, companies, deposits, commissions
      */
     private static final Set<String> MASTER_ONLY_PATHS = Set.of(
             "/api/auth/register",
@@ -38,7 +38,19 @@ public class TenantFilter extends OncePerRequestFilter {
             "/api/auth/send-verification",
             "/api/auth/verify-email",
             "/api/plans",
-            "/api/admin");
+            "/api/admin/settings",
+            "/api/admin/plans",
+            "/api/admin/companies",
+            "/api/admin/deposits",
+            "/api/admin/commissions",
+            "/api/admin/commission-settings");
+
+    /**
+     * Các path prefix cần query từ tenant "tamabee" (Tamabee admin endpoints).
+     * Dùng cho các endpoint cần query cả users (tenant) và companies (master).
+     */
+    private static final Set<String> TAMABEE_TENANT_PATHS = Set.of(
+            "/api/admin/employees");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -50,6 +62,18 @@ public class TenantFilter extends OncePerRequestFilter {
         // Kiểm tra nếu là master-only path thì không set tenant
         if (isMasterOnlyPath(path)) {
             log.debug("TenantFilter: path={} is master-only, using master DB", path);
+            try {
+                chain.doFilter(request, response);
+            } finally {
+                TenantContext.clear();
+            }
+            return;
+        }
+
+        // Kiểm tra nếu là Tamabee tenant path thì set tenant = "tamabee"
+        if (isTamabeeTenantPath(path)) {
+            log.debug("TenantFilter: path={} is tamabee-tenant, using tamabee DB", path);
+            TenantContext.setCurrentTenant("tamabee");
             try {
                 chain.doFilter(request, response);
             } finally {
@@ -86,6 +110,13 @@ public class TenantFilter extends OncePerRequestFilter {
      */
     private boolean isMasterOnlyPath(String path) {
         return MASTER_ONLY_PATHS.stream().anyMatch(path::startsWith);
+    }
+
+    /**
+     * Kiểm tra path có phải Tamabee tenant path không
+     */
+    private boolean isTamabeeTenantPath(String path) {
+        return TAMABEE_TENANT_PATHS.stream().anyMatch(path::startsWith);
     }
 
     /**

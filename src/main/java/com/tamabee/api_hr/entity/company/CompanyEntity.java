@@ -11,7 +11,6 @@ import jakarta.persistence.Enumerated;
 import jakarta.persistence.FetchType;
 import jakarta.persistence.Index;
 import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
 import jakarta.persistence.OneToOne;
 import jakarta.persistence.Table;
 import lombok.Data;
@@ -62,10 +61,9 @@ public class CompanyEntity extends BaseEntity {
     @Column(name = "plan_id")
     private Long planId;
 
-    // Nhân viên tư vấn (giới thiệu công ty)
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "referred_by_employee_id")
-    private UserEntity referredByEmployee;
+    // ID nhân viên giới thiệu (lưu trực tiếp vì cross-database)
+    @Column(name = "referred_by_employee_id")
+    private Long referredByEmployeeId;
 
     // Logo công ty
     private String logo;

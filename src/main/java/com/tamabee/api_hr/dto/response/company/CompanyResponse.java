@@ -17,8 +17,7 @@ public class CompanyResponse {
     private String zipcode;
     private String locale;
     private String language;
-    private String referredByEmployeeCode;
-    private String referredByEmployeeName;
+    private Long referredByEmployeeId;
     private String logo;
     private Long ownerId;
     private String tenantDomain;

@@ -304,4 +304,16 @@ public class CompanyEmployeeController {
         List<LeaveBalanceResponse> leaveBalance = leaveService.getLeaveBalance(id, effectiveYear);
         return ResponseEntity.ok(BaseResponse.success(leaveBalance, "Lấy số ngày phép còn lại thành công"));
     }
+
+    /**
+     * Xóa nhân viên vĩnh viễn (hard delete)
+     * DELETE /api/company/employees/{id}
+     * Chỉ Admin có quyền thực hiện
+     */
+    @DeleteMapping("/{id}")
+    @PreAuthorize(RoleConstants.HAS_ADMIN_COMPANY)
+    public ResponseEntity<BaseResponse<Void>> deleteEmployee(@PathVariable Long id) {
+        companyEmployeeService.deleteEmployee(id);
+        return ResponseEntity.ok(BaseResponse.success(null, "Xóa nhân viên thành công"));
+    }
 }

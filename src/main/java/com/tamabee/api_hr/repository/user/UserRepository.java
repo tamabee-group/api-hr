@@ -31,6 +31,9 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     // Tìm user theo ID (chưa bị xóa)
     Optional<UserEntity> findByIdAndDeletedFalse(Long id);
 
+    // Kiểm tra user tồn tại theo ID (chưa bị xóa)
+    boolean existsByIdAndDeletedFalse(Long id);
+
     // Multi-tenant: Lấy tất cả users trong tenant hiện tại (có phân trang)
     @EntityGraph(attributePaths = { "profile" })
     Page<UserEntity> findByDeletedFalse(Pageable pageable);

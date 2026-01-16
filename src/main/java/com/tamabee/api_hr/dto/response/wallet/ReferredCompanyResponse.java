@@ -1,12 +1,13 @@
 package com.tamabee.api_hr.dto.response.wallet;
 
-import com.tamabee.api_hr.enums.CommissionStatus;
-import com.tamabee.api_hr.enums.CompanyStatus;
-import lombok.Builder;
-import lombok.Data;
-
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+
+import com.tamabee.api_hr.enums.CommissionStatus;
+import com.tamabee.api_hr.enums.CompanyStatus;
+
+import lombok.Builder;
+import lombok.Data;
 
 /**
  * Response DTO cho company được Employee Tamabee giới thiệu
@@ -20,7 +21,11 @@ public class ReferredCompanyResponse {
     private Long companyId;
     private String companyName;
     private String ownerName;
+    private String email;
+    private String phone;
     private String planName;
+    private BigDecimal planPrice;
+    private LocalDateTime planExpiryDate;
     private CompanyStatus status;
 
     // Service usage info
