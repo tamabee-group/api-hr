@@ -7,7 +7,6 @@ import java.time.format.DateTimeFormatter;
 import java.util.Locale;
 
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.core.io.ClassPathResource;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
@@ -25,11 +24,9 @@ public class EmailServiceImpl implements IEmailService {
     private final String adminEmail;
     private final String baseUrl;
     
-    // Đường dẫn đến logo images (dùng PNG để hỗ trợ tốt nhất trong email)
-    private static final String LOGO_PATH = "templates/images/logo.png";
-    private static final String LOGO_TEXT_PATH = "templates/images/logo-text-light.png";
-    private static final String LOGO_CID = "logo";
-    private static final String LOGO_TEXT_CID = "logoText";
+    // Logo URLs từ GitHub raw (dùng cho email, không có attachment preview icons)
+    private static final String LOGO_URL = "https://raw.githubusercontent.com/tamabee-group/api-hr/main/src/main/resources/templates/images/logo.png";
+    private static final String LOGO_TEXT_URL = "https://raw.githubusercontent.com/tamabee-group/api-hr/main/src/main/resources/templates/images/logo-text-light.png";
 
     public EmailServiceImpl(
             JavaMailSender mailSender,
@@ -41,23 +38,12 @@ public class EmailServiceImpl implements IEmailService {
     }
     
     /**
-     * Thêm inline images (logo) vào email
-     * Sử dụng DataSource để đảm bảo Content-Disposition: inline được set đúng
+     * Thay thế CID references bằng URL trong template
      */
-    private void addInlineImages(MimeMessageHelper helper) {
-        try {
-            ClassPathResource logoResource = new ClassPathResource(LOGO_PATH);
-            ClassPathResource logoTextResource = new ClassPathResource(LOGO_TEXT_PATH);
-            
-            if (logoResource.exists()) {
-                helper.addInline(LOGO_CID, logoResource.getFile());
-            }
-            if (logoTextResource.exists()) {
-                helper.addInline(LOGO_TEXT_CID, logoTextResource.getFile());
-            }
-        } catch (Exception e) {
-            log.warn("Không thể thêm inline images vào email: {}", e.getMessage());
-        }
+    private String replaceLogoWithUrl(String content) {
+        content = content.replace("cid:logo", LOGO_URL);
+        content = content.replace("cid:logoText", LOGO_TEXT_URL);
+        return content;
     }
 
     @Override
@@ -81,8 +67,7 @@ public class EmailServiceImpl implements IEmailService {
                     .replace("{loginUrl}", loginUrl)
                     .replace("{freeTrialEnd}", formatDate(freeTrialEnd, language));
 
-            helper.setText(content, true);
-            addInlineImages(helper);
+            helper.setText(replaceLogoWithUrl(content), true);
             mailSender.send(mimeMessage);
             log.info("Đã gửi email chào mừng đến: {}", email);
         } catch (Exception e) {
@@ -120,8 +105,7 @@ public class EmailServiceImpl implements IEmailService {
                     .replace("{referralCode}", referralInfo)
                     .replace("{date}", formatDate(LocalDateTime.now(), "vi"));
 
-            helper.setText(content, true);
-            addInlineImages(helper);
+            helper.setText(replaceLogoWithUrl(content), true);
             mailSender.send(mimeMessage);
             log.info("Đã gửi email thông báo công ty mới đến admin");
         } catch (Exception e) {
@@ -146,8 +130,7 @@ public class EmailServiceImpl implements IEmailService {
                     .replace("{newCompanyName}", newCompanyName)
                     .replace("{date}", formatDate(LocalDateTime.now(), language));
 
-            helper.setText(content, true);
-            addInlineImages(helper);
+            helper.setText(replaceLogoWithUrl(content), true);
             mailSender.send(mimeMessage);
             log.info("Đã gửi email thông báo hoa hồng đến: {}", referrerEmail);
         } catch (Exception e) {
@@ -171,8 +154,7 @@ public class EmailServiceImpl implements IEmailService {
                     .replace("{email}", email)
                     .replace("{temporaryPassword}", temporaryPassword);
 
-            helper.setText(content, true);
-            addInlineImages(helper);
+            helper.setText(replaceLogoWithUrl(content), true);
             mailSender.send(mimeMessage);
             log.info("Đã gửi email mật khẩu tạm thời đến: {}", email);
         } catch (Exception e) {
@@ -198,8 +180,7 @@ public class EmailServiceImpl implements IEmailService {
                     .replace("{balance}", formatCurrency(balance))
                     .replace("{date}", formatDate(LocalDateTime.now(), language));
 
-            helper.setText(content, true);
-            addInlineImages(helper);
+            helper.setText(replaceLogoWithUrl(content), true);
             mailSender.send(mimeMessage);
             log.info("Đã gửi email thông báo nạp tiền thành công đến: {}", email);
         } catch (Exception e) {
@@ -226,8 +207,7 @@ public class EmailServiceImpl implements IEmailService {
                     .replace("{balance}", formatCurrency(balance))
                     .replace("{date}", formatDate(LocalDateTime.now(), language));
 
-            helper.setText(content, true);
-            addInlineImages(helper);
+            helper.setText(replaceLogoWithUrl(content), true);
             mailSender.send(mimeMessage);
             log.info("Đã gửi email thông báo billing đến: {}", email);
         } catch (Exception e) {
@@ -253,8 +233,7 @@ public class EmailServiceImpl implements IEmailService {
                     .replace("{amount}", formatCurrency(amount))
                     .replace("{balance}", formatCurrency(balance));
 
-            helper.setText(content, true);
-            addInlineImages(helper);
+            helper.setText(replaceLogoWithUrl(content), true);
             mailSender.send(mimeMessage);
             log.info("Đã gửi email thông báo insufficient balance đến: {}", email);
         } catch (Exception e) {
@@ -287,8 +266,7 @@ public class EmailServiceImpl implements IEmailService {
                     .replace("{date}", formatDate(LocalDateTime.now(), "vi"))
                     .replace("{adminUrl}", baseUrl + "/vi/admin/deposits");
 
-            helper.setText(content, true);
-            addInlineImages(helper);
+            helper.setText(replaceLogoWithUrl(content), true);
             mailSender.send(mimeMessage);
             log.info("Đã gửi email thông báo yêu cầu nạp tiền mới đến admin");
         } catch (Exception e) {
@@ -330,8 +308,7 @@ public class EmailServiceImpl implements IEmailService {
                     .replace("{companiesList}", companiesList.toString())
                     .replace("{date}", formatDate(LocalDateTime.now(), "vi"));
 
-            helper.setText(content, true);
-            addInlineImages(helper);
+            helper.setText(replaceLogoWithUrl(content), true);
             mailSender.send(mimeMessage);
             log.info("Đã gửi email báo cáo cleanup đến admin: {} companies đã xóa", deletedCompanies.size());
         } catch (Exception e) {
@@ -356,8 +333,7 @@ public class EmailServiceImpl implements IEmailService {
                     .replace("{date}", formatDate(LocalDateTime.now(), language))
                     .replace("{year}", String.valueOf(LocalDateTime.now().getYear()));
 
-            helper.setText(content, true);
-            addInlineImages(helper);
+            helper.setText(replaceLogoWithUrl(content), true);
             mailSender.send(mimeMessage);
             log.info("Đã gửi email thông báo reactivation đến: {}", email);
         } catch (Exception e) {
