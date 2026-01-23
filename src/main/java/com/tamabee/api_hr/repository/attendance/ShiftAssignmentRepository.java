@@ -1,7 +1,9 @@
 package com.tamabee.api_hr.repository.attendance;
 
-import com.tamabee.api_hr.entity.attendance.ShiftAssignmentEntity;
-import com.tamabee.api_hr.enums.ShiftAssignmentStatus;
+import java.time.LocalDate;
+import java.time.LocalTime;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -10,8 +12,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
-import java.util.List;
+import com.tamabee.api_hr.entity.attendance.ShiftAssignmentEntity;
+import com.tamabee.api_hr.enums.ShiftAssignmentStatus;
 
 /**
  * Repository quản lý phân ca làm việc cho nhân viên.
@@ -58,18 +60,22 @@ public interface ShiftAssignmentRepository
         boolean existsByEmployeeIdAndWorkDate(Long employeeId, LocalDate workDate);
 
         /**
-         * Kiểm tra overlap shift assignments cho nhân viên trong ngày
+         * Kiểm tra overlap thời gian ca làm việc cho nhân viên trong ngày
+         * Kiểm tra xem ca mới có trùng giờ với các ca đã có không
          */
         @Query("SELECT COUNT(sa) > 0 FROM ShiftAssignmentEntity sa " +
                         "JOIN ShiftTemplateEntity st ON sa.shiftTemplateId = st.id " +
                         "WHERE sa.employeeId = :employeeId " +
                         "AND sa.workDate = :workDate " +
-                        "AND sa.id != :excludeId " +
-                        "AND sa.status != 'CANCELLED'")
-        boolean existsOverlappingAssignment(
+                        "AND sa.status != 'CANCELLED' " +
+                        "AND (" +
+                        "  (st.startTime < :endTime AND st.endTime > :startTime)" +
+                        ")")
+        boolean existsTimeOverlap(
                         @Param("employeeId") Long employeeId,
                         @Param("workDate") LocalDate workDate,
-                        @Param("excludeId") Long excludeId);
+                        @Param("startTime") LocalTime startTime,
+                        @Param("endTime") LocalTime endTime);
 
         /**
          * Đếm số shift assignments của nhân viên trong khoảng thời gian
@@ -85,6 +91,12 @@ public interface ShiftAssignmentRepository
          * Kiểm tra shift template có đang được sử dụng không
          */
         boolean existsByShiftTemplateId(Long shiftTemplateId);
+
+        /**
+         * Tìm shift assignments theo nhân viên, ngày và status
+         */
+        List<ShiftAssignmentEntity> findByEmployeeIdAndWorkDateAndStatus(
+                        Long employeeId, LocalDate workDate, ShiftAssignmentStatus status);
 
         /**
          * Tìm các ca làm việc có thể đổi (cùng ngày, khác nhân viên, status SCHEDULED)

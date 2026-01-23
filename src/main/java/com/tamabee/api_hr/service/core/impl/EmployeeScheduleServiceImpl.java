@@ -1,7 +1,13 @@
 package com.tamabee.api_hr.service.core.impl;
 
+import java.time.LocalDate;
+import java.util.ArrayList;
+import java.util.List;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.tamabee.api_hr.dto.request.attendance.EmployeeSwapRequest;
-import com.tamabee.api_hr.dto.response.schedule.EmployeeScheduleDataResponse;
 import com.tamabee.api_hr.dto.response.attendance.ShiftAssignmentResponse;
 import com.tamabee.api_hr.dto.response.attendance.ShiftSwapRequestResponse;
 import com.tamabee.api_hr.entity.attendance.ShiftAssignmentEntity;
@@ -18,13 +24,8 @@ import com.tamabee.api_hr.repository.attendance.ShiftSwapRequestRepository;
 import com.tamabee.api_hr.repository.attendance.ShiftTemplateRepository;
 import com.tamabee.api_hr.repository.user.UserRepository;
 import com.tamabee.api_hr.service.core.interfaces.IEmployeeScheduleService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.util.ArrayList;
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Service implementation cho employee xem lịch làm việc
@@ -77,19 +78,6 @@ public class EmployeeScheduleServiceImpl implements IEmployeeScheduleService {
                 }
 
                 return result;
-        }
-
-        @Override
-        @Transactional(readOnly = true)
-        public EmployeeScheduleDataResponse getAllScheduleData(Long employeeId, LocalDate startDate,
-                        LocalDate endDate) {
-                List<ShiftAssignmentResponse> shifts = getMySchedule(employeeId, startDate, endDate);
-                List<ShiftSwapRequestResponse> swapRequests = getSwapHistory(employeeId);
-
-                return EmployeeScheduleDataResponse.builder()
-                                .shifts(shifts)
-                                .swapRequests(swapRequests)
-                                .build();
         }
 
         private ShiftSwapRequestResponse buildSwapRequestResponse(ShiftSwapRequestEntity entity) {

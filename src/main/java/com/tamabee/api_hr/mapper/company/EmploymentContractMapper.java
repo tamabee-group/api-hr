@@ -1,14 +1,15 @@
 package com.tamabee.api_hr.mapper.company;
 
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
+
+import org.springframework.stereotype.Component;
+
 import com.tamabee.api_hr.dto.request.payroll.ContractRequest;
 import com.tamabee.api_hr.dto.response.payroll.ContractResponse;
 import com.tamabee.api_hr.entity.contract.EmploymentContractEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.ContractStatus;
-import org.springframework.stereotype.Component;
-
-import java.time.LocalDate;
-import java.time.temporal.ChronoUnit;
 
 /**
  * Mapper cho EmploymentContract entities và DTOs.
@@ -46,7 +47,7 @@ public class EmploymentContractMapper {
         }
 
         entity.setContractType(request.getContractType());
-        entity.setContractNumber(request.getContractNumber());
+        // Không update contractNumber vì đây là số định danh duy nhất
         entity.setStartDate(request.getStartDate());
         entity.setEndDate(request.getEndDate());
         entity.setSalaryConfigId(request.getSalaryConfigId());
@@ -63,8 +64,10 @@ public class EmploymentContractMapper {
 
         String employeeName = null;
         String employeeCode = null;
+        String employeeEmail = null;
         if (employee != null) {
             employeeCode = employee.getEmployeeCode();
+            employeeEmail = employee.getEmail();
             if (employee.getProfile() != null) {
                 employeeName = employee.getProfile().getName();
             }
@@ -72,9 +75,13 @@ public class EmploymentContractMapper {
 
         // Tính số ngày còn lại đến khi hết hạn
         Integer daysUntilExpiry = null;
-        if (entity.getEndDate() != null && entity.getStatus() == ContractStatus.ACTIVE) {
+        if (entity.getEndDate() != null) {
             LocalDate today = LocalDate.now();
-            if (!entity.getEndDate().isBefore(today)) {
+            if (entity.getEndDate().isBefore(today)) {
+                // Đã hết hạn
+                daysUntilExpiry = 0;
+            } else {
+                // Còn hiệu lực
                 daysUntilExpiry = (int) ChronoUnit.DAYS.between(today, entity.getEndDate());
             }
         }
@@ -84,6 +91,7 @@ public class EmploymentContractMapper {
                 .employeeId(entity.getEmployeeId())
                 .employeeName(employeeName)
                 .employeeCode(employeeCode)
+                .employeeEmail(employeeEmail)
                 .contractType(entity.getContractType())
                 .contractNumber(entity.getContractNumber())
                 .startDate(entity.getStartDate())

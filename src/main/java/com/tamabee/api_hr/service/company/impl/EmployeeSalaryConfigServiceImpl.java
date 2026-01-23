@@ -104,7 +104,11 @@ public class EmployeeSalaryConfigServiceImpl implements IEmployeeSalaryConfigSer
                         && config.getEmployeeId().equals(employeeId) 
                         && Boolean.TRUE.equals(config.getActive()))
                 .findFirst()
-                .orElseThrow(() -> new NotFoundException(ErrorCode.SALARY_CONFIG_NOT_FOUND));
+                .orElse(null);
+
+        if (currentConfig == null) {
+            return null;
+        }
 
         return salaryMapper.toResponse(currentConfig, employee);
     }

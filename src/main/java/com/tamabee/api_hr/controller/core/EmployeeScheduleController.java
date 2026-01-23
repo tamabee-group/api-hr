@@ -1,22 +1,28 @@
 package com.tamabee.api_hr.controller.core;
 
-import com.tamabee.api_hr.dto.request.attendance.EmployeeSwapRequest;
-import com.tamabee.api_hr.dto.response.schedule.EmployeeScheduleDataResponse;
-import com.tamabee.api_hr.dto.response.attendance.ShiftAssignmentResponse;
-import com.tamabee.api_hr.dto.response.attendance.ShiftSwapRequestResponse;
-import com.tamabee.api_hr.dto.common.BaseResponse;
-import com.tamabee.api_hr.service.core.interfaces.IAuthService;
-import com.tamabee.api_hr.service.core.interfaces.IEmployeeScheduleService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
-import java.util.List;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.dto.request.attendance.EmployeeSwapRequest;
+import com.tamabee.api_hr.dto.response.attendance.ShiftAssignmentResponse;
+import com.tamabee.api_hr.dto.response.attendance.ShiftSwapRequestResponse;
+import com.tamabee.api_hr.service.core.interfaces.IAuthService;
+import com.tamabee.api_hr.service.core.interfaces.IEmployeeScheduleService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Controller cho employee xem lịch làm việc của mình
@@ -29,19 +35,6 @@ public class EmployeeScheduleController {
 
     private final IEmployeeScheduleService employeeScheduleService;
     private final IAuthService authService;
-
-    /**
-     * Lấy tất cả dữ liệu lịch làm việc (ca + lịch sử đổi ca) trong 1 API call
-     */
-    @GetMapping("/all")
-    public ResponseEntity<BaseResponse<EmployeeScheduleDataResponse>> getAllScheduleData(
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
-            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
-        Long employeeId = authService.getCurrentUser().getId();
-        EmployeeScheduleDataResponse data = employeeScheduleService.getAllScheduleData(
-                employeeId, startDate, endDate);
-        return ResponseEntity.ok(BaseResponse.success(data));
-    }
 
     /**
      * Lấy lịch làm việc của nhân viên trong khoảng thời gian

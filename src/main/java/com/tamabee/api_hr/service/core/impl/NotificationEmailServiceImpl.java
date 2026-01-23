@@ -15,13 +15,15 @@ import org.springframework.stereotype.Service;
 import com.tamabee.api_hr.entity.attendance.AttendanceAdjustmentRequestEntity;
 import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
 import com.tamabee.api_hr.entity.leave.LeaveRequestEntity;
-import com.tamabee.api_hr.entity.payroll.PayrollRecordEntity;
+import com.tamabee.api_hr.entity.payroll.PayrollItemEntity;
+import com.tamabee.api_hr.entity.payroll.PayrollPeriodEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.LeaveType;
 import com.tamabee.api_hr.repository.attendance.AttendanceAdjustmentRequestRepository;
 import com.tamabee.api_hr.repository.attendance.BreakRecordRepository;
 import com.tamabee.api_hr.repository.leave.LeaveRequestRepository;
-import com.tamabee.api_hr.repository.payroll.PayrollRecordRepository;
+import com.tamabee.api_hr.repository.payroll.PayrollItemRepository;
+import com.tamabee.api_hr.repository.payroll.PayrollPeriodRepository;
 import com.tamabee.api_hr.repository.user.UserRepository;
 import com.tamabee.api_hr.service.core.interfaces.INotificationEmailService;
 import com.tamabee.api_hr.util.LocaleUtil;
@@ -41,7 +43,8 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
 
     private final JavaMailSender mailSender;
     private final UserRepository userRepository;
-    private final PayrollRecordRepository payrollRecordRepository;
+    private final PayrollItemRepository payrollItemRepository;
+    private final PayrollPeriodRepository payrollPeriodRepository;
     private final AttendanceAdjustmentRequestRepository adjustmentRequestRepository;
     private final LeaveRequestRepository leaveRequestRepository;
     private final BreakRecordRepository breakRecordRepository;
@@ -65,7 +68,7 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
     // ==================== Salary Notification ====================
 
     @Override
-    public void sendSalaryNotification(Long employeeId, PayrollRecordEntity payroll) {
+    public void sendSalaryNotification(Long employeeId, PayrollItemEntity payrollItem) {
         try {
             UserEntity employee = userRepository.findById(employeeId).orElse(null);
             if (employee == null) {
@@ -73,26 +76,34 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
                 return;
             }
 
+            // Lấy thông tin period để có year/month
+            PayrollPeriodEntity period = payrollPeriodRepository.findById(payrollItem.getPayrollPeriodId())
+                    .orElse(null);
+            if (period == null) {
+                log.warn("Không tìm thấy kỳ lương {} để gửi thông báo", payrollItem.getPayrollPeriodId());
+                return;
+            }
+
             String language = getLanguageFromLocale(employee.getLocale());
             String employeeName = getEmployeeName(employee);
-            String period = formatPeriod(payroll.getYear(), payroll.getMonth(), language);
+            String periodStr = formatPeriod(period.getYear(), period.getMonth(), language);
 
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
             helper.setFrom(FROM_EMAIL);
             helper.setTo(employee.getEmail());
-            helper.setSubject(getSalaryNotificationSubject(language, period));
+            helper.setSubject(getSalaryNotificationSubject(language, periodStr));
 
             String template = loadTemplate("salary-notification", language);
             String content = template
                     .replace("{employeeName}", employeeName)
-                    .replace("{period}", period)
-                    .replace("{netSalary}", formatCurrency(payroll.getNetSalary(), language))
-                    .replace("{baseSalary}", formatCurrency(payroll.getBaseSalary(), language))
-                    .replace("{totalOvertime}", formatCurrency(payroll.getTotalOvertimePay(), language))
-                    .replace("{totalAllowances}", formatCurrency(payroll.getTotalAllowances(), language))
-                    .replace("{totalDeductions}", formatCurrency(payroll.getTotalDeductions(), language))
+                    .replace("{period}", periodStr)
+                    .replace("{netSalary}", formatCurrency(payrollItem.getNetSalary(), language))
+                    .replace("{baseSalary}", formatCurrency(payrollItem.getCalculatedBaseSalary(), language))
+                    .replace("{totalOvertime}", formatCurrency(payrollItem.getTotalOvertimePay(), language))
+                    .replace("{totalAllowances}", formatCurrency(payrollItem.getTotalAllowances(), language))
+                    .replace("{totalDeductions}", formatCurrency(payrollItem.getTotalDeductions(), language))
                     .replace("{paymentDate}", formatDate(LocalDateTime.now(), language));
 
             helper.setText(replaceLogoWithUrl(content), true);
@@ -105,14 +116,21 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
 
     @Override
     public void sendBulkSalaryNotifications(Long companyId, Integer year, Integer month) {
-        List<PayrollRecordEntity> records = payrollRecordRepository
-                .findPendingNotifications(year, month);
-
-        for (PayrollRecordEntity record : records) {
-            sendSalaryNotification(record.getEmployeeId(), record);
+        // Tìm period theo year/month
+        PayrollPeriodEntity period = payrollPeriodRepository.findByYearAndMonth(year, month).orElse(null);
+        if (period == null) {
+            log.warn("Không tìm thấy kỳ lương {}/{}", year, month);
+            return;
         }
 
-        log.info("Đã gửi {} thông báo lương", records.size());
+        // Lấy tất cả payroll items của period
+        java.util.List<PayrollItemEntity> items = payrollItemRepository.findByPayrollPeriodId(period.getId());
+
+        for (PayrollItemEntity item : items) {
+            sendSalaryNotification(item.getEmployeeId(), item);
+        }
+
+        log.info("Đã gửi {} thông báo lương", items.size());
     }
 
     // ==================== Adjustment Notification ====================

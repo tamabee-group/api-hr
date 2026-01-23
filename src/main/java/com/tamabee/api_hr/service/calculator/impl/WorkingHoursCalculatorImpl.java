@@ -1,19 +1,20 @@
 package com.tamabee.api_hr.service.calculator.impl;
 
+import java.time.Duration;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.List;
+
+import org.springframework.stereotype.Component;
+
 import com.tamabee.api_hr.dto.config.BreakConfig;
-import com.tamabee.api_hr.dto.config.WorkScheduleData;
 import com.tamabee.api_hr.dto.result.WorkingHoursResult;
 import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
 import com.tamabee.api_hr.enums.BreakType;
 import com.tamabee.api_hr.service.calculator.interfaces.IBreakCalculator;
 import com.tamabee.api_hr.service.calculator.interfaces.IWorkingHoursCalculator;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 
-import java.time.Duration;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.List;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Calculator tính toán giờ làm việc
@@ -31,8 +32,7 @@ public class WorkingHoursCalculatorImpl implements IWorkingHoursCalculator {
             LocalDateTime checkIn,
             LocalDateTime checkOut,
             List<BreakRecordEntity> breakRecords,
-            BreakConfig breakConfig,
-            WorkScheduleData schedule) {
+            BreakConfig breakConfig) {
 
         if (checkIn == null || checkOut == null) {
             return WorkingHoursResult.builder().build();
@@ -41,7 +41,7 @@ public class WorkingHoursCalculatorImpl implements IWorkingHoursCalculator {
         // Kiểm tra xem có phải overnight shift không
         boolean isOvernight = isOvernightShift(checkIn.toLocalTime(), checkOut.toLocalTime());
         if (isOvernight && checkOut.isBefore(checkIn)) {
-            return calculateOvernightWorkingHours(checkIn, checkOut, breakRecords, breakConfig, schedule);
+            return calculateOvernightWorkingHours(checkIn, checkOut, breakRecords, breakConfig);
         }
 
         // Tính gross working minutes
@@ -114,8 +114,7 @@ public class WorkingHoursCalculatorImpl implements IWorkingHoursCalculator {
             LocalDateTime checkIn,
             LocalDateTime checkOut,
             List<BreakRecordEntity> breakRecords,
-            BreakConfig breakConfig,
-            WorkScheduleData schedule) {
+            BreakConfig breakConfig) {
 
         if (checkIn == null || checkOut == null) {
             return WorkingHoursResult.builder().build();

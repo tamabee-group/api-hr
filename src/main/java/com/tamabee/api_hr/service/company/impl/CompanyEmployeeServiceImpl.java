@@ -103,7 +103,7 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
         employee.setEmail(request.getEmail());
         employee.setPassword(passwordEncoder.encode(temporaryPassword));
         employee.setRole(assignedRole);
-        employee.setStatus(UserStatus.ACTIVE);
+        employee.setStatus(UserStatus.INACTIVE); // Mặc định INACTIVE, chỉ ACTIVE khi có hợp đồng
         employee.setLanguage(request.getLanguage());
         employee.setLocale(request.getLanguage()); // Dùng language làm locale
         employee.setTenantDomain(currentTenant);

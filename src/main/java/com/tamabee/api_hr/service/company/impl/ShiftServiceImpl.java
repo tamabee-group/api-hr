@@ -2,6 +2,7 @@ package com.tamabee.api_hr.service.company.impl;
 
 import com.tamabee.api_hr.dto.request.attendance.*;
 import com.tamabee.api_hr.dto.response.attendance.BatchAssignmentResult;
+import com.tamabee.api_hr.dto.response.attendance.BatchDeleteResult;
 import com.tamabee.api_hr.dto.response.attendance.ShiftAssignmentResponse;
 import com.tamabee.api_hr.dto.response.attendance.ShiftSwapRequestResponse;
 import com.tamabee.api_hr.dto.response.attendance.ShiftTemplateResponse;
@@ -27,7 +28,9 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -103,12 +106,13 @@ public class ShiftServiceImpl implements IShiftService {
         UserEntity employee = userRepository.findByIdAndDeletedFalse(request.getEmployeeId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
 
-        // Kiểm tra overlap: không được phân 2 ca trùng nhau cho cùng nhân viên trong
-        // cùng ngày
-        // ShiftAssignment không có soft delete nên dùng existsByEmployeeIdAndWorkDate
-        boolean hasOverlap = shiftAssignmentRepository.existsByEmployeeIdAndWorkDate(
-                request.getEmployeeId(), request.getWorkDate());
-        if (hasOverlap) {
+        // Kiểm tra overlap thời gian: không được phân 2 ca trùng giờ cho cùng nhân viên trong cùng ngày
+        boolean hasTimeOverlap = shiftAssignmentRepository.existsTimeOverlap(
+                request.getEmployeeId(),
+                request.getWorkDate(),
+                shiftTemplate.getStartTime(),
+                shiftTemplate.getEndTime());
+        if (hasTimeOverlap) {
             throw new ConflictException(ErrorCode.SHIFT_OVERLAP_EXISTS);
         }
 
@@ -126,55 +130,80 @@ public class ShiftServiceImpl implements IShiftService {
                 .findByIdAndDeletedFalse(request.getShiftTemplateId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.SHIFT_TEMPLATE_NOT_FOUND));
 
+        // Xác định khoảng ngày cần phân ca
+        LocalDate startDate = request.getStartDate();
+        LocalDate endDate = request.getEndDate() != null ? request.getEndDate() : startDate;
+
+        // Validate date range
+        if (endDate.isBefore(startDate)) {
+            throw new ConflictException(ErrorCode.INVALID_DATE_RANGE);
+        }
+
         List<ShiftAssignmentResponse> successfulAssignments = new ArrayList<>();
         List<BatchAssignmentResult.FailedAssignment> failedAssignments = new ArrayList<>();
 
-        for (Long employeeId : request.getEmployeeIds()) {
-            try {
-                // Validate employee exists
-                UserEntity employee = userRepository.findByIdAndDeletedFalse(employeeId).orElse(null);
-                if (employee == null) {
+        // Tính tổng số request = số nhân viên * số ngày
+        long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1;
+        int totalRequested = request.getEmployeeIds().size() * (int) daysBetween;
+
+        // Lặp qua từng ngày trong khoảng
+        LocalDate currentDate = startDate;
+        while (!currentDate.isAfter(endDate)) {
+            final LocalDate workDate = currentDate;
+
+            // Lặp qua từng nhân viên
+            for (Long employeeId : request.getEmployeeIds()) {
+                try {
+                    // Validate employee exists
+                    UserEntity employee = userRepository.findByIdAndDeletedFalse(employeeId).orElse(null);
+                    if (employee == null) {
+                        failedAssignments.add(BatchAssignmentResult.FailedAssignment.builder()
+                                .employeeId(employeeId)
+                                .reason("Nhân viên không tồn tại")
+                                .build());
+                        continue;
+                    }
+
+                    // Kiểm tra overlap thời gian - chỉ chặn nếu trùng giờ
+                    boolean hasTimeOverlap = shiftAssignmentRepository.existsTimeOverlap(
+                            employeeId,
+                            workDate,
+                            shiftTemplate.getStartTime(),
+                            shiftTemplate.getEndTime());
+                    if (hasTimeOverlap) {
+                        String employeeName = employee.getProfile() != null ? employee.getProfile().getName()
+                                : employee.getEmail();
+                        failedAssignments.add(BatchAssignmentResult.FailedAssignment.builder()
+                                .employeeId(employeeId)
+                                .employeeName(employeeName)
+                                .reason("Ca bị trùng giờ với ca khác trong ngày " + workDate)
+                                .build());
+                        continue;
+                    }
+
+                    // Tạo assignment
+                    ShiftAssignmentRequest assignRequest = new ShiftAssignmentRequest();
+                    assignRequest.setEmployeeId(employeeId);
+                    assignRequest.setShiftTemplateId(request.getShiftTemplateId());
+                    assignRequest.setWorkDate(workDate);
+
+                    ShiftAssignmentEntity entity = shiftMapper.toEntity(assignRequest);
+                    entity = shiftAssignmentRepository.save(entity);
+
+                    successfulAssignments.add(shiftMapper.toResponse(entity, employee, shiftTemplate, null));
+                } catch (Exception e) {
                     failedAssignments.add(BatchAssignmentResult.FailedAssignment.builder()
                             .employeeId(employeeId)
-                            .reason("Nhân viên không tồn tại")
+                            .reason(e.getMessage())
                             .build());
-                    continue;
                 }
-
-                // Kiểm tra overlap - ShiftAssignment không có soft delete
-                boolean hasOverlap = shiftAssignmentRepository.existsByEmployeeIdAndWorkDate(
-                        employeeId, request.getWorkDate());
-                if (hasOverlap) {
-                    String employeeName = employee.getProfile() != null ? employee.getProfile().getName()
-                            : employee.getEmail();
-                    failedAssignments.add(BatchAssignmentResult.FailedAssignment.builder()
-                            .employeeId(employeeId)
-                            .employeeName(employeeName)
-                            .reason("Đã có ca làm việc trong ngày này")
-                            .build());
-                    continue;
-                }
-
-                // Tạo assignment
-                ShiftAssignmentRequest assignRequest = new ShiftAssignmentRequest();
-                assignRequest.setEmployeeId(employeeId);
-                assignRequest.setShiftTemplateId(request.getShiftTemplateId());
-                assignRequest.setWorkDate(request.getWorkDate());
-
-                ShiftAssignmentEntity entity = shiftMapper.toEntity(assignRequest);
-                entity = shiftAssignmentRepository.save(entity);
-
-                successfulAssignments.add(shiftMapper.toResponse(entity, employee, shiftTemplate, null));
-            } catch (Exception e) {
-                failedAssignments.add(BatchAssignmentResult.FailedAssignment.builder()
-                        .employeeId(employeeId)
-                        .reason(e.getMessage())
-                        .build());
             }
+
+            currentDate = currentDate.plusDays(1);
         }
 
         return BatchAssignmentResult.builder()
-                .totalRequested(request.getEmployeeIds().size())
+                .totalRequested(totalRequested)
                 .successCount(successfulAssignments.size())
                 .failedCount(failedAssignments.size())
                 .successfulAssignments(successfulAssignments)
@@ -190,6 +219,60 @@ public class ShiftServiceImpl implements IShiftService {
                 .orElseThrow(() -> new NotFoundException(ErrorCode.SHIFT_ASSIGNMENT_NOT_FOUND));
 
         shiftAssignmentRepository.delete(entity);
+    }
+
+    @Override
+    @Transactional
+    public BatchDeleteResult batchDeleteShiftAssignments(BatchDeleteShiftAssignmentRequest request) {
+        // Xác định khoảng ngày cần xóa
+        LocalDate startDate = request.getStartDate();
+        LocalDate endDate = request.getEndDate() != null ? request.getEndDate() : startDate;
+
+        // Validate date range
+        if (endDate.isBefore(startDate)) {
+            throw new ConflictException(ErrorCode.INVALID_DATE_RANGE);
+        }
+
+        int successCount = 0;
+        int failedCount = 0;
+
+        // Tính tổng số request = số nhân viên * số ngày
+        long daysBetween = java.time.temporal.ChronoUnit.DAYS.between(startDate, endDate) + 1;
+        int totalRequested = request.getEmployeeIds().size() * (int) daysBetween;
+
+        // Lặp qua từng ngày trong khoảng
+        LocalDate currentDate = startDate;
+        while (!currentDate.isAfter(endDate)) {
+            final LocalDate workDate = currentDate;
+
+            // Lặp qua từng nhân viên
+            for (Long employeeId : request.getEmployeeIds()) {
+                try {
+                    // Tìm tất cả assignments của nhân viên trong ngày này với status SCHEDULED
+                    List<ShiftAssignmentEntity> assignments = shiftAssignmentRepository
+                            .findByEmployeeIdAndWorkDateAndStatus(employeeId, workDate, ShiftAssignmentStatus.SCHEDULED);
+
+                    if (!assignments.isEmpty()) {
+                        // Xóa tất cả assignments tìm được
+                        shiftAssignmentRepository.deleteAll(assignments);
+                        successCount += assignments.size();
+                    } else {
+                        // Không có assignment nào để xóa - vẫn tính là thất bại
+                        failedCount++;
+                    }
+                } catch (Exception e) {
+                    failedCount++;
+                }
+            }
+
+            currentDate = currentDate.plusDays(1);
+        }
+
+        return BatchDeleteResult.builder()
+                .totalRequested(totalRequested)
+                .successCount(successCount)
+                .failedCount(failedCount)
+                .build();
     }
 
     @Override
@@ -258,6 +341,9 @@ public class ShiftServiceImpl implements IShiftService {
             throw new ConflictException(ErrorCode.SHIFT_SWAP_NOT_ALLOWED);
         }
 
+        // Kiểm tra xem sau khi swap có bị trùng giờ với các ca khác không
+        validateSwapTimeOverlap(requesterAssignment, targetAssignment);
+
         ShiftSwapRequestEntity entity = shiftMapper.toEntity(request, employeeId);
         entity = shiftSwapRequestRepository.save(entity);
 
@@ -275,12 +361,6 @@ public class ShiftServiceImpl implements IShiftService {
             throw new ConflictException(ErrorCode.SHIFT_SWAP_ALREADY_PROCESSED);
         }
 
-        // Update swap request
-        swapRequest.setStatus(SwapRequestStatus.APPROVED);
-        swapRequest.setApprovedBy(approverId);
-        swapRequest.setApprovedAt(LocalDateTime.now());
-        swapRequest = shiftSwapRequestRepository.save(swapRequest);
-
         // Update both assignments - ShiftAssignment không có soft delete
         ShiftAssignmentEntity requesterAssignment = shiftAssignmentRepository
                 .findById(swapRequest.getRequesterAssignmentId())
@@ -289,6 +369,15 @@ public class ShiftServiceImpl implements IShiftService {
         ShiftAssignmentEntity targetAssignment = shiftAssignmentRepository
                 .findById(swapRequest.getTargetAssignmentId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.SHIFT_ASSIGNMENT_NOT_FOUND));
+
+        // Kiểm tra lại xem sau khi swap có bị trùng giờ với các ca khác không
+        validateSwapTimeOverlap(requesterAssignment, targetAssignment);
+
+        // Update swap request
+        swapRequest.setStatus(SwapRequestStatus.APPROVED);
+        swapRequest.setApprovedBy(approverId);
+        swapRequest.setApprovedAt(LocalDateTime.now());
+        swapRequest = shiftSwapRequestRepository.save(swapRequest);
 
         // Swap the assignments
         Long tempEmployeeId = requesterAssignment.getEmployeeId();
@@ -395,5 +484,85 @@ public class ShiftServiceImpl implements IShiftService {
 
         return shiftMapper.toResponse(entity, requester, targetEmployee,
                 requesterAssignmentResponse, targetAssignmentResponse, approver);
+    }
+
+    /**
+     * Kiểm tra xem sau khi swap 2 ca có bị trùng giờ với các ca khác trong cùng ngày không
+     */
+    private void validateSwapTimeOverlap(ShiftAssignmentEntity requesterAssignment,
+                                          ShiftAssignmentEntity targetAssignment) {
+        // Lấy thông tin shift template
+        ShiftTemplateEntity requesterTemplate = shiftTemplateRepository
+                .findByIdAndDeletedFalse(requesterAssignment.getShiftTemplateId())
+                .orElseThrow(() -> new NotFoundException(ErrorCode.SHIFT_TEMPLATE_NOT_FOUND));
+
+        ShiftTemplateEntity targetTemplate = shiftTemplateRepository
+                .findByIdAndDeletedFalse(targetAssignment.getShiftTemplateId())
+                .orElseThrow(() -> new NotFoundException(ErrorCode.SHIFT_TEMPLATE_NOT_FOUND));
+
+        // Lấy thời gian ca từ template
+        LocalTime requesterStart = requesterTemplate.getStartTime();
+        LocalTime requesterEnd = requesterTemplate.getEndTime();
+
+        LocalTime targetStart = targetTemplate.getStartTime();
+        LocalTime targetEnd = targetTemplate.getEndTime();
+
+        // Kiểm tra requester nhận ca của target có bị trùng với các ca khác của requester không
+        List<ShiftAssignmentEntity> requesterOtherAssignments = shiftAssignmentRepository
+                .findByEmployeeIdAndWorkDate(requesterAssignment.getEmployeeId(), requesterAssignment.getWorkDate());
+
+        for (ShiftAssignmentEntity otherAssignment : requesterOtherAssignments) {
+            // Bỏ qua chính ca đang swap
+            if (otherAssignment.getId().equals(requesterAssignment.getId())) {
+                continue;
+            }
+
+            // Lấy thời gian ca khác từ template
+            ShiftTemplateEntity otherTemplate = shiftTemplateRepository
+                    .findByIdAndDeletedFalse(otherAssignment.getShiftTemplateId())
+                    .orElse(null);
+            if (otherTemplate == null) continue;
+
+            LocalTime otherStart = otherTemplate.getStartTime();
+            LocalTime otherEnd = otherTemplate.getEndTime();
+
+            // Kiểm tra trùng giờ: ca target với ca khác của requester
+            if (isTimeOverlap(targetStart, targetEnd, otherStart, otherEnd)) {
+                throw new ConflictException(ErrorCode.SHIFT_OVERLAP_EXISTS);
+            }
+        }
+
+        // Kiểm tra target nhận ca của requester có bị trùng với các ca khác của target không
+        List<ShiftAssignmentEntity> targetOtherAssignments = shiftAssignmentRepository
+                .findByEmployeeIdAndWorkDate(targetAssignment.getEmployeeId(), targetAssignment.getWorkDate());
+
+        for (ShiftAssignmentEntity otherAssignment : targetOtherAssignments) {
+            // Bỏ qua chính ca đang swap
+            if (otherAssignment.getId().equals(targetAssignment.getId())) {
+                continue;
+            }
+
+            // Lấy thời gian ca khác từ template
+            ShiftTemplateEntity otherTemplate = shiftTemplateRepository
+                    .findByIdAndDeletedFalse(otherAssignment.getShiftTemplateId())
+                    .orElse(null);
+            if (otherTemplate == null) continue;
+
+            LocalTime otherStart = otherTemplate.getStartTime();
+            LocalTime otherEnd = otherTemplate.getEndTime();
+
+            // Kiểm tra trùng giờ: ca requester với ca khác của target
+            if (isTimeOverlap(requesterStart, requesterEnd, otherStart, otherEnd)) {
+                throw new ConflictException(ErrorCode.SHIFT_OVERLAP_EXISTS);
+            }
+        }
+    }
+
+    /**
+     * Kiểm tra xem 2 khoảng thời gian có trùng nhau không
+     */
+    private boolean isTimeOverlap(LocalTime start1, LocalTime end1, LocalTime start2, LocalTime end2) {
+        // Trùng nếu: start1 < end2 AND start2 < end1
+        return start1.isBefore(end2) && start2.isBefore(end1);
     }
 }

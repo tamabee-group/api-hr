@@ -1,20 +1,7 @@
 package com.tamabee.api_hr.controller.company;
 
-import com.tamabee.api_hr.dto.request.attendance.*;
-import com.tamabee.api_hr.dto.response.attendance.BatchAssignmentResult;
-import com.tamabee.api_hr.dto.response.attendance.ShiftAssignmentResponse;
-import com.tamabee.api_hr.dto.response.attendance.ShiftSwapRequestResponse;
-import com.tamabee.api_hr.dto.response.attendance.ShiftTemplateResponse;
-import com.tamabee.api_hr.entity.user.UserEntity;
-import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.enums.ShiftAssignmentStatus;
-import com.tamabee.api_hr.enums.SwapRequestStatus;
-import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.dto.common.BaseResponse;
-import com.tamabee.api_hr.repository.user.UserRepository;
-import com.tamabee.api_hr.service.company.interfaces.IShiftService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDate;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -24,9 +11,39 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.dto.request.attendance.BatchDeleteShiftAssignmentRequest;
+import com.tamabee.api_hr.dto.request.attendance.BatchShiftAssignmentRequest;
+import com.tamabee.api_hr.dto.request.attendance.ShiftAssignmentQuery;
+import com.tamabee.api_hr.dto.request.attendance.ShiftAssignmentRequest;
+import com.tamabee.api_hr.dto.request.attendance.ShiftSwapRequest;
+import com.tamabee.api_hr.dto.request.attendance.ShiftTemplateRequest;
+import com.tamabee.api_hr.dto.request.attendance.SwapRequestQuery;
+import com.tamabee.api_hr.dto.response.attendance.BatchAssignmentResult;
+import com.tamabee.api_hr.dto.response.attendance.BatchDeleteResult;
+import com.tamabee.api_hr.dto.response.attendance.ShiftAssignmentResponse;
+import com.tamabee.api_hr.dto.response.attendance.ShiftSwapRequestResponse;
+import com.tamabee.api_hr.dto.response.attendance.ShiftTemplateResponse;
+import com.tamabee.api_hr.entity.user.UserEntity;
+import com.tamabee.api_hr.enums.RoleConstants;
+import com.tamabee.api_hr.enums.ShiftAssignmentStatus;
+import com.tamabee.api_hr.enums.SwapRequestStatus;
+import com.tamabee.api_hr.exception.NotFoundException;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.IShiftService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Controller quản lý ca làm việc cho admin/manager công ty.
@@ -123,7 +140,7 @@ public class ShiftController {
         query.setWorkDateTo(workDateTo);
         query.setStatus(status);
 
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "workDate"));
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.ASC, "workDate"));
         Page<ShiftAssignmentResponse> assignments = shiftService.getShiftAssignments(query, pageable);
         return ResponseEntity.ok(BaseResponse.success(assignments, "Lấy danh sách phân ca thành công"));
     }
@@ -150,6 +167,17 @@ public class ShiftController {
         BatchAssignmentResult result = shiftService.batchAssignShift(request);
         return ResponseEntity.status(HttpStatus.CREATED)
                 .body(BaseResponse.created(result, "Phân ca hàng loạt thành công"));
+    }
+
+    /**
+     * Xóa phân ca hàng loạt theo nhân viên và khoảng thời gian
+     * DELETE /api/company/shifts/assignments/batch
+     */
+    @DeleteMapping("/assignments/batch")
+    public ResponseEntity<BaseResponse<BatchDeleteResult>> batchDeleteShiftAssignments(
+            @Valid @RequestBody BatchDeleteShiftAssignmentRequest request) {
+        BatchDeleteResult result = shiftService.batchDeleteShiftAssignments(request);
+        return ResponseEntity.ok(BaseResponse.success(result, "Xóa phân ca hàng loạt thành công"));
     }
 
     /**

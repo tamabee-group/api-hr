@@ -1,31 +1,36 @@
 package com.tamabee.api_hr.controller.company;
 
-import com.tamabee.api_hr.dto.config.*;
+import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
+
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.dto.config.AllowanceConfig;
+import com.tamabee.api_hr.dto.config.AttendanceConfig;
+import com.tamabee.api_hr.dto.config.BreakConfig;
+import com.tamabee.api_hr.dto.config.DeductionConfig;
+import com.tamabee.api_hr.dto.config.OvertimeConfig;
+import com.tamabee.api_hr.dto.config.PayrollConfig;
 import com.tamabee.api_hr.dto.request.attendance.AttendanceConfigRequest;
 import com.tamabee.api_hr.dto.request.attendance.BreakConfigRequest;
 import com.tamabee.api_hr.dto.request.payroll.AllowanceConfigRequest;
 import com.tamabee.api_hr.dto.request.payroll.DeductionConfigRequest;
 import com.tamabee.api_hr.dto.request.payroll.OvertimeConfigRequest;
 import com.tamabee.api_hr.dto.request.payroll.PayrollConfigRequest;
-import com.tamabee.api_hr.dto.request.schedule.WorkModeConfigRequest;
 import com.tamabee.api_hr.dto.response.attendance.BreakConfigResponse;
 import com.tamabee.api_hr.dto.response.company.CompanySettingsResponse;
 import com.tamabee.api_hr.dto.response.payroll.OvertimeConfigResponse;
-import com.tamabee.api_hr.dto.response.schedule.WorkModeChangeLogResponse;
-import com.tamabee.api_hr.dto.response.schedule.WorkModeConfigResponse;
 import com.tamabee.api_hr.enums.RoleConstants;
 import com.tamabee.api_hr.mapper.company.BreakConfigMapper;
 import com.tamabee.api_hr.mapper.company.OvertimeConfigMapper;
-import com.tamabee.api_hr.dto.common.BaseResponse;
 import com.tamabee.api_hr.service.company.interfaces.ICompanySettingsService;
+
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
-
-import java.util.List;
 
 /**
  * Controller quản lý cấu hình chấm công và tính lương của công ty.
@@ -51,32 +56,12 @@ public class CompanySettingsController {
     }
 
     /**
-     * Lấy cấu hình work mode của công ty
+     * Lấy cấu hình chấm công
      */
-    @GetMapping("/work-mode")
-    public ResponseEntity<BaseResponse<WorkModeConfigResponse>> getWorkModeConfig() {
-        WorkModeConfigResponse config = companySettingsService.getWorkModeConfig();
-        return ResponseEntity.ok(BaseResponse.success(config, "Lấy cấu hình work mode thành công"));
-    }
-
-    /**
-     * Cập nhật cấu hình work mode của công ty
-     */
-    @PutMapping("/work-mode")
-    public ResponseEntity<BaseResponse<WorkModeConfigResponse>> updateWorkModeConfig(
-            @Valid @RequestBody WorkModeConfigRequest request) {
-        String changedBy = getCurrentUserEmail();
-        WorkModeConfigResponse config = companySettingsService.updateWorkModeConfig(request, changedBy);
-        return ResponseEntity.ok(BaseResponse.success(config, "Cập nhật cấu hình work mode thành công"));
-    }
-
-    /**
-     * Lấy lịch sử thay đổi work mode của công ty
-     */
-    @GetMapping("/work-mode/logs")
-    public ResponseEntity<BaseResponse<List<WorkModeChangeLogResponse>>> getWorkModeChangeLogs() {
-        List<WorkModeChangeLogResponse> logs = companySettingsService.getWorkModeChangeLogs();
-        return ResponseEntity.ok(BaseResponse.success(logs, "Lấy lịch sử thay đổi work mode thành công"));
+    @GetMapping("/attendance")
+    public ResponseEntity<BaseResponse<AttendanceConfig>> getAttendanceConfig() {
+        AttendanceConfig config = companySettingsService.getAttendanceConfig();
+        return ResponseEntity.ok(BaseResponse.success(config, "Lấy cấu hình chấm công thành công"));
     }
 
     /**
@@ -158,13 +143,5 @@ public class CompanySettingsController {
             @Valid @RequestBody DeductionConfigRequest request) {
         DeductionConfig config = companySettingsService.updateDeductionConfig(request);
         return ResponseEntity.ok(BaseResponse.success(config, "Cập nhật cấu hình khấu trừ thành công"));
-    }
-
-    /**
-     * Lấy email của user đang đăng nhập
-     */
-    private String getCurrentUserEmail() {
-        var authentication = SecurityContextHolder.getContext().getAuthentication();
-        return authentication.getName();
     }
 }

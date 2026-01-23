@@ -1,12 +1,20 @@
 package com.tamabee.api_hr.service.company.interfaces;
 
-import com.tamabee.api_hr.dto.request.attendance.*;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
+import com.tamabee.api_hr.dto.request.attendance.BatchDeleteShiftAssignmentRequest;
+import com.tamabee.api_hr.dto.request.attendance.BatchShiftAssignmentRequest;
+import com.tamabee.api_hr.dto.request.attendance.ShiftAssignmentQuery;
+import com.tamabee.api_hr.dto.request.attendance.ShiftAssignmentRequest;
+import com.tamabee.api_hr.dto.request.attendance.ShiftSwapRequest;
+import com.tamabee.api_hr.dto.request.attendance.ShiftTemplateRequest;
+import com.tamabee.api_hr.dto.request.attendance.SwapRequestQuery;
 import com.tamabee.api_hr.dto.response.attendance.BatchAssignmentResult;
+import com.tamabee.api_hr.dto.response.attendance.BatchDeleteResult;
 import com.tamabee.api_hr.dto.response.attendance.ShiftAssignmentResponse;
 import com.tamabee.api_hr.dto.response.attendance.ShiftSwapRequestResponse;
 import com.tamabee.api_hr.dto.response.attendance.ShiftTemplateResponse;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 /**
  * Service interface cho quản lý ca làm việc.
@@ -47,6 +55,11 @@ public interface IShiftService {
      * Phân ca cho nhiều nhân viên cùng lúc.
      */
     BatchAssignmentResult batchAssignShift(BatchShiftAssignmentRequest request);
+
+    /**
+     * Xóa phân ca hàng loạt theo nhân viên và khoảng thời gian.
+     */
+    BatchDeleteResult batchDeleteShiftAssignments(BatchDeleteShiftAssignmentRequest request);
 
     /**
      * Hủy phân ca.

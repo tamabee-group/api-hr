@@ -1,5 +1,15 @@
 package com.tamabee.api_hr.service.company.impl;
 
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import com.tamabee.api_hr.enums.UserStatus;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.tamabee.api_hr.dto.request.payroll.ContractQuery;
 import com.tamabee.api_hr.dto.request.payroll.ContractRequest;
 import com.tamabee.api_hr.dto.response.payroll.ContractResponse;
@@ -14,15 +24,8 @@ import com.tamabee.api_hr.mapper.company.EmploymentContractMapper;
 import com.tamabee.api_hr.repository.contract.EmploymentContractRepository;
 import com.tamabee.api_hr.repository.user.UserRepository;
 import com.tamabee.api_hr.service.company.interfaces.IEmploymentContractService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Service implementation cho quản lý hợp đồng lao động
@@ -34,6 +37,29 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
     private final EmploymentContractRepository contractRepository;
     private final UserRepository userRepository;
     private final EmploymentContractMapper contractMapper;
+
+    /**
+     * Cập nhật trạng thái nhân viên dựa trên hợp đồng
+     * - Có hợp đồng ACTIVE -> status = ACTIVE
+     * - Không có hợp đồng ACTIVE -> status = INACTIVE
+     */
+    private void updateEmployeeStatus(Long employeeId) {
+        UserEntity employee = userRepository.findById(employeeId).orElse(null);
+        if (employee == null) {
+            return;
+        }
+
+        // Kiểm tra có hợp đồng ACTIVE không
+        LocalDate today = LocalDate.now();
+        boolean hasActiveContract = contractRepository.findActiveByEmployeeId(employeeId, today).isPresent();
+
+        // Cập nhật status
+        UserStatus newStatus = hasActiveContract ? UserStatus.ACTIVE : UserStatus.INACTIVE;
+        if (employee.getStatus() != newStatus) {
+            employee.setStatus(newStatus);
+            userRepository.save(employee);
+        }
+    }
 
     @Override
     @Transactional
@@ -58,8 +84,17 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
         String contractNumber = generateContractNumber();
         entity.setContractNumber(contractNumber);
 
+        // Kiểm tra nếu endDate trong quá khứ thì set status = EXPIRED
+        LocalDate today = LocalDate.now();
+        if (request.getEndDate() != null && request.getEndDate().isBefore(today)) {
+            entity.setStatus(ContractStatus.EXPIRED);
+        }
+
         // Lưu vào database
         entity = contractRepository.save(entity);
+
+        // Cập nhật trạng thái nhân viên
+        updateEmployeeStatus(employeeId);
 
         return contractMapper.toResponse(entity, employee);
     }
@@ -112,8 +147,19 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
         // Cập nhật entity
         contractMapper.updateEntity(contract, request);
 
+        // Kiểm tra nếu endDate trong quá khứ và contract đang ACTIVE thì chuyển sang EXPIRED
+        LocalDate today = LocalDate.now();
+        if (contract.getStatus() == ContractStatus.ACTIVE && 
+            request.getEndDate() != null && 
+            request.getEndDate().isBefore(today)) {
+            contract.setStatus(ContractStatus.EXPIRED);
+        }
+
         // Lưu vào database
         contract = contractRepository.save(contract);
+
+        // Cập nhật trạng thái nhân viên
+        updateEmployeeStatus(contract.getEmployeeId());
 
         return contractMapper.toResponse(contract, employee);
     }
@@ -142,6 +188,9 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
         // Lưu vào database
         contract = contractRepository.save(contract);
 
+        // Cập nhật trạng thái nhân viên
+        updateEmployeeStatus(contract.getEmployeeId());
+
         return contractMapper.toResponse(contract, employee);
     }
 
@@ -154,10 +203,9 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
 
         // Tìm contract hiện tại
         LocalDate today = LocalDate.now();
-        EmploymentContractEntity contract = contractRepository.findActiveByEmployeeId(employeeId, today)
-                .orElseThrow(() -> new NotFoundException(ErrorCode.CONTRACT_NOT_FOUND));
-
-        return contractMapper.toResponse(contract, employee);
+        return contractRepository.findActiveByEmployeeId(employeeId, today)
+                .map(contract -> contractMapper.toResponse(contract, employee))
+                .orElse(null);
     }
 
     @Override
@@ -205,6 +253,7 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
             contracts = contractRepository.findByDeletedFalse(pageable);
         }
 
+        // Map sang response và sort theo employeeCode, contractNumber
         return contracts.map(contract -> {
             UserEntity employee = userRepository.findById(contract.getEmployeeId()).orElse(null);
             return contractMapper.toResponse(contract, employee);
@@ -219,6 +268,28 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
 
         UserEntity employee = userRepository.findById(contract.getEmployeeId()).orElse(null);
         return contractMapper.toResponse(contract, employee);
+    }
+
+    @Override
+    @Transactional
+    public void deleteContract(Long contractId) {
+        // Tìm contract
+        EmploymentContractEntity contract = contractRepository.findByIdAndDeletedFalse(contractId)
+                .orElseThrow(() -> new NotFoundException(ErrorCode.CONTRACT_NOT_FOUND));
+
+        // Chỉ cho phép xóa contract đã hết hiệu lực (TERMINATED hoặc EXPIRED)
+        if (contract.getStatus() == ContractStatus.ACTIVE) {
+            throw new BadRequestException(ErrorCode.CONTRACT_CANNOT_DELETE_ACTIVE);
+        }
+
+        Long employeeId = contract.getEmployeeId();
+
+        // Soft delete
+        contract.setDeleted(true);
+        contractRepository.save(contract);
+
+        // Cập nhật trạng thái nhân viên
+        updateEmployeeStatus(employeeId);
     }
 
     /**

@@ -1,13 +1,14 @@
 package com.tamabee.api_hr.service.company.interfaces;
 
-import com.tamabee.api_hr.dto.request.wallet.PaymentRequest;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import com.tamabee.api_hr.dto.request.payroll.PayrollAdjustmentRequest;
 import com.tamabee.api_hr.dto.request.payroll.PayrollPeriodRequest;
+import com.tamabee.api_hr.dto.request.wallet.PaymentRequest;
 import com.tamabee.api_hr.dto.response.payroll.PayrollItemResponse;
 import com.tamabee.api_hr.dto.response.payroll.PayrollPeriodDetailResponse;
 import com.tamabee.api_hr.dto.response.payroll.PayrollPeriodResponse;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
 
 /**
  * Service interface cho quản lý kỳ lương
@@ -82,4 +83,59 @@ public interface IPayrollPeriodService {
      * @return Thông tin kỳ lương sau khi thanh toán
      */
     PayrollPeriodResponse markAsPaid(Long periodId, PaymentRequest request);
+
+    /**
+     * Từ chối kỳ lương - chuyển status từ REVIEWING về DRAFT
+     *
+     * @param periodId ID kỳ lương
+     * @param reason   Lý do từ chối
+     * @return Thông tin kỳ lương sau khi từ chối
+     */
+    PayrollPeriodResponse rejectPayroll(Long periodId, String reason);
+
+    /**
+     * Lấy danh sách payroll items của kỳ lương với filter và pagination
+     *
+     * @param periodId   ID kỳ lương
+     * @param employeeId Filter theo employee (optional)
+     * @param status     Filter theo status (optional)
+     * @param pageable   Thông tin phân trang
+     * @return Danh sách payroll items
+     */
+    Page<PayrollItemResponse> getPayrollItems(Long periodId, Long employeeId, String status, Pageable pageable);
+
+    /**
+     * Lấy chi tiết 1 payroll item
+     *
+     * @param itemId ID payroll item
+     * @return Chi tiết payroll item
+     */
+    PayrollItemResponse getPayrollItemById(Long itemId);
+
+    /**
+     * Lấy lịch sử payslip của employee
+     *
+     * @param employeeId ID nhân viên
+     * @param pageable   Thông tin phân trang
+     * @return Danh sách payslip của nhân viên
+     */
+    Page<PayrollItemResponse> getEmployeePayslips(Long employeeId, Pageable pageable);
+
+    /**
+     * Lấy tất cả payslips của công ty
+     *
+     * @param employeeId ID nhân viên (optional filter)
+     * @param status     Status (optional filter)
+     * @param pageable   Thông tin phân trang
+     * @return Danh sách tất cả payslips
+     */
+    Page<PayrollItemResponse> getAllCompanyPayslips(Long employeeId, String status, Pageable pageable);
+
+    /**
+     * Generate PDF payslip cho payroll item
+     *
+     * @param itemId ID của payroll item
+     * @return PDF data dưới dạng byte array
+     */
+    byte[] generatePayslipPdf(Long itemId);
 }

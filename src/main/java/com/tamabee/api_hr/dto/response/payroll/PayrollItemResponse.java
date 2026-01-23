@@ -27,6 +27,10 @@ public class PayrollItemResponse {
     private String employeeName;
     private String employeeCode;
     private Long companyId;
+    
+    // Thông tin kỳ lương
+    private Integer year;
+    private Integer month;
 
     // Thông tin lương
     private SalaryType salaryType;

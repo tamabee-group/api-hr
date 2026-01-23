@@ -311,56 +311,7 @@ COMMENT ON COLUMN company_settings.default_work_end_time IS 'Giờ kết thúc l
 COMMENT ON COLUMN company_settings.default_break_minutes IS 'Thời gian nghỉ giải lao mặc định (phút) (dùng cho FIXED_HOURS mode)';
 
 -- =====================================================
--- 12. WORK_SCHEDULES - Lịch làm việc
--- =====================================================
-CREATE TABLE work_schedules (
-    id BIGSERIAL PRIMARY KEY,
-    company_id BIGINT NOT NULL,
-    name VARCHAR(255) NOT NULL,
-    type VARCHAR(50) NOT NULL,
-    is_default BOOLEAN NOT NULL DEFAULT FALSE,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    schedule_data JSONB,
-    description VARCHAR(500),
-    deleted BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(50),
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by VARCHAR(50)
-);
-
-CREATE INDEX idx_work_schedules_deleted ON work_schedules(deleted);
-CREATE INDEX idx_work_schedules_company_id ON work_schedules(company_id);
-CREATE INDEX idx_work_schedules_type ON work_schedules(type);
-CREATE INDEX idx_work_schedules_is_default ON work_schedules(is_default);
-CREATE INDEX idx_work_schedules_is_active ON work_schedules(company_id, is_active);
-
-COMMENT ON COLUMN work_schedules.is_active IS 'Trạng thái hoạt động của lịch làm việc (FALSE khi switch sang FIXED_HOURS)';
-
--- =====================================================
--- 13. WORK_SCHEDULE_ASSIGNMENTS - Gán lịch làm việc cho nhân viên
--- =====================================================
-CREATE TABLE work_schedule_assignments (
-    id BIGSERIAL PRIMARY KEY,
-    employee_id BIGINT NOT NULL,
-    schedule_id BIGINT NOT NULL,
-    effective_from DATE NOT NULL,
-    effective_to DATE,
-    deleted BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(50),
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by VARCHAR(50)
-);
-
-CREATE INDEX idx_work_schedule_assignments_deleted ON work_schedule_assignments(deleted);
-CREATE INDEX idx_work_schedule_assignments_employee_id ON work_schedule_assignments(employee_id);
-CREATE INDEX idx_work_schedule_assignments_schedule_id ON work_schedule_assignments(schedule_id);
-CREATE INDEX idx_work_schedule_assignments_effective_from ON work_schedule_assignments(effective_from);
-CREATE INDEX idx_work_schedule_assignments_effective_to ON work_schedule_assignments(effective_to);
-
--- =====================================================
--- 14. ATTENDANCE_RECORDS - Bản ghi chấm công
+-- 12. ATTENDANCE_RECORDS - Bản ghi chấm công
 -- =====================================================
 CREATE TABLE attendance_records (
     id BIGSERIAL PRIMARY KEY,
@@ -601,35 +552,6 @@ CREATE INDEX idx_adjustment_requests_work_date ON attendance_adjustment_requests
 CREATE INDEX idx_adjustment_requests_break_record_id ON attendance_adjustment_requests(break_record_id);
 CREATE INDEX idx_adjustment_requests_assigned_to ON attendance_adjustment_requests(assigned_to);
 CREATE INDEX idx_adjustment_requests_status ON attendance_adjustment_requests(status);
-
--- =====================================================
--- 17. SCHEDULE_SELECTIONS - Lựa chọn lịch làm việc của nhân viên
--- =====================================================
-CREATE TABLE schedule_selections (
-    id BIGSERIAL PRIMARY KEY,
-    employee_id BIGINT NOT NULL,
-    company_id BIGINT NOT NULL,
-    schedule_id BIGINT NOT NULL,
-    effective_from DATE NOT NULL,
-    effective_to DATE,
-    -- Trạng thái
-    status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
-    -- Approval info
-    approved_by BIGINT,
-    approved_at TIMESTAMP,
-    rejection_reason VARCHAR(500),
-    deleted BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(50),
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by VARCHAR(50)
-);
-
-CREATE INDEX idx_schedule_selections_deleted ON schedule_selections(deleted);
-CREATE INDEX idx_schedule_selections_employee_id ON schedule_selections(employee_id);
-CREATE INDEX idx_schedule_selections_company_id ON schedule_selections(company_id);
-CREATE INDEX idx_schedule_selections_schedule_id ON schedule_selections(schedule_id);
-CREATE INDEX idx_schedule_selections_status ON schedule_selections(status);
 
 -- =====================================================
 -- 18. HOLIDAYS - Ngày lễ

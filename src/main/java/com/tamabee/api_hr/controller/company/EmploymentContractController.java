@@ -1,16 +1,8 @@
 package com.tamabee.api_hr.controller.company;
 
-import com.tamabee.api_hr.dto.request.payroll.ContractQuery;
-import com.tamabee.api_hr.dto.request.payroll.ContractRequest;
-import com.tamabee.api_hr.dto.response.payroll.ContractResponse;
-import com.tamabee.api_hr.enums.ContractStatus;
-import com.tamabee.api_hr.enums.ContractType;
-import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.dto.common.BaseResponse;
-import com.tamabee.api_hr.repository.user.UserRepository;
-import com.tamabee.api_hr.service.company.interfaces.IEmploymentContractService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -19,10 +11,28 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
-import java.util.List;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.dto.request.payroll.ContractQuery;
+import com.tamabee.api_hr.dto.request.payroll.ContractRequest;
+import com.tamabee.api_hr.dto.request.payroll.TerminateContractRequest;
+import com.tamabee.api_hr.dto.response.payroll.ContractResponse;
+import com.tamabee.api_hr.enums.ContractStatus;
+import com.tamabee.api_hr.enums.ContractType;
+import com.tamabee.api_hr.enums.RoleConstants;
+import com.tamabee.api_hr.service.company.interfaces.IEmploymentContractService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Controller quản lý hợp đồng lao động.
@@ -35,7 +45,6 @@ import java.util.List;
 public class EmploymentContractController {
 
     private final IEmploymentContractService contractService;
-    private final UserRepository userRepository;
 
     /**
      * Lấy danh sách hợp đồng của công ty với filter
@@ -138,8 +147,18 @@ public class EmploymentContractController {
     @PostMapping("/{id}/terminate")
     public ResponseEntity<BaseResponse<ContractResponse>> terminateContract(
             @PathVariable Long id,
-            @RequestParam String reason) {
-        ContractResponse response = contractService.terminateContract(id, reason);
+            @RequestBody @Valid TerminateContractRequest request) {
+        ContractResponse response = contractService.terminateContract(id, request.getReason());
         return ResponseEntity.ok(BaseResponse.success(response, "Chấm dứt hợp đồng thành công"));
+    }
+
+    /**
+     * Xóa hợp đồng (soft delete)
+     * DELETE /api/company/contracts/{id}
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<BaseResponse<Void>> deleteContract(@PathVariable Long id) {
+        contractService.deleteContract(id);
+        return ResponseEntity.ok(BaseResponse.success(null, "Xóa hợp đồng thành công"));
     }
 }

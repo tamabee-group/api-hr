@@ -1,14 +1,19 @@
 package com.tamabee.api_hr.entity.company;
 
-import com.tamabee.api_hr.entity.BaseEntity;
-import com.tamabee.api_hr.enums.WorkMode;
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
-import java.time.LocalTime;
+import com.tamabee.api_hr.entity.BaseEntity;
+import com.tamabee.api_hr.enums.WorkMode;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * Entity lưu trữ cấu hình chấm công và tính lương của từng công ty.
@@ -31,15 +36,6 @@ public class CompanySettingEntity extends BaseEntity {
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     private WorkMode workMode = WorkMode.FLEXIBLE_SHIFT;
-
-    // Giờ bắt đầu làm việc mặc định (dùng cho FIXED_HOURS mode)
-    private LocalTime defaultWorkStartTime;
-
-    // Giờ kết thúc làm việc mặc định (dùng cho FIXED_HOURS mode)
-    private LocalTime defaultWorkEndTime;
-
-    // Thời gian nghỉ giải lao mặc định (phút) (dùng cho FIXED_HOURS mode)
-    private Integer defaultBreakMinutes;
 
     // Cấu hình chấm công (giờ làm việc, làm tròn, grace period, device/location)
     @JdbcTypeCode(SqlTypes.JSON)

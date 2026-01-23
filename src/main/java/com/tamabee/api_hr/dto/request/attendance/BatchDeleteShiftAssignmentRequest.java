@@ -8,21 +8,18 @@ import jakarta.validation.constraints.NotNull;
 import lombok.Data;
 
 /**
- * Request DTO cho phân ca hàng loạt
- * Hỗ trợ phân ca theo ngày đơn hoặc khoảng thời gian
+ * Request DTO cho xóa phân ca hàng loạt
+ * Hỗ trợ xóa theo danh sách nhân viên và khoảng thời gian
  */
 @Data
-public class BatchShiftAssignmentRequest {
+public class BatchDeleteShiftAssignmentRequest {
 
     @NotEmpty(message = "Danh sách nhân viên không được trống")
     private List<Long> employeeIds;
 
-    @NotNull(message = "Mẫu ca không được trống")
-    private Long shiftTemplateId;
-
     @NotNull(message = "Ngày bắt đầu không được trống")
     private LocalDate startDate;
 
-    // Nếu endDate = null hoặc = startDate thì chỉ phân ca cho 1 ngày
+    // Nếu endDate = null hoặc = startDate thì chỉ xóa phân ca cho 1 ngày
     private LocalDate endDate;
 }

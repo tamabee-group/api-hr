@@ -173,9 +173,9 @@ public class PayrollPeriodMapper {
     }
 
     /**
-     * Chuyển đổi PayrollItemEntity sang Response DTO
+     * Chuyển đổi PayrollItemEntity sang Response DTO với year/month từ period
      */
-    public PayrollItemResponse toItemResponse(PayrollItemEntity entity, Map<Long, UserEntity> userMap) {
+    public PayrollItemResponse toItemResponse(PayrollItemEntity entity, Map<Long, UserEntity> userMap, Integer year, Integer month) {
         if (entity == null) {
             return null;
         }
@@ -206,6 +206,8 @@ public class PayrollPeriodMapper {
                 .employeeId(entity.getEmployeeId())
                 .employeeName(employeeName)
                 .employeeCode(employeeCode)
+                .year(year)
+                .month(month)
                 .salaryType(entity.getSalaryType())
                 .baseSalary(entity.getBaseSalary())
                 .calculatedBaseSalary(entity.getCalculatedBaseSalary())
@@ -233,6 +235,13 @@ public class PayrollPeriodMapper {
                 .adjustedAt(entity.getAdjustedAt())
                 .status(entity.getStatus())
                 .build();
+    }
+
+    /**
+     * Chuyển đổi PayrollItemEntity sang Response DTO (không có year/month)
+     */
+    public PayrollItemResponse toItemResponse(PayrollItemEntity entity, Map<Long, UserEntity> userMap) {
+        return toItemResponse(entity, userMap, null, null);
     }
 
     /**

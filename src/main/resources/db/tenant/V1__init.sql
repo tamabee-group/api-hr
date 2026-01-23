@@ -109,9 +109,6 @@ CREATE TABLE company_settings (
     deduction_config JSONB,
     break_config JSONB,
     work_mode VARCHAR(20) NOT NULL DEFAULT 'FLEXIBLE_SHIFT',
-    default_work_start_time TIME,
-    default_work_end_time TIME,
-    default_break_minutes INTEGER,
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(50),
@@ -121,45 +118,6 @@ CREATE TABLE company_settings (
 
 CREATE INDEX idx_company_settings_deleted ON company_settings(deleted);
 CREATE INDEX idx_company_settings_work_mode ON company_settings(work_mode);
-
-CREATE TABLE work_schedules (
-    id BIGSERIAL PRIMARY KEY,
-    name VARCHAR(255) NOT NULL,
-    type VARCHAR(50) NOT NULL,
-    is_default BOOLEAN NOT NULL DEFAULT FALSE,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    schedule_data JSONB,
-    description VARCHAR(500),
-    deleted BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(50),
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by VARCHAR(50)
-);
-
-CREATE INDEX idx_work_schedules_deleted ON work_schedules(deleted);
-CREATE INDEX idx_work_schedules_type ON work_schedules(type);
-CREATE INDEX idx_work_schedules_is_default ON work_schedules(is_default);
-CREATE INDEX idx_work_schedules_is_active ON work_schedules(is_active);
-
-CREATE TABLE work_schedule_assignments (
-    id BIGSERIAL PRIMARY KEY,
-    employee_id BIGINT NOT NULL,
-    schedule_id BIGINT NOT NULL,
-    effective_from DATE NOT NULL,
-    effective_to DATE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(50),
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by VARCHAR(50),
-    CONSTRAINT fk_work_schedule_assignments_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_work_schedule_assignments_schedule FOREIGN KEY (schedule_id) REFERENCES work_schedules(id) ON UPDATE CASCADE ON DELETE CASCADE
-);
-
-CREATE INDEX idx_work_schedule_assignments_employee_id ON work_schedule_assignments(employee_id);
-CREATE INDEX idx_work_schedule_assignments_schedule_id ON work_schedule_assignments(schedule_id);
-CREATE INDEX idx_work_schedule_assignments_effective_from ON work_schedule_assignments(effective_from);
-CREATE INDEX idx_work_schedule_assignments_effective_to ON work_schedule_assignments(effective_to);
 
 CREATE TABLE shift_templates (
     id BIGSERIAL PRIMARY KEY,
@@ -318,28 +276,6 @@ CREATE INDEX idx_adjustment_requests_work_date ON attendance_adjustment_requests
 CREATE INDEX idx_adjustment_requests_break_record_id ON attendance_adjustment_requests(break_record_id);
 CREATE INDEX idx_adjustment_requests_assigned_to ON attendance_adjustment_requests(assigned_to);
 CREATE INDEX idx_adjustment_requests_status ON attendance_adjustment_requests(status);
-
-CREATE TABLE schedule_selections (
-    id BIGSERIAL PRIMARY KEY,
-    employee_id BIGINT NOT NULL,
-    schedule_id BIGINT NOT NULL,
-    effective_from DATE NOT NULL,
-    effective_to DATE,
-    status VARCHAR(50) NOT NULL DEFAULT 'PENDING',
-    approved_by BIGINT,
-    approved_at TIMESTAMP,
-    rejection_reason VARCHAR(500),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(50),
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by VARCHAR(50),
-    CONSTRAINT fk_schedule_selections_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
-    CONSTRAINT fk_schedule_selections_schedule FOREIGN KEY (schedule_id) REFERENCES work_schedules(id) ON UPDATE CASCADE ON DELETE CASCADE
-);
-
-CREATE INDEX idx_schedule_selections_employee_id ON schedule_selections(employee_id);
-CREATE INDEX idx_schedule_selections_schedule_id ON schedule_selections(schedule_id);
-CREATE INDEX idx_schedule_selections_status ON schedule_selections(status);
 
 CREATE TABLE holidays (
     id BIGSERIAL PRIMARY KEY,
@@ -525,6 +461,9 @@ CREATE TABLE payroll_items (
     adjusted_by BIGINT,
     adjusted_at TIMESTAMP,
     status VARCHAR(50) NOT NULL DEFAULT 'CALCULATED',
+    -- Commission fields for Tamabee employees
+    commission_amount DECIMAL(15,2) DEFAULT 0,
+    commission_details JSONB,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     CONSTRAINT fk_payroll_items_period FOREIGN KEY (payroll_period_id) REFERENCES payroll_periods(id) ON UPDATE CASCADE ON DELETE CASCADE,
@@ -534,56 +473,6 @@ CREATE TABLE payroll_items (
 CREATE INDEX idx_payroll_item_period_id ON payroll_items(payroll_period_id);
 CREATE INDEX idx_payroll_item_employee_id ON payroll_items(employee_id);
 CREATE INDEX idx_payroll_item_period_employee ON payroll_items(payroll_period_id, employee_id);
-
-CREATE TABLE payroll_records (
-    id BIGSERIAL PRIMARY KEY,
-    employee_id BIGINT NOT NULL,
-    year INTEGER NOT NULL,
-    month INTEGER NOT NULL,
-    salary_type VARCHAR(50) NOT NULL,
-    base_salary DECIMAL(15, 2) NOT NULL DEFAULT 0,
-    working_days INTEGER,
-    working_hours INTEGER,
-    regular_overtime_pay DECIMAL(15, 2) DEFAULT 0,
-    night_overtime_pay DECIMAL(15, 2) DEFAULT 0,
-    holiday_overtime_pay DECIMAL(15, 2) DEFAULT 0,
-    weekend_overtime_pay DECIMAL(15, 2) DEFAULT 0,
-    total_overtime_pay DECIMAL(15, 2) DEFAULT 0,
-    regular_overtime_hours INTEGER,
-    night_overtime_hours INTEGER,
-    holiday_overtime_hours INTEGER,
-    weekend_overtime_hours INTEGER,
-    allowance_details JSONB,
-    total_allowances DECIMAL(15, 2) DEFAULT 0,
-    deduction_details JSONB,
-    total_deductions DECIMAL(15, 2) DEFAULT 0,
-    total_break_minutes INTEGER DEFAULT 0,
-    break_type VARCHAR(20),
-    break_deduction_amount DECIMAL(15, 2) DEFAULT 0,
-    gross_salary DECIMAL(15, 2) NOT NULL DEFAULT 0,
-    net_salary DECIMAL(15, 2) NOT NULL DEFAULT 0,
-    status VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
-    payment_status VARCHAR(50) DEFAULT 'PENDING',
-    paid_at TIMESTAMP,
-    payment_reference VARCHAR(255),
-    notification_sent BOOLEAN NOT NULL DEFAULT FALSE,
-    notification_sent_at TIMESTAMP,
-    finalized_at TIMESTAMP,
-    finalized_by BIGINT,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    created_by VARCHAR(50),
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_by VARCHAR(50),
-    CONSTRAINT fk_payroll_records_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
-);
-
-CREATE INDEX idx_payroll_records_employee_id ON payroll_records(employee_id);
-CREATE INDEX idx_payroll_records_year ON payroll_records(year);
-CREATE INDEX idx_payroll_records_month ON payroll_records(month);
-CREATE INDEX idx_payroll_records_status ON payroll_records(status);
-CREATE INDEX idx_payroll_records_payment_status ON payroll_records(payment_status);
-CREATE INDEX idx_payroll_records_period ON payroll_records(year, month);
-CREATE INDEX idx_payroll_records_employee_period ON payroll_records(employee_id, year, month);
 
 CREATE TABLE employment_contracts (
     id BIGSERIAL PRIMARY KEY,

@@ -1,23 +1,18 @@
 package com.tamabee.api_hr.service.company.interfaces;
 
-import java.util.List;
-
 import com.tamabee.api_hr.dto.config.AllowanceConfig;
 import com.tamabee.api_hr.dto.config.AttendanceConfig;
 import com.tamabee.api_hr.dto.config.BreakConfig;
 import com.tamabee.api_hr.dto.config.DeductionConfig;
 import com.tamabee.api_hr.dto.config.OvertimeConfig;
 import com.tamabee.api_hr.dto.config.PayrollConfig;
-import com.tamabee.api_hr.dto.request.payroll.AllowanceConfigRequest;
 import com.tamabee.api_hr.dto.request.attendance.AttendanceConfigRequest;
 import com.tamabee.api_hr.dto.request.attendance.BreakConfigRequest;
+import com.tamabee.api_hr.dto.request.payroll.AllowanceConfigRequest;
 import com.tamabee.api_hr.dto.request.payroll.DeductionConfigRequest;
 import com.tamabee.api_hr.dto.request.payroll.OvertimeConfigRequest;
 import com.tamabee.api_hr.dto.request.payroll.PayrollConfigRequest;
-import com.tamabee.api_hr.dto.request.schedule.WorkModeConfigRequest;
 import com.tamabee.api_hr.dto.response.company.CompanySettingsResponse;
-import com.tamabee.api_hr.dto.response.schedule.WorkModeChangeLogResponse;
-import com.tamabee.api_hr.dto.response.schedule.WorkModeConfigResponse;
 
 /**
  * Service quản lý cấu hình chấm công và tính lương của công ty.
@@ -28,21 +23,6 @@ public interface ICompanySettingsService {
      * Lấy toàn bộ settings của tenant hiện tại
      */
     CompanySettingsResponse getSettings();
-
-    /**
-     * Lấy cấu hình work mode
-     */
-    WorkModeConfigResponse getWorkModeConfig();
-
-    /**
-     * Cập nhật cấu hình work mode
-     */
-    WorkModeConfigResponse updateWorkModeConfig(WorkModeConfigRequest request, String changedBy);
-
-    /**
-     * Lấy lịch sử thay đổi work mode
-     */
-    List<WorkModeChangeLogResponse> getWorkModeChangeLogs();
 
     /**
      * Cập nhật cấu hình chấm công

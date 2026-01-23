@@ -1,7 +1,9 @@
 package com.tamabee.api_hr.repository.payroll;
 
-import com.tamabee.api_hr.entity.payroll.PayrollItemEntity;
-import com.tamabee.api_hr.enums.PayrollItemStatus;
+import java.math.BigDecimal;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,9 +11,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
-import java.util.List;
-import java.util.Optional;
+import com.tamabee.api_hr.entity.payroll.PayrollItemEntity;
+import com.tamabee.api_hr.enums.PayrollItemStatus;
 
 @Repository
 public interface PayrollItemRepository extends JpaRepository<PayrollItemEntity, Long> {
@@ -87,4 +88,32 @@ public interface PayrollItemRepository extends JpaRepository<PayrollItemEntity, 
          */
         @Query("DELETE FROM PayrollItemEntity pi WHERE pi.payrollPeriodId = :payrollPeriodId")
         void deleteByPayrollPeriodId(@Param("payrollPeriodId") Long payrollPeriodId);
+
+        /**
+         * Lấy payroll items theo period và employee (phân trang)
+         */
+        Page<PayrollItemEntity> findByPayrollPeriodIdAndEmployeeId(
+                        Long payrollPeriodId, Long employeeId, Pageable pageable);
+
+        /**
+         * Lấy payroll items theo period và status (phân trang)
+         */
+        Page<PayrollItemEntity> findByPayrollPeriodIdAndStatus(
+                        Long payrollPeriodId, PayrollItemStatus status, Pageable pageable);
+
+        /**
+         * Lấy payroll items theo period, employee và status (phân trang)
+         */
+        Page<PayrollItemEntity> findByPayrollPeriodIdAndEmployeeIdAndStatus(
+                        Long payrollPeriodId, Long employeeId, PayrollItemStatus status, Pageable pageable);
+
+        /**
+         * Lấy payroll items theo employee và status (phân trang)
+         */
+        Page<PayrollItemEntity> findByEmployeeIdAndStatus(Long employeeId, String status, Pageable pageable);
+
+        /**
+         * Lấy payroll items theo status (phân trang)
+         */
+        Page<PayrollItemEntity> findByStatus(String status, Pageable pageable);
 }

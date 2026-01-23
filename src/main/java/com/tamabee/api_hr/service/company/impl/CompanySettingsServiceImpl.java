@@ -1,9 +1,5 @@
 package com.tamabee.api_hr.service.company.impl;
 
-import java.time.LocalDateTime;
-import java.util.List;
-import java.util.stream.Collectors;
-
 import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -24,25 +20,20 @@ import com.tamabee.api_hr.dto.request.payroll.AllowanceConfigRequest;
 import com.tamabee.api_hr.dto.request.payroll.DeductionConfigRequest;
 import com.tamabee.api_hr.dto.request.payroll.OvertimeConfigRequest;
 import com.tamabee.api_hr.dto.request.payroll.PayrollConfigRequest;
-import com.tamabee.api_hr.dto.request.schedule.WorkModeConfigRequest;
 import com.tamabee.api_hr.dto.response.company.CompanySettingsResponse;
-import com.tamabee.api_hr.dto.response.schedule.WorkModeChangeLogResponse;
-import com.tamabee.api_hr.dto.response.schedule.WorkModeConfigResponse;
-import com.tamabee.api_hr.entity.audit.WorkModeChangeLogEntity;
 import com.tamabee.api_hr.entity.company.CompanySettingEntity;
 import com.tamabee.api_hr.enums.ErrorCode;
-import com.tamabee.api_hr.enums.WorkMode;
 import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.ConflictException;
 import com.tamabee.api_hr.exception.InternalServerException;
 import com.tamabee.api_hr.repository.attendance.WorkModeChangeLogRepository;
-import com.tamabee.api_hr.repository.attendance.WorkScheduleRepository;
 import com.tamabee.api_hr.repository.company.CompanySettingsRepository;
 import com.tamabee.api_hr.service.calculator.LegalBreakRequirements;
 import com.tamabee.api_hr.service.calculator.LegalOvertimeRequirements;
 import com.tamabee.api_hr.service.company.cache.CompanySettingsCache;
 import com.tamabee.api_hr.service.company.interfaces.ICompanySettingsService;
 
+import jakarta.persistence.EntityManager;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
@@ -57,11 +48,11 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
 
     private final CompanySettingsRepository companySettingsRepository;
     private final WorkModeChangeLogRepository workModeChangeLogRepository;
-    private final WorkScheduleRepository workScheduleRepository;
     private final ObjectMapper objectMapper;
     private final LegalBreakRequirements legalBreakRequirements;
     private final LegalOvertimeRequirements legalOvertimeRequirements;
     private final ObjectProvider<CompanySettingsCache> settingsCacheProvider;
+    private final EntityManager entityManager;
 
     /**
      * Lấy cache instance, trả về null nếu không có request context
@@ -94,64 +85,6 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
 
     @Override
     @Transactional
-    public WorkModeConfigResponse getWorkModeConfig() {
-        CompanySettingEntity entity = findSettings();
-        return toWorkModeConfigResponse(entity);
-    }
-
-    @Override
-    @Transactional
-    public WorkModeConfigResponse updateWorkModeConfig(WorkModeConfigRequest request,
-                                                       String changedBy) {
-        CompanySettingEntity entity = findSettings();
-        WorkMode previousMode = entity.getWorkMode();
-        WorkMode newMode = request.getMode();
-
-        // Validate request
-        validateWorkModeConfig(request);
-
-        // Nếu mode thay đổi, tạo audit log và xử lý schedules
-        if (previousMode != newMode) {
-            // Nếu switch sang FIXED_HOURS, đánh dấu tất cả schedules là inactive
-            if (newMode == WorkMode.FIXED_HOURS) {
-                deactivateAllSchedules();
-            } else {
-                // Nếu switch sang FLEXIBLE_SHIFT, reactivate schedules
-                reactivateAllSchedules();
-            }
-
-            // Tạo audit log
-            createWorkModeChangeLog(previousMode, newMode, changedBy, request.getReason());
-        }
-
-        // Cập nhật entity
-        entity.setWorkMode(newMode);
-        entity.setDefaultWorkStartTime(request.getDefaultWorkStartTime());
-        entity.setDefaultWorkEndTime(request.getDefaultWorkEndTime());
-        entity.setDefaultBreakMinutes(request.getDefaultBreakMinutes());
-
-        companySettingsRepository.save(entity);
-
-        // Invalidate cache
-        invalidateCacheIfAvailable();
-
-        log.info("Đã cập nhật work mode: {} -> {}", previousMode, newMode);
-
-        return toWorkModeConfigResponse(entity);
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public List<WorkModeChangeLogResponse> getWorkModeChangeLogs() {
-        List<WorkModeChangeLogEntity> logs = workModeChangeLogRepository
-                .findAllByOrderByChangedAtDesc();
-        return logs.stream()
-                .map(this::toWorkModeChangeLogResponse)
-                .collect(Collectors.toList());
-    }
-
-    @Override
-    @Transactional
     public AttendanceConfig updateAttendanceConfig(AttendanceConfigRequest request) {
         CompanySettingEntity entity = findSettings();
 
@@ -167,9 +100,12 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
         // Validate config
         validateAttendanceConfig(config);
 
-        // Serialize và lưu
-        entity.setAttendanceConfig(serializeConfig(config));
-        companySettingsRepository.save(entity);
+        // Serialize và lưu - detach/merge để force Hibernate detect JSONB changes
+        String serializedConfig = serializeConfig(config);
+        entityManager.detach(entity);
+        entity.setAttendanceConfig(serializedConfig);
+        entityManager.merge(entity);
+        entityManager.flush();
 
         // Invalidate cache
         invalidateCacheIfAvailable();
@@ -189,8 +125,11 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
 
         updatePayrollConfigFields(config, request);
 
+        // Detach/merge để force Hibernate detect JSONB changes
+        entityManager.detach(entity);
         entity.setPayrollConfig(serializeConfig(config));
-        companySettingsRepository.save(entity);
+        entityManager.merge(entity);
+        entityManager.flush();
 
         // Invalidate cache
         invalidateCacheIfAvailable();
@@ -213,8 +152,11 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
         // Validate overtime config
         validateOvertimeConfig(config);
 
+        // Detach/merge để force Hibernate detect JSONB changes
+        entityManager.detach(entity);
         entity.setOvertimeConfig(serializeConfig(config));
-        companySettingsRepository.save(entity);
+        entityManager.merge(entity);
+        entityManager.flush();
 
         // Invalidate cache
         invalidateCacheIfAvailable();
@@ -236,8 +178,11 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
             config.setAllowances(request.getAllowances());
         }
 
+        // Detach/merge để force Hibernate detect JSONB changes
+        entityManager.detach(entity);
         entity.setAllowanceConfig(serializeConfig(config));
-        companySettingsRepository.save(entity);
+        entityManager.merge(entity);
+        entityManager.flush();
 
         // Invalidate cache
         invalidateCacheIfAvailable();
@@ -257,8 +202,11 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
 
         updateDeductionConfigFields(config, request);
 
+        // Detach/merge để force Hibernate detect JSONB changes
+        entityManager.detach(entity);
         entity.setDeductionConfig(serializeConfig(config));
-        companySettingsRepository.save(entity);
+        entityManager.merge(entity);
+        entityManager.flush();
 
         // Invalidate cache
         invalidateCacheIfAvailable();
@@ -349,8 +297,11 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
         // Validate break config
         validateBreakConfig(config);
 
+        // Detach/merge để force Hibernate detect JSONB changes
+        entityManager.detach(entity);
         entity.setBreakConfig(serializeConfig(config));
-        companySettingsRepository.save(entity);
+        entityManager.merge(entity);
+        entityManager.flush();
 
         // Invalidate cache
         invalidateCacheIfAvailable();
@@ -435,19 +386,14 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
      * Chuyển entity thành response
      */
     private CompanySettingsResponse toResponse(CompanySettingEntity entity) {
-        // Lấy thông tin work mode change log gần nhất
-        List<WorkModeChangeLogEntity> logs = workModeChangeLogRepository
-                .findAllByOrderByChangedAtDesc();
-        LocalDateTime lastModeChangeAt = logs.isEmpty() ? null : logs.get(0).getChangedAt();
-        String lastModeChangeBy = logs.isEmpty() ? null : logs.get(0).getChangedBy();
+        // Lấy default work hours từ attendance config (nguồn dữ liệu duy nhất)
+        AttendanceConfig attendanceConfig = deserializeConfig(entity.getAttendanceConfig(), AttendanceConfig.class);
 
         WorkModeConfig workModeConfig = WorkModeConfig.builder()
                 .mode(entity.getWorkMode())
-                .defaultWorkStartTime(entity.getDefaultWorkStartTime())
-                .defaultWorkEndTime(entity.getDefaultWorkEndTime())
-                .defaultBreakMinutes(entity.getDefaultBreakMinutes())
-                .lastModeChangeAt(lastModeChangeAt)
-                .lastModeChangeBy(lastModeChangeBy)
+                .defaultWorkStartTime(attendanceConfig != null ? attendanceConfig.getDefaultWorkStartTime() : null)
+                .defaultWorkEndTime(attendanceConfig != null ? attendanceConfig.getDefaultWorkEndTime() : null)
+                .defaultBreakMinutes(attendanceConfig != null ? attendanceConfig.getDefaultBreakMinutes() : null)
                 .build();
 
         PayrollConfig payrollConfig = deserializeConfig(entity.getPayrollConfig(), PayrollConfig.class);
@@ -456,7 +402,7 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
         return CompanySettingsResponse.builder()
                 .id(entity.getId())
                 .workModeConfig(workModeConfig)
-                .attendanceConfig(deserializeConfig(entity.getAttendanceConfig(), AttendanceConfig.class))
+                .attendanceConfig(attendanceConfig)
                 .breakConfig(deserializeConfig(entity.getBreakConfig(), BreakConfig.class))
                 .payrollConfig(payrollConfig)
                 .overtimeConfig(deserializeConfig(entity.getOvertimeConfig(), OvertimeConfig.class))
@@ -465,99 +411,6 @@ public class CompanySettingsServiceImpl implements ICompanySettingsService {
                 .createdAt(entity.getCreatedAt())
                 .updatedAt(entity.getUpdatedAt())
                 .build();
-    }
-
-    /**
-     * Chuyển entity thành WorkModeConfigResponse
-     */
-    private WorkModeConfigResponse toWorkModeConfigResponse(CompanySettingEntity entity) {
-        // Lấy thông tin work mode change log gần nhất
-        List<WorkModeChangeLogEntity> logs = workModeChangeLogRepository
-                .findAllByOrderByChangedAtDesc();
-        LocalDateTime lastModeChangeAt = logs.isEmpty() ? null : logs.get(0).getChangedAt();
-        String lastModeChangeBy = logs.isEmpty() ? null : logs.get(0).getChangedBy();
-
-        return WorkModeConfigResponse.builder()
-                .mode(entity.getWorkMode())
-                .defaultWorkStartTime(entity.getDefaultWorkStartTime())
-                .defaultWorkEndTime(entity.getDefaultWorkEndTime())
-                .defaultBreakMinutes(entity.getDefaultBreakMinutes())
-                .lastModeChangeAt(lastModeChangeAt)
-                .lastModeChangeBy(lastModeChangeBy)
-                .build();
-    }
-
-    /**
-     * Chuyển WorkModeChangeLogEntity thành response
-     */
-    private WorkModeChangeLogResponse toWorkModeChangeLogResponse(WorkModeChangeLogEntity entity) {
-        return WorkModeChangeLogResponse.builder()
-                .id(entity.getId())
-                .previousMode(entity.getPreviousMode())
-                .newMode(entity.getNewMode())
-                .changedBy(entity.getChangedBy())
-                .changedAt(entity.getChangedAt())
-                .reason(entity.getReason())
-                .build();
-    }
-
-    /**
-     * Validate work mode config request
-     */
-    private void validateWorkModeConfig(WorkModeConfigRequest request) {
-        if (request.getMode() == WorkMode.FIXED_HOURS) {
-            // FIXED_HOURS mode yêu cầu cấu hình giờ làm việc mặc định
-            if (request.getDefaultWorkStartTime() == null || request.getDefaultWorkEndTime() == null) {
-                throw new BadRequestException(
-                        "Chế độ giờ cố định yêu cầu cấu hình giờ làm việc mặc định",
-                        ErrorCode.FIXED_HOURS_MISSING_CONFIG);
-            }
-            // Validate giờ bắt đầu phải trước giờ kết thúc
-            if (!request.getDefaultWorkStartTime().isBefore(request.getDefaultWorkEndTime())) {
-                throw new BadRequestException("Giờ bắt đầu phải trước giờ kết thúc", ErrorCode.INVALID_WORK_TIME);
-            }
-        }
-    }
-
-    /**
-     * Đánh dấu tất cả schedules là inactive
-     * Được gọi khi switch sang FIXED_HOURS mode
-     */
-    private void deactivateAllSchedules() {
-        workScheduleRepository.findByDeletedFalse(org.springframework.data.domain.Pageable.unpaged())
-                .forEach(schedule -> {
-                    schedule.setIsActive(false);
-                    workScheduleRepository.save(schedule);
-                });
-        log.info("Đã đánh dấu tất cả schedules là inactive");
-    }
-
-    /**
-     * Reactivate tất cả schedules
-     * Được gọi khi switch sang FLEXIBLE_SHIFT mode
-     */
-    private void reactivateAllSchedules() {
-        workScheduleRepository.findByDeletedFalse(org.springframework.data.domain.Pageable.unpaged())
-                .forEach(schedule -> {
-                    schedule.setIsActive(true);
-                    workScheduleRepository.save(schedule);
-                });
-        log.info("Đã reactivate tất cả schedules");
-    }
-
-    /**
-     * Tạo audit log khi work mode thay đổi
-     */
-    private void createWorkModeChangeLog(WorkMode previousMode, WorkMode newMode,
-            String changedBy, String reason) {
-        WorkModeChangeLogEntity logEntity = new WorkModeChangeLogEntity();
-        logEntity.setPreviousMode(previousMode);
-        logEntity.setNewMode(newMode);
-        logEntity.setChangedBy(changedBy);
-        logEntity.setChangedAt(LocalDateTime.now());
-        logEntity.setReason(reason);
-        workModeChangeLogRepository.save(logEntity);
-        log.info("Đã tạo audit log cho thay đổi work mode: {} -> {}", previousMode, newMode);
     }
 
     /**

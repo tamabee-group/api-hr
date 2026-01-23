@@ -1,13 +1,12 @@
 package com.tamabee.api_hr.service.calculator.interfaces;
 
-import com.tamabee.api_hr.dto.config.BreakConfig;
-import com.tamabee.api_hr.dto.config.WorkScheduleData;
-import com.tamabee.api_hr.dto.result.WorkingHoursResult;
-import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
-
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+
+import com.tamabee.api_hr.dto.config.BreakConfig;
+import com.tamabee.api_hr.dto.result.WorkingHoursResult;
+import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
 
 /**
  * Interface cho việc tính toán giờ làm việc
@@ -21,15 +20,13 @@ public interface IWorkingHoursCalculator {
      * @param checkOut     Thời gian check-out
      * @param breakRecords Danh sách bản ghi giải lao
      * @param breakConfig  Cấu hình giải lao
-     * @param schedule     Lịch làm việc
      * @return Kết quả tính toán working hours
      */
     WorkingHoursResult calculateWorkingHours(
             LocalDateTime checkIn,
             LocalDateTime checkOut,
             List<BreakRecordEntity> breakRecords,
-            BreakConfig breakConfig,
-            WorkScheduleData schedule);
+            BreakConfig breakConfig);
 
     /**
      * Tính working hours cho overnight shift (qua đêm)
@@ -38,15 +35,13 @@ public interface IWorkingHoursCalculator {
      * @param checkOut     Thời gian check-out
      * @param breakRecords Danh sách bản ghi giải lao
      * @param breakConfig  Cấu hình giải lao
-     * @param schedule     Lịch làm việc
      * @return Kết quả tính toán working hours
      */
     WorkingHoursResult calculateOvernightWorkingHours(
             LocalDateTime checkIn,
             LocalDateTime checkOut,
             List<BreakRecordEntity> breakRecords,
-            BreakConfig breakConfig,
-            WorkScheduleData schedule);
+            BreakConfig breakConfig);
 
     /**
      * Kiểm tra xem shift có qua đêm không

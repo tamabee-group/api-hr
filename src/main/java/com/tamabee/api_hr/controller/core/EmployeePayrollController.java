@@ -1,12 +1,12 @@
 package com.tamabee.api_hr.controller.core;
 
-import com.tamabee.api_hr.dto.response.payroll.PayrollRecordResponse;
+import com.tamabee.api_hr.dto.response.payroll.PayrollItemResponse;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.RoleConstants;
 import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.dto.common.BaseResponse;
 import com.tamabee.api_hr.repository.user.UserRepository;
-import com.tamabee.api_hr.service.company.interfaces.IPayrollService;
+import com.tamabee.api_hr.service.company.interfaces.IPayrollPeriodService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -21,8 +21,6 @@ import org.springframework.web.bind.annotation.*;
 
 import java.net.URLEncoder;
 import java.nio.charset.StandardCharsets;
-import java.time.YearMonth;
-import java.time.format.DateTimeFormatter;
 
 /**
  * Controller cho nhân viên xem lương của mình.
@@ -34,62 +32,65 @@ import java.time.format.DateTimeFormatter;
 @PreAuthorize(RoleConstants.HAS_ALL_COMPANY_ACCESS)
 public class EmployeePayrollController {
 
-    private final IPayrollService payrollService;
+    private final IPayrollPeriodService payrollPeriodService;
     private final UserRepository userRepository;
-
-    private static final DateTimeFormatter PERIOD_FORMATTER = DateTimeFormatter.ofPattern("yyyy-MM");
 
     /**
      * Lấy lịch sử lương của nhân viên (phân trang)
      * GET /api/employee/payroll
      */
     @GetMapping
-    public ResponseEntity<BaseResponse<Page<PayrollRecordResponse>>> getMyPayrollHistory(
+    public ResponseEntity<BaseResponse<Page<PayrollItemResponse>>> getMyPayrollHistory(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "10") int size) {
         UserEntity currentUser = getCurrentUser();
-        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "year", "month"));
-        Page<PayrollRecordResponse> records = payrollService.getEmployeePayrollHistory(
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
+        Page<PayrollItemResponse> items = payrollPeriodService.getEmployeePayslips(
                 currentUser.getId(), pageable);
-        return ResponseEntity.ok(BaseResponse.success(records, "Lấy lịch sử lương thành công"));
+        return ResponseEntity.ok(BaseResponse.success(items, "Lấy lịch sử lương thành công"));
     }
 
     /**
-     * Lấy chi tiết lương của nhân viên theo kỳ
-     * GET /api/employee/payroll/{period}
+     * Lấy chi tiết lương của nhân viên theo ID
+     * GET /api/employee/payroll/{itemId}
      */
-    @GetMapping("/{period}")
-    public ResponseEntity<BaseResponse<PayrollRecordResponse>> getMyPayrollByPeriod(
-            @PathVariable String period) {
+    @GetMapping("/{itemId}")
+    public ResponseEntity<BaseResponse<PayrollItemResponse>> getMyPayrollById(
+            @PathVariable Long itemId) {
         UserEntity currentUser = getCurrentUser();
-        YearMonth yearMonth = YearMonth.parse(period, PERIOD_FORMATTER);
-        PayrollRecordResponse record = payrollService.getEmployeePayroll(currentUser.getId(), yearMonth);
-        return ResponseEntity.ok(BaseResponse.success(record, "Lấy thông tin lương thành công"));
+        PayrollItemResponse item = payrollPeriodService.getPayrollItemById(itemId);
+        
+        // Kiểm tra item thuộc về nhân viên hiện tại
+        if (!item.getEmployeeId().equals(currentUser.getId())) {
+            throw NotFoundException.payrollRecord(itemId);
+        }
+        
+        return ResponseEntity.ok(BaseResponse.success(item, "Lấy thông tin lương thành công"));
     }
 
     /**
      * Download payslip PDF của nhân viên
-     * GET /api/employee/payroll/{recordId}/download
+     * GET /api/employee/payroll/{itemId}/download
      */
-    @GetMapping("/{recordId}/download")
-    public ResponseEntity<byte[]> downloadPayslip(@PathVariable Long recordId) {
+    @GetMapping("/{itemId}/download")
+    public ResponseEntity<byte[]> downloadPayslip(@PathVariable Long itemId) {
         UserEntity currentUser = getCurrentUser();
 
-        // Kiểm tra bản ghi lương thuộc về nhân viên hiện tại
-        PayrollRecordResponse record = payrollService.getPayrollRecordById(recordId);
-        if (!record.getEmployeeId().equals(currentUser.getId())) {
-            throw NotFoundException.payrollRecord(recordId);
+        // Kiểm tra item thuộc về nhân viên hiện tại
+        PayrollItemResponse item = payrollPeriodService.getPayrollItemById(itemId);
+        if (!item.getEmployeeId().equals(currentUser.getId())) {
+            throw NotFoundException.payrollRecord(itemId);
         }
 
-        byte[] pdfData = payrollService.generatePayslip(recordId);
+        byte[] pdfData = payrollPeriodService.generatePayslipPdf(itemId);
 
         // Tên file theo ngôn ngữ - encode UTF-8 cho header
         String payslipLabel = getPayslipLabel(currentUser.getLanguage());
         String filename = String.format("%s_%s_%d-%02d.pdf",
                 payslipLabel,
-                currentUser.getEmployeeCode(),
-                record.getYear(),
-                record.getMonth());
+                item.getEmployeeCode(),
+                item.getYear(),
+                item.getMonth());
 
         // Encode filename cho Content-Disposition (RFC 5987)
         String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8).replace("+", "%20");

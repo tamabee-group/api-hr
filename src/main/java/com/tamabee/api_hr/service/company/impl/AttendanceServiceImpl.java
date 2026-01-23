@@ -1,8 +1,22 @@
 package com.tamabee.api_hr.service.company.impl;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.YearMonth;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.tamabee.api_hr.dto.config.AttendanceConfig;
 import com.tamabee.api_hr.dto.config.BreakConfig;
-import com.tamabee.api_hr.dto.config.WorkScheduleData;
 import com.tamabee.api_hr.dto.request.attendance.AdjustAttendanceRequest;
 import com.tamabee.api_hr.dto.request.attendance.AttendanceQueryRequest;
 import com.tamabee.api_hr.dto.request.attendance.CheckInRequest;
@@ -11,7 +25,6 @@ import com.tamabee.api_hr.dto.request.attendance.StartBreakRequest;
 import com.tamabee.api_hr.dto.response.attendance.AttendanceRecordResponse;
 import com.tamabee.api_hr.dto.response.attendance.AttendanceSummaryResponse;
 import com.tamabee.api_hr.dto.response.attendance.ShiftInfoResponse;
-import com.tamabee.api_hr.dto.response.schedule.WorkScheduleResponse;
 import com.tamabee.api_hr.entity.attendance.AttendanceRecordEntity;
 import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
 import com.tamabee.api_hr.entity.attendance.ShiftAssignmentEntity;
@@ -19,7 +32,6 @@ import com.tamabee.api_hr.entity.attendance.ShiftTemplateEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.AttendanceStatus;
 import com.tamabee.api_hr.enums.ErrorCode;
-import com.tamabee.api_hr.enums.ScheduleType;
 import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.ConflictException;
 import com.tamabee.api_hr.exception.NotFoundException;
@@ -33,23 +45,9 @@ import com.tamabee.api_hr.service.calculator.interfaces.IBreakCalculator;
 import com.tamabee.api_hr.service.calculator.interfaces.ITimeRoundingCalculator;
 import com.tamabee.api_hr.service.company.cache.ICachedCompanySettingsService;
 import com.tamabee.api_hr.service.company.interfaces.IAttendanceService;
-import com.tamabee.api_hr.service.company.interfaces.IWorkScheduleService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.YearMonth;
-import java.time.temporal.ChronoUnit;
-import java.util.List;
-import java.util.Optional;
 
 /**
  * Service implementation quản lý chấm công.
@@ -67,7 +65,6 @@ public class AttendanceServiceImpl implements IAttendanceService {
     private final ShiftAssignmentRepository shiftAssignmentRepository;
     private final ShiftTemplateRepository shiftTemplateRepository;
     private final ICachedCompanySettingsService cachedSettingsService;
-    private final IWorkScheduleService workScheduleService;
     private final ITimeRoundingCalculator timeRoundingCalculator;
     private final IBreakCalculator breakCalculator;
     private final AttendanceMapper attendanceMapper;
@@ -79,12 +76,6 @@ public class AttendanceServiceImpl implements IAttendanceService {
     public AttendanceRecordResponse checkIn(Long employeeId, CheckInRequest request) {
         LocalDate today = LocalDate.now();
         LocalDateTime now = LocalDateTime.now();
-
-        // Kiểm tra đã check-in chưa
-        // AttendanceRecord không có soft delete
-        if (attendanceRecordRepository.existsByEmployeeIdAndWorkDate(employeeId, today)) {
-            throw new ConflictException("Đã check-in hôm nay", ErrorCode.ALREADY_CHECKED_IN);
-        }
 
         AttendanceConfig config = cachedSettingsService.getAttendanceConfig();
 
@@ -102,35 +93,70 @@ public class AttendanceServiceImpl implements IAttendanceService {
             }
         }
 
-        // Tạo bản ghi chấm công
-        AttendanceRecordEntity entity = new AttendanceRecordEntity();
-        entity.setEmployeeId(employeeId);
-        entity.setWorkDate(today);
-        entity.setOriginalCheckIn(now);
-        entity.setStatus(AttendanceStatus.PRESENT);
+        // Kiểm tra đã có attendance record hôm nay chưa
+        Optional<AttendanceRecordEntity> existingRecord = attendanceRecordRepository
+                .findByEmployeeIdAndWorkDate(employeeId, today);
 
-        // Lưu device và location info
-        entity.setCheckInDeviceId(request.getDeviceId());
-        entity.setCheckInLatitude(request.getLatitude());
-        entity.setCheckInLongitude(request.getLongitude());
+        AttendanceRecordEntity entity;
 
-        // Áp dụng làm tròn nếu được bật
-        LocalDateTime roundedCheckIn = now;
-        if (Boolean.TRUE.equals(config.getEnableRounding()) && config.getCheckInRounding() != null) {
-            roundedCheckIn = timeRoundingCalculator.roundTime(now, config.getCheckInRounding());
-        }
-        entity.setRoundedCheckIn(roundedCheckIn);
+        if (existingRecord.isPresent()) {
+            // Đã có record - đây là check-in ca thứ 2 trở đi
+            entity = existingRecord.get();
 
-        // Tính số phút đi muộn
-        WorkScheduleResponse schedule = workScheduleService.getEffectiveSchedule(employeeId, today);
-        if (schedule != null) {
-            int lateMinutes = calculateLateMinutes(roundedCheckIn, schedule, config);
-            entity.setLateMinutes(lateMinutes);
+            // Kiểm tra đã check-out ca trước chưa
+            if (entity.getOriginalCheckOut() == null) {
+                throw new ConflictException("Chưa check-out ca trước, không thể check-in ca mới", 
+                        ErrorCode.ALREADY_CHECKED_IN);
+            }
+
+            // Tạo break record cho khoảng thời gian giữa 2 ca
+            LocalDateTime previousCheckOut = entity.getOriginalCheckOut();
+            createBreakRecordBetweenShifts(entity, previousCheckOut, now);
+
+            // Cập nhật check-out thành thời gian check-in ca mới (mở rộng attendance record)
+            entity.setOriginalCheckOut(now);
+
+            // Áp dụng làm tròn cho check-out mới
+            LocalDateTime roundedCheckOut = now;
+            if (Boolean.TRUE.equals(config.getEnableRounding()) && config.getCheckOutRounding() != null) {
+                roundedCheckOut = timeRoundingCalculator.roundTime(now, config.getCheckOutRounding());
+            }
+            entity.setRoundedCheckOut(roundedCheckOut);
+
+            log.info("Nhân viên {} check-in ca tiếp theo lúc {}, tạo break từ {} đến {}", 
+                    employeeId, now, previousCheckOut, now);
+
+        } else {
+            // Chưa có record - đây là check-in ca đầu tiên
+            entity = new AttendanceRecordEntity();
+            entity.setEmployeeId(employeeId);
+            entity.setWorkDate(today);
+            entity.setOriginalCheckIn(now);
+            entity.setStatus(AttendanceStatus.PRESENT);
+
+            // Lưu device và location info
+            entity.setCheckInDeviceId(request.getDeviceId());
+            entity.setCheckInLatitude(request.getLatitude());
+            entity.setCheckInLongitude(request.getLongitude());
+
+            // Áp dụng làm tròn nếu được bật
+            LocalDateTime roundedCheckIn = now;
+            if (Boolean.TRUE.equals(config.getEnableRounding()) && config.getCheckInRounding() != null) {
+                roundedCheckIn = timeRoundingCalculator.roundTime(now, config.getCheckInRounding());
+            }
+            entity.setRoundedCheckIn(roundedCheckIn);
+
+            // Tính số phút đi muộn dựa trên shift assignment đầu tiên
+            ShiftInfoResponse shiftInfo = getFirstShiftInfo(employeeId, today);
+            if (shiftInfo != null && shiftInfo.getScheduledStart() != null) {
+                int lateMinutes = calculateLateMinutes(roundedCheckIn, shiftInfo.getScheduledStart(), config);
+                entity.setLateMinutes(lateMinutes);
+            }
+
+            log.info("Nhân viên {} check-in ca đầu tiên lúc {}", employeeId, now);
         }
 
         entity = attendanceRecordRepository.save(entity);
-        log.info("Nhân viên {} đã check-in lúc {}", employeeId, now);
-
         return attendanceMapper.toResponse(entity, getEmployeeName(employeeId));
     }
 
@@ -182,10 +208,10 @@ public class AttendanceServiceImpl implements IAttendanceService {
         }
         entity.setRoundedCheckOut(roundedCheckOut);
 
-        // Tính toán giờ làm việc và về sớm
-        WorkScheduleResponse schedule = workScheduleService.getEffectiveSchedule(employeeId, today);
-        if (schedule != null) {
-            calculateWorkingHours(entity, schedule, config);
+        // Tính toán giờ làm việc và về sớm dựa trên shift assignment
+        ShiftInfoResponse shiftInfo = getShiftInfo(employeeId, today);
+        if (shiftInfo != null) {
+            calculateWorkingHours(entity, shiftInfo, config);
         }
 
         entity = attendanceRecordRepository.save(entity);
@@ -242,18 +268,18 @@ public class AttendanceServiceImpl implements IAttendanceService {
             entity.setRoundedCheckOut(entity.getOriginalCheckOut());
         }
 
-        // Tính toán lại giờ làm việc
-        WorkScheduleResponse schedule = workScheduleService.getEffectiveSchedule(
-                entity.getEmployeeId(), entity.getWorkDate());
-        if (schedule != null) {
+        // Tính toán lại giờ làm việc dựa trên shift assignment
+        ShiftInfoResponse shiftInfo = getShiftInfo(entity.getEmployeeId(), entity.getWorkDate());
+        if (shiftInfo != null) {
             // Tính lại late minutes
-            if (entity.getRoundedCheckIn() != null) {
-                int lateMinutes = calculateLateMinutes(entity.getRoundedCheckIn(), schedule, config);
+            if (entity.getRoundedCheckIn() != null && shiftInfo.getScheduledStart() != null) {
+                int lateMinutes = calculateLateMinutes(entity.getRoundedCheckIn(), 
+                        shiftInfo.getScheduledStart(), config);
                 entity.setLateMinutes(lateMinutes);
             }
             // Tính lại working hours và early leave
             if (entity.getRoundedCheckOut() != null) {
-                calculateWorkingHours(entity, schedule, config);
+                calculateWorkingHours(entity, shiftInfo, config);
             }
         }
 
@@ -493,9 +519,8 @@ public class AttendanceServiceImpl implements IAttendanceService {
     /**
      * Tính số phút đi muộn
      */
-    private int calculateLateMinutes(LocalDateTime checkInTime, WorkScheduleResponse schedule,
+    private int calculateLateMinutes(LocalDateTime checkInTime, LocalTime scheduleStartTime,
             AttendanceConfig config) {
-        LocalTime scheduleStartTime = getScheduleStartTime(schedule, checkInTime.toLocalDate());
         if (scheduleStartTime == null) {
             return 0;
         }
@@ -516,7 +541,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
      * Tính toán giờ làm việc, tăng ca, và về sớm
      * Tích hợp break calculation theo break policy
      */
-    private void calculateWorkingHours(AttendanceRecordEntity entity, WorkScheduleResponse schedule,
+    private void calculateWorkingHours(AttendanceRecordEntity entity, ShiftInfoResponse shiftInfo,
             AttendanceConfig config) {
         LocalDateTime checkIn = entity.getRoundedCheckIn();
         LocalDateTime checkOut = entity.getRoundedCheckOut();
@@ -550,14 +575,16 @@ public class AttendanceServiceImpl implements IAttendanceService {
                 // Sử dụng actual break từ records
                 actualBreakMinutes = breakCalculator.calculateTotalBreakMinutes(breakRecords);
             } else {
-                // Sử dụng default break từ schedule hoặc config
-                actualBreakMinutes = getBreakMinutes(schedule, entity.getWorkDate());
+                // Sử dụng default break từ config
+                actualBreakMinutes = breakConfig.getDefaultBreakMinutes() != null 
+                        ? breakConfig.getDefaultBreakMinutes() : 60;
             }
 
             // Kiểm tra night shift
-            LocalTime shiftStart = getScheduleStartTime(schedule, entity.getWorkDate());
-            LocalTime shiftEnd = getScheduleEndTime(schedule, entity.getWorkDate());
-            isNightShift = breakCalculator.isNightShift(shiftStart, shiftEnd, breakConfig);
+            if (shiftInfo != null && shiftInfo.getScheduledStart() != null && shiftInfo.getScheduledEnd() != null) {
+                isNightShift = breakCalculator.isNightShift(
+                        shiftInfo.getScheduledStart(), shiftInfo.getScheduledEnd(), breakConfig);
+            }
 
             // Tính effective break (với min/max capping)
             effectiveBreakMinutes = breakCalculator.calculateEffectiveBreakMinutes(
@@ -574,7 +601,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
             entity.setBreakCompliant(actualBreakMinutes >= legalMinimum);
         } else {
             // Không có break config hoặc break không được bật - sử dụng default
-            actualBreakMinutes = getBreakMinutes(schedule, entity.getWorkDate());
+            actualBreakMinutes = 60; // Default 1 hour
             effectiveBreakMinutes = actualBreakMinutes;
             entity.setTotalBreakMinutes(actualBreakMinutes);
             entity.setEffectiveBreakMinutes(effectiveBreakMinutes);
@@ -595,14 +622,13 @@ public class AttendanceServiceImpl implements IAttendanceService {
         entity.setWorkingMinutes(netWorkingMinutes);
 
         // Tính số phút về sớm
-        LocalTime scheduleEndTime = getScheduleEndTime(schedule, entity.getWorkDate());
-        if (scheduleEndTime != null && config != null) {
+        if (shiftInfo != null && shiftInfo.getScheduledEnd() != null && config != null) {
             int graceMinutes = config.getEarlyLeaveGraceMinutes() != null ? config.getEarlyLeaveGraceMinutes() : 0;
-            LocalTime graceStartTime = scheduleEndTime.minusMinutes(graceMinutes);
+            LocalTime graceStartTime = shiftInfo.getScheduledEnd().minusMinutes(graceMinutes);
 
             LocalTime checkOutLocalTime = checkOut.toLocalTime();
             if (checkOutLocalTime.isBefore(graceStartTime)) {
-                int earlyMinutes = (int) ChronoUnit.MINUTES.between(checkOutLocalTime, scheduleEndTime);
+                int earlyMinutes = (int) ChronoUnit.MINUTES.between(checkOutLocalTime, shiftInfo.getScheduledEnd());
                 entity.setEarlyLeaveMinutes(earlyMinutes);
             } else {
                 entity.setEarlyLeaveMinutes(0);
@@ -612,7 +638,7 @@ public class AttendanceServiceImpl implements IAttendanceService {
         }
 
         // Tính số phút tăng ca (làm việc vượt quá giờ chuẩn)
-        int standardMinutes = getStandardWorkingMinutes(schedule, entity.getWorkDate());
+        int standardMinutes = getStandardWorkingMinutes(shiftInfo);
         if (netWorkingMinutes > standardMinutes) {
             entity.setOvertimeMinutes(netWorkingMinutes - standardMinutes);
         } else {
@@ -621,90 +647,23 @@ public class AttendanceServiceImpl implements IAttendanceService {
     }
 
     /**
-     * Lấy giờ bắt đầu làm việc từ schedule
+     * Lấy số phút làm việc chuẩn trong ngày từ shift info
      */
-    private LocalTime getScheduleStartTime(WorkScheduleResponse schedule, LocalDate date) {
-        if (schedule == null || schedule.getScheduleData() == null) {
-            return LocalTime.of(9, 0); // Default
+    private int getStandardWorkingMinutes(ShiftInfoResponse shiftInfo) {
+        if (shiftInfo == null || shiftInfo.getScheduledStart() == null || shiftInfo.getScheduledEnd() == null) {
+            return 8 * 60; // Default 8 hours
         }
 
-        WorkScheduleData data = schedule.getScheduleData();
+        LocalTime startTime = shiftInfo.getScheduledStart();
+        LocalTime endTime = shiftInfo.getScheduledEnd();
+        
+        // Lấy break minutes từ config
+        BreakConfig breakConfig = cachedSettingsService.getBreakConfig();
+        int breakMinutes = breakConfig != null && breakConfig.getDefaultBreakMinutes() != null
+                ? breakConfig.getDefaultBreakMinutes() : 60;
 
-        if (schedule.getType() == ScheduleType.FIXED) {
-            return data.getDefaultStartTime() != null ? data.getDefaultStartTime() : LocalTime.of(9, 0);
-        }
-
-        if (schedule.getType() == ScheduleType.FLEXIBLE && data.getDailySchedules() != null) {
-            String dayKey = date.getDayOfWeek().name();
-            WorkScheduleData.DailySchedule daily = data.getDailySchedules().get(dayKey);
-            if (daily != null && daily.getStartTime() != null) {
-                return daily.getStartTime();
-            }
-        }
-
-        return data.getDefaultStartTime() != null ? data.getDefaultStartTime() : LocalTime.of(9, 0);
-    }
-
-    /**
-     * Lấy giờ kết thúc làm việc từ schedule
-     */
-    private LocalTime getScheduleEndTime(WorkScheduleResponse schedule, LocalDate date) {
-        if (schedule == null || schedule.getScheduleData() == null) {
-            return LocalTime.of(18, 0); // Default
-        }
-
-        WorkScheduleData data = schedule.getScheduleData();
-
-        if (schedule.getType() == ScheduleType.FIXED) {
-            return data.getDefaultEndTime() != null ? data.getDefaultEndTime() : LocalTime.of(18, 0);
-        }
-
-        if (schedule.getType() == ScheduleType.FLEXIBLE && data.getDailySchedules() != null) {
-            String dayKey = date.getDayOfWeek().name();
-            WorkScheduleData.DailySchedule daily = data.getDailySchedules().get(dayKey);
-            if (daily != null && daily.getEndTime() != null) {
-                return daily.getEndTime();
-            }
-        }
-
-        return data.getDefaultEndTime() != null ? data.getDefaultEndTime() : LocalTime.of(18, 0);
-    }
-
-    /**
-     * Lấy số phút nghỉ từ schedule
-     */
-    private int getBreakMinutes(WorkScheduleResponse schedule, LocalDate date) {
-        if (schedule == null || schedule.getScheduleData() == null) {
-            return 60; // Default 1 hour
-        }
-
-        WorkScheduleData data = schedule.getScheduleData();
-
-        if (schedule.getType() == ScheduleType.FLEXIBLE && data.getDailySchedules() != null) {
-            String dayKey = date.getDayOfWeek().name();
-            WorkScheduleData.DailySchedule daily = data.getDailySchedules().get(dayKey);
-            if (daily != null && daily.getBreakMinutes() != null) {
-                return daily.getBreakMinutes();
-            }
-        }
-
-        return data.getDefaultBreakMinutes() != null ? data.getDefaultBreakMinutes() : 60;
-    }
-
-    /**
-     * Lấy số phút làm việc chuẩn trong ngày
-     */
-    private int getStandardWorkingMinutes(WorkScheduleResponse schedule, LocalDate date) {
-        LocalTime startTime = getScheduleStartTime(schedule, date);
-        LocalTime endTime = getScheduleEndTime(schedule, date);
-        int breakMinutes = getBreakMinutes(schedule, date);
-
-        if (startTime != null && endTime != null) {
-            int totalMinutes = (int) ChronoUnit.MINUTES.between(startTime, endTime);
-            return Math.max(0, totalMinutes - breakMinutes);
-        }
-
-        return 8 * 60; // Default 8 hours
+        int totalMinutes = (int) ChronoUnit.MINUTES.between(startTime, endTime);
+        return Math.max(0, totalMinutes - breakMinutes);
     }
 
     // ==================== Break Management ====================
@@ -928,5 +887,83 @@ public class AttendanceServiceImpl implements IAttendanceService {
                 .scheduledEnd(template.getEndTime())
                 .multiplier(template.getMultiplier())
                 .build();
+    }
+
+    /**
+     * Lấy thông tin ca đầu tiên trong ngày (dùng cho tính late minutes)
+     */
+    private ShiftInfoResponse getFirstShiftInfo(Long employeeId, LocalDate date) {
+        List<ShiftAssignmentEntity> assignments = shiftAssignmentRepository
+                .findByEmployeeIdAndWorkDate(employeeId, date);
+
+        if (assignments.isEmpty()) {
+            return null;
+        }
+
+        // Sắp xếp theo startTime để lấy ca đầu tiên
+        ShiftAssignmentEntity firstAssignment = assignments.stream()
+                .map(a -> {
+                    ShiftTemplateEntity template = shiftTemplateRepository
+                            .findByIdAndDeletedFalse(a.getShiftTemplateId()).orElse(null);
+                    return new Object[] { a, template };
+                })
+                .filter(pair -> pair[1] != null)
+                .min((pair1, pair2) -> {
+                    LocalTime time1 = ((ShiftTemplateEntity) pair1[1]).getStartTime();
+                    LocalTime time2 = ((ShiftTemplateEntity) pair2[1]).getStartTime();
+                    return time1.compareTo(time2);
+                })
+                .map(pair -> (ShiftAssignmentEntity) pair[0])
+                .orElse(assignments.get(0));
+
+        Optional<ShiftTemplateEntity> templateOpt = shiftTemplateRepository
+                .findByIdAndDeletedFalse(firstAssignment.getShiftTemplateId());
+
+        if (templateOpt.isEmpty()) {
+            return null;
+        }
+
+        ShiftTemplateEntity template = templateOpt.get();
+
+        return ShiftInfoResponse.builder()
+                .shiftTemplateId(template.getId())
+                .shiftName(template.getName())
+                .scheduledStart(template.getStartTime())
+                .scheduledEnd(template.getEndTime())
+                .multiplier(template.getMultiplier())
+                .build();
+    }
+
+    /**
+     * Tạo break record cho khoảng thời gian giữa 2 ca
+     */
+    private void createBreakRecordBetweenShifts(AttendanceRecordEntity attendance, 
+            LocalDateTime breakStart, LocalDateTime breakEnd) {
+        // Lấy break number tiếp theo
+        Integer maxBreakNumber = breakRecordRepository.findMaxBreakNumberByAttendanceRecordId(attendance.getId());
+        int nextBreakNumber = (maxBreakNumber != null ? maxBreakNumber : 0) + 1;
+
+        // Tạo break record
+        BreakRecordEntity breakRecord = new BreakRecordEntity();
+        breakRecord.setAttendanceRecordId(attendance.getId());
+        breakRecord.setEmployeeId(attendance.getEmployeeId());
+        breakRecord.setWorkDate(attendance.getWorkDate());
+        breakRecord.setBreakNumber(nextBreakNumber);
+        breakRecord.setBreakStart(breakStart);
+        breakRecord.setBreakEnd(breakEnd);
+
+        // Tính break minutes
+        long breakMinutes = ChronoUnit.MINUTES.between(breakStart, breakEnd);
+        breakRecord.setActualBreakMinutes((int) breakMinutes);
+        breakRecord.setEffectiveBreakMinutes((int) breakMinutes);
+        breakRecord.setNotes("Tự động tạo giữa các ca");
+
+        breakRecordRepository.save(breakRecord);
+
+        // Cập nhật tổng break minutes trong attendance
+        updateTotalBreakMinutes(attendance);
+
+        log.info("Tạo break record tự động từ {} đến {} ({} phút)", 
+                breakStart, breakEnd, breakMinutes);
     }
 }

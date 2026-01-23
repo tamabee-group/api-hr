@@ -1,12 +1,11 @@
 package com.tamabee.api_hr.service.core.interfaces;
 
-import com.tamabee.api_hr.dto.request.attendance.EmployeeSwapRequest;
-import com.tamabee.api_hr.dto.response.schedule.EmployeeScheduleDataResponse;
-import com.tamabee.api_hr.dto.response.attendance.ShiftAssignmentResponse;
-import com.tamabee.api_hr.dto.response.attendance.ShiftSwapRequestResponse;
-
 import java.time.LocalDate;
 import java.util.List;
+
+import com.tamabee.api_hr.dto.request.attendance.EmployeeSwapRequest;
+import com.tamabee.api_hr.dto.response.attendance.ShiftAssignmentResponse;
+import com.tamabee.api_hr.dto.response.attendance.ShiftSwapRequestResponse;
 
 /**
  * Service interface cho employee xem lịch làm việc
@@ -22,11 +21,6 @@ public interface IEmployeeScheduleService {
      * Lấy lịch sử đổi ca của nhân viên
      */
     List<ShiftSwapRequestResponse> getSwapHistory(Long employeeId);
-
-    /**
-     * Lấy tất cả dữ liệu lịch làm việc (ca + lịch sử đổi ca)
-     */
-    EmployeeScheduleDataResponse getAllScheduleData(Long employeeId, LocalDate startDate, LocalDate endDate);
 
     /**
      * Lấy danh sách ca có thể đổi từ nhân viên khác

@@ -1,12 +1,13 @@
 package com.tamabee.api_hr.dto.response.payroll;
 
-import com.tamabee.api_hr.enums.ContractStatus;
-import com.tamabee.api_hr.enums.ContractType;
-import lombok.Builder;
-import lombok.Data;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
+import com.tamabee.api_hr.enums.ContractStatus;
+import com.tamabee.api_hr.enums.ContractType;
+
+import lombok.Builder;
+import lombok.Data;
 
 /**
  * Response DTO cho thông tin hợp đồng lao động
@@ -19,6 +20,7 @@ public class ContractResponse {
     private Long employeeId;
     private String employeeName;
     private String employeeCode;
+    private String employeeEmail;
     private Long companyId;
 
     // Thông tin hợp đồng

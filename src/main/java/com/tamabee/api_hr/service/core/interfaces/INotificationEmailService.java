@@ -1,6 +1,6 @@
 package com.tamabee.api_hr.service.core.interfaces;
 
-import com.tamabee.api_hr.entity.payroll.PayrollRecordEntity;
+import com.tamabee.api_hr.entity.payroll.PayrollItemEntity;
 
 /**
  * Service gửi email thông báo cho nhân viên.
@@ -16,7 +16,7 @@ public interface INotificationEmailService {
      * @param employeeId ID nhân viên
      * @param payroll    bản ghi lương
      */
-    void sendSalaryNotification(Long employeeId, PayrollRecordEntity payroll);
+    void sendSalaryNotification(Long employeeId, PayrollItemEntity payrollItem);
 
     /**
      * Gửi thông báo lương cho tất cả nhân viên trong kỳ

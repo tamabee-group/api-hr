@@ -131,6 +131,16 @@ public class PayrollItemEntity extends BaseEntity {
     // Thời gian điều chỉnh
     private LocalDateTime adjustedAt;
 
+    // === Hoa hồng (Commission) ===
+    // Số tiền hoa hồng (cho Tamabee employees)
+    @Column(precision = 15, scale = 2)
+    private BigDecimal commissionAmount = BigDecimal.ZERO;
+
+    // Chi tiết hoa hồng (JSON)
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(columnDefinition = "jsonb")
+    private String commissionDetails;
+
     // === Trạng thái ===
     // Trạng thái chi tiết lương
     @Enumerated(EnumType.STRING)

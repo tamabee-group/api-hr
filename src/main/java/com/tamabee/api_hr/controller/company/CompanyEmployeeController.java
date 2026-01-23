@@ -1,6 +1,5 @@
 package com.tamabee.api_hr.controller.company;
 
-import java.time.LocalDate;
 import java.time.YearMonth;
 import java.util.List;
 
@@ -31,8 +30,7 @@ import com.tamabee.api_hr.dto.response.employee.EmployeeDocumentResponse;
 import com.tamabee.api_hr.dto.response.employee.EmployeePersonalInfoResponse;
 import com.tamabee.api_hr.dto.response.leave.LeaveBalanceResponse;
 import com.tamabee.api_hr.dto.response.leave.LeaveRequestResponse;
-import com.tamabee.api_hr.dto.response.payroll.PayrollRecordResponse;
-import com.tamabee.api_hr.dto.response.schedule.WorkScheduleResponse;
+import com.tamabee.api_hr.dto.response.payroll.PayrollItemResponse;
 import com.tamabee.api_hr.dto.response.user.ApproverResponse;
 import com.tamabee.api_hr.dto.response.user.UserResponse;
 import com.tamabee.api_hr.enums.RoleConstants;
@@ -41,8 +39,7 @@ import com.tamabee.api_hr.service.company.interfaces.ICompanyEmployeeService;
 import com.tamabee.api_hr.service.company.interfaces.IDepartmentService;
 import com.tamabee.api_hr.service.company.interfaces.IEmployeeDocumentService;
 import com.tamabee.api_hr.service.company.interfaces.ILeaveService;
-import com.tamabee.api_hr.service.company.interfaces.IPayrollService;
-import com.tamabee.api_hr.service.company.interfaces.IWorkScheduleService;
+import com.tamabee.api_hr.service.company.interfaces.IPayrollPeriodService;
 import com.tamabee.api_hr.service.core.interfaces.IEmailVerificationService;
 
 import jakarta.validation.Valid;
@@ -62,9 +59,8 @@ public class CompanyEmployeeController {
 
     private final ICompanyEmployeeService companyEmployeeService;
     private final IDepartmentService departmentService;
-    private final IWorkScheduleService workScheduleService;
     private final IAttendanceService attendanceService;
-    private final IPayrollService payrollService;
+    private final IPayrollPeriodService payrollPeriodService;
     private final ILeaveService leaveService;
     private final IEmailVerificationService emailVerificationService;
     private final IEmployeeDocumentService employeeDocumentService;
@@ -120,21 +116,6 @@ public class CompanyEmployeeController {
             @RequestParam("avatar") MultipartFile file) {
         String avatarUrl = companyEmployeeService.uploadEmployeeAvatar(id, file);
         return ResponseEntity.ok(BaseResponse.success(avatarUrl, "Tải ảnh đại diện thành công"));
-    }
-
-    /**
-     * Lấy lịch làm việc hiệu lực của nhân viên
-     * 
-     * @param id   ID nhân viên
-     * @param date Ngày cần lấy lịch (mặc định là ngày hiện tại)
-     */
-    @GetMapping("/{id}/effective-schedule")
-    public ResponseEntity<BaseResponse<WorkScheduleResponse>> getEffectiveSchedule(
-            @PathVariable Long id,
-            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate date) {
-        LocalDate effectiveDate = date != null ? date : LocalDate.now();
-        WorkScheduleResponse schedule = workScheduleService.getEffectiveSchedule(id, effectiveDate);
-        return ResponseEntity.ok(BaseResponse.success(schedule, "Lấy lịch làm việc hiệu lực thành công"));
     }
 
     /**
@@ -194,10 +175,10 @@ public class CompanyEmployeeController {
      * GET /api/company/employees/{id}/payroll
      */
     @GetMapping("/{id}/payroll")
-    public ResponseEntity<BaseResponse<Page<PayrollRecordResponse>>> getEmployeePayrollHistory(
+    public ResponseEntity<BaseResponse<Page<PayrollItemResponse>>> getEmployeePayrollHistory(
             @PathVariable Long id,
             Pageable pageable) {
-        Page<PayrollRecordResponse> payrollHistory = payrollService.getEmployeePayrollHistory(id, pageable);
+        Page<PayrollItemResponse> payrollHistory = payrollPeriodService.getEmployeePayslips(id, pageable);
         return ResponseEntity.ok(BaseResponse.success(payrollHistory, "Lấy lịch sử bảng lương thành công"));
     }
 

@@ -1,39 +1,58 @@
 package com.tamabee.api_hr.service.company.impl;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tamabee.api_hr.dto.request.wallet.PaymentRequest;
-import com.tamabee.api_hr.dto.request.payroll.PayrollAdjustmentRequest;
-import com.tamabee.api_hr.dto.request.payroll.PayrollPeriodRequest;
-import com.tamabee.api_hr.dto.response.payroll.PayrollItemResponse;
-import com.tamabee.api_hr.dto.response.payroll.PayrollPeriodDetailResponse;
-import com.tamabee.api_hr.dto.response.payroll.PayrollPeriodResponse;
-import com.tamabee.api_hr.entity.attendance.AttendanceRecordEntity;
-import com.tamabee.api_hr.entity.payroll.*;
-import com.tamabee.api_hr.entity.user.UserEntity;
-import com.tamabee.api_hr.enums.*;
-import com.tamabee.api_hr.exception.BadRequestException;
-import com.tamabee.api_hr.exception.ConflictException;
-import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.mapper.company.PayrollPeriodMapper;
-import com.tamabee.api_hr.repository.attendance.AttendanceRecordRepository;
-import com.tamabee.api_hr.repository.payroll.*;
-import com.tamabee.api_hr.repository.user.UserRepository;
-import com.tamabee.api_hr.service.company.interfaces.IPayrollPeriodService;
-import lombok.RequiredArgsConstructor;
-import lombok.extern.slf4j.Slf4j;
+import java.math.BigDecimal;
+import java.math.RoundingMode;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.math.BigDecimal;
-import java.math.RoundingMode;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.*;
-import java.util.function.Function;
-import java.util.stream.Collectors;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.tamabee.api_hr.dto.request.payroll.PayrollAdjustmentRequest;
+import com.tamabee.api_hr.dto.request.payroll.PayrollPeriodRequest;
+import com.tamabee.api_hr.dto.request.wallet.PaymentRequest;
+import com.tamabee.api_hr.dto.response.payroll.PayrollItemResponse;
+import com.tamabee.api_hr.dto.response.payroll.PayrollPeriodDetailResponse;
+import com.tamabee.api_hr.dto.response.payroll.PayrollPeriodResponse;
+import com.tamabee.api_hr.entity.attendance.AttendanceRecordEntity;
+import com.tamabee.api_hr.entity.payroll.EmployeeAllowanceEntity;
+import com.tamabee.api_hr.entity.payroll.EmployeeDeductionEntity;
+import com.tamabee.api_hr.entity.payroll.EmployeeSalaryEntity;
+import com.tamabee.api_hr.entity.payroll.PayrollItemEntity;
+import com.tamabee.api_hr.entity.payroll.PayrollPeriodEntity;
+import com.tamabee.api_hr.entity.user.UserEntity;
+import com.tamabee.api_hr.enums.ErrorCode;
+import com.tamabee.api_hr.enums.PayrollItemStatus;
+import com.tamabee.api_hr.enums.PayrollPeriodStatus;
+import com.tamabee.api_hr.exception.BadRequestException;
+import com.tamabee.api_hr.exception.ConflictException;
+import com.tamabee.api_hr.exception.NotFoundException;
+import com.tamabee.api_hr.mapper.company.PayrollPeriodMapper;
+import com.tamabee.api_hr.repository.attendance.AttendanceRecordRepository;
+import com.tamabee.api_hr.repository.payroll.EmployeeAllowanceRepository;
+import com.tamabee.api_hr.repository.payroll.EmployeeDeductionRepository;
+import com.tamabee.api_hr.repository.payroll.EmployeeSalaryRepository;
+import com.tamabee.api_hr.repository.payroll.PayrollItemRepository;
+import com.tamabee.api_hr.repository.payroll.PayrollPeriodRepository;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.IPayrollPeriodService;
+
+import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Service implementation cho quản lý kỳ lương
@@ -176,7 +195,7 @@ public class PayrollPeriodServiceImpl implements IPayrollPeriodService {
 
         // Chuyển đổi items sang response
         List<PayrollItemResponse> itemResponses = items.stream()
-                .map(item -> mapper.toItemResponse(item, userMap))
+                .map(item -> mapper.toItemResponse(item, userMap, period.getYear(), period.getMonth()))
                 .collect(Collectors.toList());
 
         return mapper.toDetailResponse(period, itemResponses, userMap);
@@ -244,7 +263,7 @@ public class PayrollPeriodServiceImpl implements IPayrollPeriodService {
         userIds.add(adjustedBy);
         Map<Long, UserEntity> userMap = getUserMap(new ArrayList<>(userIds));
 
-        return mapper.toItemResponse(item, userMap);
+        return mapper.toItemResponse(item, userMap, period.getYear(), period.getMonth());
     }
 
     @Override
@@ -573,5 +592,148 @@ public class PayrollPeriodServiceImpl implements IPayrollPeriodService {
         period.setTotalNetSalary(totalNet);
         period.setTotalEmployees((int) itemCount);
         periodRepository.save(period);
+    }
+
+    @Override
+    @Transactional
+    public PayrollPeriodResponse rejectPayroll(Long periodId, String reason) {
+        PayrollPeriodEntity period = getPeriodOrThrow(periodId);
+
+        // Kiểm tra trạng thái - chỉ cho phép reject khi REVIEWING
+        if (period.getStatus() != PayrollPeriodStatus.REVIEWING) {
+            throw new BadRequestException("Chỉ có thể từ chối khi kỳ lương đang ở trạng thái REVIEWING",
+                    ErrorCode.PAYROLL_INVALID_STATUS_TRANSITION);
+        }
+
+        // Chuyển về DRAFT để có thể chỉnh sửa lại
+        period.setStatus(PayrollPeriodStatus.DRAFT);
+        period.setApprovedBy(null);
+        period.setApprovedAt(null);
+        period = periodRepository.save(period);
+
+        Set<Long> userIds = new HashSet<>();
+        userIds.add(period.getCreatedBy());
+        Map<Long, UserEntity> userMap = getUserMap(new ArrayList<>(userIds));
+
+        log.info("Từ chối kỳ lương {} với lý do: {}", periodId, reason);
+        return mapper.toResponse(period, userMap);
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PayrollItemResponse> getPayrollItems(Long periodId, Long employeeId, String status, Pageable pageable) {
+        PayrollPeriodEntity period = getPeriodOrThrow(periodId);
+
+        Page<PayrollItemEntity> itemPage;
+        if (employeeId != null && status != null) {
+            itemPage = itemRepository.findByPayrollPeriodIdAndEmployeeIdAndStatus(
+                    periodId, employeeId, PayrollItemStatus.valueOf(status), pageable);
+        } else if (employeeId != null) {
+            itemPage = itemRepository.findByPayrollPeriodIdAndEmployeeId(periodId, employeeId, pageable);
+        } else if (status != null) {
+            itemPage = itemRepository.findByPayrollPeriodIdAndStatus(
+                    periodId, PayrollItemStatus.valueOf(status), pageable);
+        } else {
+            itemPage = itemRepository.findByPayrollPeriodId(periodId, pageable);
+        }
+
+        // Lấy thông tin employees
+        List<Long> employeeIds = itemPage.getContent().stream()
+                .map(PayrollItemEntity::getEmployeeId)
+                .distinct()
+                .collect(Collectors.toList());
+        Map<Long, UserEntity> userMap = getUserMap(employeeIds);
+
+        return itemPage.map(item -> mapper.toItemResponse(item, userMap, period.getYear(), period.getMonth()));
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public PayrollItemResponse getPayrollItemById(Long itemId) {
+        PayrollItemEntity item = itemRepository.findById(itemId)
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy payroll item", ErrorCode.PAYROLL_ITEM_NOT_FOUND));
+
+        PayrollPeriodEntity period = periodRepository.findById(item.getPayrollPeriodId())
+                .orElseThrow(() -> new NotFoundException("Không tìm thấy kỳ lương", ErrorCode.PAYROLL_PERIOD_NOT_FOUND));
+
+        UserEntity employee = userRepository.findById(item.getEmployeeId())
+                .orElseThrow(() -> NotFoundException.user(item.getEmployeeId()));
+
+        // Tạo map với 1 employee
+        Map<Long, UserEntity> userMap = new HashMap<>();
+        userMap.put(employee.getId(), employee);
+
+        return mapper.toItemResponse(item, userMap, period.getYear(), period.getMonth());
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PayrollItemResponse> getEmployeePayslips(Long employeeId, Pageable pageable) {
+        // Lấy tất cả payroll items của employee này
+        Page<PayrollItemEntity> itemPage = itemRepository.findByEmployeeId(employeeId, pageable);
+
+        // Lấy thông tin employee
+        UserEntity employee = userRepository.findById(employeeId)
+                .orElseThrow(() -> NotFoundException.user(employeeId));
+
+        Map<Long, UserEntity> userMap = new HashMap<>();
+        userMap.put(employee.getId(), employee);
+
+        Set<Long> periodIds = itemPage.getContent().stream()
+                .map(PayrollItemEntity::getPayrollPeriodId)
+                .collect(Collectors.toSet());
+        Map<Long, PayrollPeriodEntity> periodMap = periodRepository.findAllById(periodIds).stream()
+                .collect(Collectors.toMap(PayrollPeriodEntity::getId, Function.identity()));
+
+        return itemPage.map(item -> {
+            PayrollPeriodEntity p = periodMap.get(item.getPayrollPeriodId());
+            return mapper.toItemResponse(item, userMap, p != null ? p.getYear() : null, p != null ? p.getMonth() : null);
+        });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public Page<PayrollItemResponse> getAllCompanyPayslips(Long employeeId, String status, Pageable pageable) {
+        Page<PayrollItemEntity> itemPage;
+
+        // Filter theo employeeId và status
+        if (employeeId != null && status != null) {
+            itemPage = itemRepository.findByEmployeeIdAndStatus(employeeId, status, pageable);
+        } else if (employeeId != null) {
+            itemPage = itemRepository.findByEmployeeId(employeeId, pageable);
+        } else if (status != null) {
+            itemPage = itemRepository.findByStatus(status, pageable);
+        } else {
+            itemPage = itemRepository.findAll(pageable);
+        }
+
+        // Lấy tất cả employee IDs
+        Set<Long> employeeIds = itemPage.getContent().stream()
+                .map(PayrollItemEntity::getEmployeeId)
+                .collect(Collectors.toSet());
+
+        // Lấy thông tin employees
+        Map<Long, UserEntity> userMap = userRepository.findAllById(employeeIds).stream()
+                .collect(Collectors.toMap(UserEntity::getId, user -> user));
+
+        Set<Long> periodIds = itemPage.getContent().stream()
+                .map(PayrollItemEntity::getPayrollPeriodId)
+                .collect(Collectors.toSet());
+        Map<Long, PayrollPeriodEntity> periodMap = periodRepository.findAllById(periodIds).stream()
+                .collect(Collectors.toMap(PayrollPeriodEntity::getId, Function.identity()));
+
+        return itemPage.map(item -> {
+            PayrollPeriodEntity p = periodMap.get(item.getPayrollPeriodId());
+            return mapper.toItemResponse(item, userMap, p != null ? p.getYear() : null, p != null ? p.getMonth() : null);
+        });
+    }
+
+    @Override
+    @Transactional(readOnly = true)
+    public byte[] generatePayslipPdf(Long itemId) {
+        // TODO: Implement PDF generation logic
+        // Tạm thời trả về empty byte array
+        // Cần implement với thư viện PDF như iText hoặc Apache PDFBox
+        return new byte[0];
     }
 }

@@ -1,5 +1,17 @@
 package com.tamabee.api_hr.service.company.impl;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.tamabee.api_hr.dto.config.BreakConfig;
 import com.tamabee.api_hr.dto.response.attendance.DailyBreakReportResponse;
 import com.tamabee.api_hr.dto.response.attendance.DailyBreakReportResponse.BreakSessionInfo;
@@ -13,14 +25,8 @@ import com.tamabee.api_hr.repository.user.UserRepository;
 import com.tamabee.api_hr.service.calculator.LegalBreakRequirements;
 import com.tamabee.api_hr.service.company.interfaces.IBreakReportService;
 import com.tamabee.api_hr.service.company.interfaces.ICompanySettingsService;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
-import java.time.LocalDate;
-import java.time.YearMonth;
-import java.util.*;
-import java.util.stream.Collectors;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Implementation của IBreakReportService.
@@ -133,7 +139,7 @@ public class BreakReportServiceImpl implements IBreakReportService {
 
                 // Sắp xếp theo tên nhân viên
                 employeeDetails.sort(Comparator.comparing(
-                                d -> d.getEmployeeName() != null ? d.getEmployeeName() : "",
+                                EmployeeBreakDetail::getEmployeeName,
                                 Comparator.nullsLast(String::compareTo)));
 
                 int totalEmployees = recordsByEmployee.size();
@@ -259,9 +265,14 @@ public class BreakReportServiceImpl implements IBreakReportService {
                 }
 
                 // Sắp xếp theo tên nhân viên
-                employeeDetails.sort(Comparator.comparing(
-                                d -> d.getEmployeeName() != null ? d.getEmployeeName() : "",
-                                Comparator.nullsLast(String::compareTo)));
+                employeeDetails.sort((a, b) -> {
+                        String nameA = a.getEmployeeName();
+                        String nameB = b.getEmployeeName();
+                        if (nameA == null && nameB == null) return 0;
+                        if (nameA == null) return 1;
+                        if (nameB == null) return -1;
+                        return nameA.compareTo(nameB);
+                });
 
                 int totalEmployees = recordsByEmployee.size();
                 int totalWorkingDays = workingDates.size();
@@ -270,11 +281,16 @@ public class BreakReportServiceImpl implements IBreakReportService {
                                 : 0;
 
                 // Tính tỷ lệ tuân thủ trung bình
-                double avgComplianceRate = employeeDetails.isEmpty() ? 0
-                                : employeeDetails.stream()
-                                                .mapToDouble(EmployeeMonthlyBreakDetail::getComplianceRate)
-                                                .average()
-                                                .orElse(0);
+                double avgComplianceRate = 0;
+                if (!employeeDetails.isEmpty()) {
+                        double sum = 0;
+                        for (EmployeeMonthlyBreakDetail detail : employeeDetails) {
+                                if (detail.getComplianceRate() != null) {
+                                        sum += detail.getComplianceRate();
+                                }
+                        }
+                        avgComplianceRate = sum / employeeDetails.size();
+                }
 
                 return MonthlyBreakReportResponse.builder()
                                 .reportMonth(yearMonth)

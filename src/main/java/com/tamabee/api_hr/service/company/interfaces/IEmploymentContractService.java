@@ -1,12 +1,13 @@
 package com.tamabee.api_hr.service.company.interfaces;
 
-import com.tamabee.api_hr.dto.request.payroll.ContractQuery;
-import com.tamabee.api_hr.dto.request.payroll.ContractRequest;
-import com.tamabee.api_hr.dto.response.payroll.ContractResponse;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
+import com.tamabee.api_hr.dto.request.payroll.ContractQuery;
+import com.tamabee.api_hr.dto.request.payroll.ContractRequest;
+import com.tamabee.api_hr.dto.response.payroll.ContractResponse;
 
 /**
  * Service interface cho quản lý hợp đồng lao động
@@ -39,6 +40,13 @@ public interface IEmploymentContractService {
      * @return Thông tin hợp đồng đã chấm dứt
      */
     ContractResponse terminateContract(Long contractId, String reason);
+
+    /**
+     * Xóa hợp đồng (soft delete)
+     *
+     * @param contractId ID hợp đồng
+     */
+    void deleteContract(Long contractId);
 
     /**
      * Lấy hợp đồng hiện tại của nhân viên

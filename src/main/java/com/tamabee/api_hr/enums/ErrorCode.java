@@ -213,7 +213,7 @@ public enum ErrorCode {
         // === SHIFT ===
         SHIFT_TEMPLATE_NOT_FOUND("SHIFT_TEMPLATE_NOT_FOUND", "Không tìm thấy mẫu ca làm việc"),
         SHIFT_ASSIGNMENT_NOT_FOUND("SHIFT_ASSIGNMENT_NOT_FOUND", "Không tìm thấy phân ca"),
-        SHIFT_OVERLAP_EXISTS("SHIFT_OVERLAP_EXISTS", "Ca làm việc bị trùng với ca hiện có"),
+        SHIFT_OVERLAP_EXISTS("SHIFT_OVERLAP_EXISTS", "Ca làm việc bị trùng giờ với ca khác"),
         SHIFT_SWAP_NOT_ALLOWED("SHIFT_SWAP_NOT_ALLOWED", "Không thể đổi ca"),
         SHIFT_SWAP_REQUEST_NOT_FOUND("SHIFT_SWAP_REQUEST_NOT_FOUND", "Không tìm thấy yêu cầu đổi ca"),
         SHIFT_SWAP_ALREADY_PROCESSED("SHIFT_SWAP_ALREADY_PROCESSED", "Yêu cầu đổi ca đã được xử lý"),
@@ -240,6 +240,7 @@ public enum ErrorCode {
         CONTRACT_ALREADY_TERMINATED("CONTRACT_ALREADY_TERMINATED", "Hợp đồng đã được chấm dứt"),
         CONTRACT_NUMBER_EXISTS("CONTRACT_NUMBER_EXISTS", "Số hợp đồng đã tồn tại"),
         CONTRACT_INVALID_DATE_RANGE("CONTRACT_INVALID_DATE_RANGE", "Ngày bắt đầu phải trước ngày kết thúc"),
+        CONTRACT_CANNOT_DELETE_ACTIVE("CONTRACT_CANNOT_DELETE_ACTIVE", "Không thể xóa hợp đồng đang hiệu lực"),
 
         // === FEATURE ===
         FEATURE_NOT_SUPPORTED("FEATURE_NOT_SUPPORTED", "Tính năng chưa được hỗ trợ"),
