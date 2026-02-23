@@ -7,6 +7,8 @@ import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import com.tamabee.api_hr.datasource.RegionContext;
+import com.tamabee.api_hr.util.RegionUtil;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -98,19 +100,10 @@ public class EmployeeSalaryConfigServiceImpl implements IEmployeeSalaryConfigSer
         UserEntity employee = userRepository.findById(employeeId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
 
-        // Tìm config đang active
-        EmployeeSalaryEntity currentConfig = salaryRepository.findAll().stream()
-                .filter(config -> !config.getDeleted() 
-                        && config.getEmployeeId().equals(employeeId) 
-                        && Boolean.TRUE.equals(config.getActive()))
-                .findFirst()
+        // Tìm config đang active (query DB trực tiếp thay vì load all)
+        return salaryRepository.findActiveByEmployeeId(employeeId)
+                .map(config -> salaryMapper.toResponse(config, employee))
                 .orElse(null);
-
-        if (currentConfig == null) {
-            return null;
-        }
-
-        return salaryMapper.toResponse(currentConfig, employee);
     }
 
     @Override
@@ -120,15 +113,8 @@ public class EmployeeSalaryConfigServiceImpl implements IEmployeeSalaryConfigSer
         UserEntity employee = userRepository.findById(employeeId)
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
 
-        // Lấy tất cả config của employee, sắp xếp theo effectiveFrom giảm dần, sau đó createdAt giảm dần
-        List<EmployeeSalaryEntity> configs = salaryRepository.findAll().stream()
-                .filter(config -> !config.getDeleted() && config.getEmployeeId().equals(employeeId))
-                .sorted((a, b) -> {
-                    int cmp = b.getEffectiveFrom().compareTo(a.getEffectiveFrom());
-                    if (cmp != 0) return cmp;
-                    return b.getCreatedAt().compareTo(a.getCreatedAt());
-                })
-                .collect(Collectors.toList());
+        // Lấy tất cả config (query DB đã sort sẵn, không cần load all)
+        List<EmployeeSalaryEntity> configs = salaryRepository.findAllByEmployeeIdOrdered(employeeId);
 
         return configs.stream()
                 .map(config -> salaryMapper.toResponse(config, employee))
@@ -256,7 +242,7 @@ public class EmployeeSalaryConfigServiceImpl implements IEmployeeSalaryConfigSer
         }
 
         // Kiểm tra config có quá hạn không (effectiveTo < today)
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion()));
         if (config.getEffectiveTo() != null && config.getEffectiveTo().isBefore(today)) {
             throw new BadRequestException("Không thể áp dụng cấu hình lương đã hết hiệu lực",
                     ErrorCode.SALARY_CONFIG_EXPIRED);
@@ -266,17 +252,11 @@ public class EmployeeSalaryConfigServiceImpl implements IEmployeeSalaryConfigSer
         UserEntity employee = userRepository.findById(config.getEmployeeId())
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
 
-        // Deactivate tất cả config khác của employee
-        Long employeeIdToDeactivate = config.getEmployeeId();
-        salaryRepository.findAll().stream()
-                .filter(c -> !c.getDeleted() 
-                        && c.getEmployeeId().equals(employeeIdToDeactivate) 
-                        && Boolean.TRUE.equals(c.getActive())
-                        && !c.getId().equals(configId))
-                .forEach(c -> {
-                    c.setActive(false);
-                    salaryRepository.save(c);
-                });
+        // Deactivate tất cả config khác của employee (query DB trực tiếp)
+        List<EmployeeSalaryEntity> activeConfigs = salaryRepository
+                .findActiveByEmployeeIdExcluding(config.getEmployeeId(), configId);
+        activeConfigs.forEach(c -> c.setActive(false));
+        salaryRepository.saveAll(activeConfigs);
 
         // Activate config này
         config.setActive(true);

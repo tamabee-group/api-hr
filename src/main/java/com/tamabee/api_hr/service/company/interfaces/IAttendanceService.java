@@ -1,17 +1,22 @@
 package com.tamabee.api_hr.service.company.interfaces;
 
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.List;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+
 import com.tamabee.api_hr.dto.request.attendance.AdjustAttendanceRequest;
 import com.tamabee.api_hr.dto.request.attendance.AttendanceQueryRequest;
 import com.tamabee.api_hr.dto.request.attendance.CheckInRequest;
 import com.tamabee.api_hr.dto.request.attendance.CheckOutRequest;
+import com.tamabee.api_hr.dto.request.attendance.CreateAttendanceRequest;
+import com.tamabee.api_hr.dto.request.attendance.EndBreakRequest;
 import com.tamabee.api_hr.dto.request.attendance.StartBreakRequest;
+import com.tamabee.api_hr.dto.response.attendance.AttendanceAlertResponse;
 import com.tamabee.api_hr.dto.response.attendance.AttendanceRecordResponse;
 import com.tamabee.api_hr.dto.response.attendance.AttendanceSummaryResponse;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-
-import java.time.LocalDate;
-import java.time.YearMonth;
 
 /**
  * Service quản lý chấm công của nhân viên.
@@ -57,9 +62,10 @@ public interface IAttendanceService {
          *
          * @param employeeId    ID nhân viên
          * @param breakRecordId ID của break record cần kết thúc
+         * @param request       thông tin kết thúc break (location)
          * @return AttendanceRecordResponse với break record đã được cập nhật
          */
-        AttendanceRecordResponse endBreak(Long employeeId, Long breakRecordId);
+        AttendanceRecordResponse endBreak(Long employeeId, Long breakRecordId, EndBreakRequest request);
 
         // ==================== Adjustment ====================
 
@@ -72,6 +78,28 @@ public interface IAttendanceService {
          * @return bản ghi chấm công đã điều chỉnh
          */
         AttendanceRecordResponse adjustAttendance(Long recordId, Long adjustedBy, AdjustAttendanceRequest request);
+
+        /**
+         * Điều chỉnh bản ghi chấm công (bởi admin) với tùy chọn gửi thông báo
+         *
+         * @param recordId         ID bản ghi chấm công
+         * @param adjustedBy       ID người điều chỉnh
+         * @param request          thông tin điều chỉnh
+         * @param sendNotification có gửi thông báo cho nhân viên không
+         * @return bản ghi chấm công đã điều chỉnh
+         */
+        AttendanceRecordResponse adjustAttendance(Long recordId, Long adjustedBy, AdjustAttendanceRequest request,
+                        boolean sendNotification);
+
+        /**
+         * Tạo bản ghi chấm công mới (bởi manager)
+         * Dùng khi nhân viên chưa có record cho ngày đó
+         *
+         * @param createdBy ID người tạo (manager)
+         * @param request   thông tin tạo mới
+         * @return bản ghi chấm công đã tạo
+         */
+        AttendanceRecordResponse createAttendanceRecord(Long createdBy, CreateAttendanceRequest request);
 
         // ==================== Query Operations ====================
 
@@ -113,6 +141,12 @@ public interface IAttendanceService {
                         Pageable pageable);
 
         /**
+         * Lấy danh sách chấm công có vị trí (phân trang) - cho trang locations
+         */
+        Page<AttendanceRecordResponse> getAttendanceRecordsWithLocation(AttendanceQueryRequest request,
+                        Pageable pageable);
+
+        /**
          * Lấy danh sách chấm công của nhân viên (phân trang)
          *
          * @param employeeId ID nhân viên
@@ -142,15 +176,16 @@ public interface IAttendanceService {
          */
         AttendanceSummaryResponse getAttendanceSummary(Long employeeId, YearMonth period);
 
-        // ==================== Validation ====================
-
         /**
-         * Kiểm tra thiết bị có được đăng ký không
+         * Lấy danh sách cảnh báo chấm công của nhân viên trong tháng
          *
-         * @param deviceId ID thiết bị
-         * @return true nếu thiết bị hợp lệ hoặc công ty không yêu cầu đăng ký thiết bị
+         * @param employeeId ID nhân viên
+         * @param period     kỳ tính (tháng)
+         * @return danh sách cảnh báo
          */
-        boolean validateDevice(String deviceId);
+        List<AttendanceAlertResponse> getAttendanceAlerts(Long employeeId, YearMonth period);
+
+        // ==================== Validation ====================
 
         /**
          * Kiểm tra vị trí có nằm trong geo-fence không
@@ -160,4 +195,13 @@ public interface IAttendanceService {
          * @return true nếu vị trí hợp lệ hoặc công ty không yêu cầu geo-location
          */
         boolean validateLocation(Double latitude, Double longitude);
+
+        /**
+         * Xóa bản ghi chấm công (bởi admin/manager)
+         * Xóa cả break records liên quan
+         *
+         * @param recordId  ID bản ghi chấm công
+         * @param deletedBy ID người xóa
+         */
+        void deleteAttendanceRecord(Long recordId, Long deletedBy);
 }

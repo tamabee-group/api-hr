@@ -1,13 +1,19 @@
 package com.tamabee.api_hr.controller.company;
 
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.web.bind.annotation.DeleteMapping;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -30,6 +36,7 @@ import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.repository.user.UserRepository;
 import com.tamabee.api_hr.service.company.interfaces.IPayrollPeriodService;
 
+import com.tamabee.api_hr.config.ratelimit.RateLimited;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 
@@ -55,9 +62,11 @@ public class PayrollController {
     @GetMapping("/periods")
     public ResponseEntity<BaseResponse<Page<PayrollPeriodResponse>>> getPayrollPeriods(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) String status) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "year", "month"));
-        Page<PayrollPeriodResponse> periods = payrollPeriodService.getPayrollPeriods(pageable);
+        Page<PayrollPeriodResponse> periods = payrollPeriodService.getPayrollPeriods(year, status, pageable);
         return ResponseEntity.ok(BaseResponse.success(periods, "Lấy danh sách kỳ lương thành công"));
     }
 
@@ -94,6 +103,16 @@ public class PayrollController {
                 .body(BaseResponse.created(response, "Tạo kỳ lương thành công"));
     }
 
+    /**
+     * Xóa kỳ lương (chỉ xóa được khi status = DRAFT)
+     * DELETE /api/company/payroll/periods/{id}
+     */
+    @DeleteMapping("/periods/{id}")
+    public ResponseEntity<BaseResponse<Void>> deletePayrollPeriod(@PathVariable Long id) {
+        payrollPeriodService.deletePayrollPeriod(id);
+        return ResponseEntity.ok(BaseResponse.success(null, "Xóa kỳ lương thành công"));
+    }
+
     // ==================== Payroll Calculation ====================
 
     /**
@@ -124,7 +143,8 @@ public class PayrollController {
      */
     @PostMapping("/periods/{id}/submit")
     public ResponseEntity<BaseResponse<PayrollPeriodResponse>> submitForReview(@PathVariable Long id) {
-        PayrollPeriodResponse response = payrollPeriodService.submitForReview(id);
+        Long submittedBy = getCurrentUserId();
+        PayrollPeriodResponse response = payrollPeriodService.submitForReview(id, submittedBy);
         return ResponseEntity.ok(BaseResponse.success(response, "Submit kỳ lương để review thành công"));
     }
 
@@ -201,6 +221,16 @@ public class PayrollController {
     }
 
     /**
+     * Lấy chi tiết payroll item (không cần periodId)
+     * GET /api/company/payroll/items/{itemId}
+     */
+    @GetMapping("/items/{itemId}")
+    public ResponseEntity<BaseResponse<PayrollItemResponse>> getPayrollItem(@PathVariable Long itemId) {
+        PayrollItemResponse item = payrollPeriodService.getPayrollItemById(itemId);
+        return ResponseEntity.ok(BaseResponse.success(item, "Lấy chi tiết payroll item thành công"));
+    }
+
+    /**
      * Điều chỉnh payroll item
      * PUT /api/company/payroll/items/{itemId}/adjust
      */
@@ -236,9 +266,10 @@ public class PayrollController {
     public ResponseEntity<BaseResponse<Page<PayrollItemResponse>>> getEmployeePayslips(
             @PathVariable Long employeeId,
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "20") int size) {
+            @RequestParam(defaultValue = "20") int size,
+            @RequestParam(required = false) String status) {
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
-        Page<PayrollItemResponse> payslips = payrollPeriodService.getEmployeePayslips(employeeId, pageable);
+        Page<PayrollItemResponse> payslips = payrollPeriodService.getEmployeePayslips(employeeId, status, pageable);
         return ResponseEntity.ok(BaseResponse.success(payslips, "Lấy lịch sử payslip thành công"));
     }
 
@@ -263,6 +294,7 @@ public class PayrollController {
      * Download payslip PDF của một payroll item
      * GET /api/company/payroll/items/{itemId}/download
      */
+    @RateLimited(requests = 10, durationSeconds = 60, keyType = RateLimited.KeyType.USER, name = "payroll:download-pdf")
     @GetMapping("/items/{itemId}/download")
     public ResponseEntity<byte[]> downloadPayslip(@PathVariable Long itemId) {
         UserEntity currentUser = getCurrentUser();
@@ -271,37 +303,48 @@ public class PayrollController {
         // Generate PDF từ payroll item
         byte[] pdfData = payrollPeriodService.generatePayslipPdf(itemId);
 
-        // Tên file theo ngôn ngữ của admin - encode UTF-8 cho header
-        String payslipLabel = getPayslipLabel(currentUser.getLanguage());
-        String filename = String.format("%s_%s_%d-%02d.pdf",
-                payslipLabel,
-                item.getEmployeeCode(),
-                item.getYear(),
-                item.getMonth());
+        // Tạo filename sử dụng service method
+        String filename = payrollPeriodService.formatPayslipFilename(
+            item.getEmployeeCode(),
+            item.getYear(),
+            item.getMonth(),
+            currentUser.getLanguage()
+        );
 
         // Encode filename cho Content-Disposition (RFC 5987)
-        String encodedFilename = java.net.URLEncoder.encode(filename, java.nio.charset.StandardCharsets.UTF_8)
+        String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8)
                 .replace("+", "%20");
 
         return ResponseEntity.ok()
-                .header(org.springframework.http.HttpHeaders.CONTENT_DISPOSITION,
+                .header(HttpHeaders.CONTENT_DISPOSITION,
                         "attachment; filename*=UTF-8''" + encodedFilename)
-                .contentType(org.springframework.http.MediaType.APPLICATION_PDF)
+                .contentType(MediaType.APPLICATION_PDF)
                 .body(pdfData);
     }
 
     /**
-     * Lấy label "payslip" theo ngôn ngữ
+     * Download tất cả payslip PDF của một period dưới dạng ZIP
+     * GET /api/company/payroll/periods/{periodId}/download-all
      */
-    private String getPayslipLabel(String language) {
-        if (language == null) {
-            return "payslip";
-        }
-        return switch (language.toLowerCase()) {
-            case "vi" -> "phieu_luong";
-            case "ja" -> "給与明細";
-            default -> "payslip";
-        };
+    @RateLimited(requests = 3, durationSeconds = 60, keyType = RateLimited.KeyType.USER, name = "payroll:download-all")
+    @GetMapping("/periods/{periodId}/download-all")
+    public ResponseEntity<byte[]> downloadAllPayslips(@PathVariable Long periodId) {
+        // Generate ZIP file chứa tất cả PDF
+        byte[] zipData = payrollPeriodService.generateAllPayslipsZip(periodId);
+
+        // Lấy thông tin period để tạo tên file
+        PayrollPeriodDetailResponse detail = payrollPeriodService.getPayrollPeriodDetail(periodId);
+        String filename = String.format("payslips_%d-%02d.zip", detail.getYear(), detail.getMonth());
+
+        // Encode filename cho Content-Disposition
+        String encodedFilename = URLEncoder.encode(filename, StandardCharsets.UTF_8)
+                .replace("+", "%20");
+
+        return ResponseEntity.ok()
+                .header(HttpHeaders.CONTENT_DISPOSITION,
+                        "attachment; filename*=UTF-8''" + encodedFilename)
+                .contentType(MediaType.parseMediaType("application/zip"))
+                .body(zipData);
     }
 
     // ==================== Helper Methods ====================

@@ -1,5 +1,17 @@
 package com.tamabee.api_hr.mapper.company;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.YearMonth;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+
+import org.springframework.stereotype.Component;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import com.tamabee.api_hr.dto.request.payroll.PayrollPeriodRequest;
 import com.tamabee.api_hr.dto.response.payroll.PayrollItemResponse;
 import com.tamabee.api_hr.dto.response.payroll.PayrollPeriodDetailResponse;
@@ -8,17 +20,8 @@ import com.tamabee.api_hr.entity.payroll.PayrollItemEntity;
 import com.tamabee.api_hr.entity.payroll.PayrollPeriodEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.PayrollPeriodStatus;
-import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
 
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.YearMonth;
-import java.util.Collections;
-import java.util.List;
-import java.util.Map;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Mapper cho PayrollPeriod và PayrollItem entities và DTOs.
@@ -38,22 +41,33 @@ public class PayrollPeriodMapper {
         }
 
         PayrollPeriodEntity entity = new PayrollPeriodEntity();
-        entity.setYear(request.getYear());
-        entity.setMonth(request.getMonth());
         entity.setStatus(PayrollPeriodStatus.DRAFT);
         entity.setCreatedBy(createdBy);
+
+        // Xác định year và month từ request hoặc từ periodStart
+        Integer year = request.getYear();
+        Integer month = request.getMonth();
+        
+        // Nếu không có year/month, extract từ periodStart
+        if ((year == null || month == null) && request.getPeriodStart() != null) {
+            year = request.getPeriodStart().getYear();
+            month = request.getPeriodStart().getMonthValue();
+        }
+        
+        entity.setYear(year);
+        entity.setMonth(month);
 
         // Tính ngày bắt đầu và kết thúc kỳ lương
         if (request.getPeriodStart() != null) {
             entity.setPeriodStart(request.getPeriodStart());
-        } else {
-            entity.setPeriodStart(LocalDate.of(request.getYear(), request.getMonth(), 1));
+        } else if (year != null && month != null) {
+            entity.setPeriodStart(LocalDate.of(year, month, 1));
         }
 
         if (request.getPeriodEnd() != null) {
             entity.setPeriodEnd(request.getPeriodEnd());
-        } else {
-            YearMonth yearMonth = YearMonth.of(request.getYear(), request.getMonth());
+        } else if (year != null && month != null) {
+            YearMonth yearMonth = YearMonth.of(year, month);
             entity.setPeriodEnd(yearMonth.atEndOfMonth());
         }
 
@@ -91,6 +105,7 @@ public class PayrollPeriodMapper {
                 .approvedAt(entity.getApprovedAt())
                 .paidAt(entity.getPaidAt())
                 .paymentReference(entity.getPaymentReference())
+                .rejectionReason(entity.getRejectionReason())
                 .totalGrossSalary(entity.getTotalGrossSalary())
                 .totalNetSalary(entity.getTotalNetSalary())
                 .totalEmployees(entity.getTotalEmployees())
@@ -160,6 +175,7 @@ public class PayrollPeriodMapper {
                 .approvedAt(entity.getApprovedAt())
                 .paidAt(entity.getPaidAt())
                 .paymentReference(entity.getPaymentReference())
+                .rejectionReason(entity.getRejectionReason())
                 .totalGrossSalary(entity.getTotalGrossSalary())
                 .totalNetSalary(entity.getTotalNetSalary())
                 .totalEmployees(entity.getTotalEmployees())
@@ -173,9 +189,11 @@ public class PayrollPeriodMapper {
     }
 
     /**
-     * Chuyển đổi PayrollItemEntity sang Response DTO với year/month từ period
+     * Chuyển đổi PayrollItemEntity sang Response DTO với year/month/paidAt từ period
      */
-    public PayrollItemResponse toItemResponse(PayrollItemEntity entity, Map<Long, UserEntity> userMap, Integer year, Integer month) {
+    public PayrollItemResponse toItemResponse(
+            PayrollItemEntity entity, Map<Long, UserEntity> userMap,
+            Integer year, Integer month, LocalDateTime paidAt) {
         if (entity == null) {
             return null;
         }
@@ -208,6 +226,7 @@ public class PayrollPeriodMapper {
                 .employeeCode(employeeCode)
                 .year(year)
                 .month(month)
+                .paidAt(paidAt)
                 .salaryType(entity.getSalaryType())
                 .baseSalary(entity.getBaseSalary())
                 .calculatedBaseSalary(entity.getCalculatedBaseSalary())
@@ -235,6 +254,13 @@ public class PayrollPeriodMapper {
                 .adjustedAt(entity.getAdjustedAt())
                 .status(entity.getStatus())
                 .build();
+    }
+
+    /**
+     * Chuyển đổi PayrollItemEntity sang Response DTO với year/month từ period (backward compatibility)
+     */
+    public PayrollItemResponse toItemResponse(PayrollItemEntity entity, Map<Long, UserEntity> userMap, Integer year, Integer month) {
+        return toItemResponse(entity, userMap, year, month, null);
     }
 
     /**

@@ -1,14 +1,15 @@
 package com.tamabee.api_hr.repository.leave;
 
-import com.tamabee.api_hr.entity.leave.LeaveBalanceEntity;
-import com.tamabee.api_hr.enums.LeaveType;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.tamabee.api_hr.entity.leave.LeaveBalanceEntity;
+import com.tamabee.api_hr.enums.LeaveType;
 
 /**
  * Repository quản lý số ngày phép còn lại của nhân viên.
@@ -61,4 +62,10 @@ public interface LeaveBalanceRepository extends JpaRepository<LeaveBalanceEntity
                         @Param("employeeId") Long employeeId,
                         @Param("year") Integer year,
                         @Param("leaveType") LeaveType leaveType);
+
+        /**
+         * Lấy tất cả balance của nhiều nhân viên theo năm
+         * Dùng cho bulk operations
+         */
+        List<LeaveBalanceEntity> findByYearAndEmployeeIdIn(Integer year, List<Long> employeeIds);
 }

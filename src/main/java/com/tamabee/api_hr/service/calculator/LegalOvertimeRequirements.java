@@ -15,15 +15,15 @@ public class LegalOvertimeRequirements {
     /**
      * Lấy hệ số tăng ca tối thiểu theo quy định pháp luật
      *
-     * @param locale Locale code (ja, vi, en, ...)
+     * @param region Region code (ja, vi, ...)
      * @return Hệ số tăng ca tối thiểu
      */
-    public OvertimeMultipliers getMinimumMultipliers(String locale) {
-        if (locale == null) {
+    public OvertimeMultipliers getMinimumMultipliers(String region) {
+        if (region == null) {
             return getDefaultMinimumMultipliers();
         }
 
-        return switch (locale.toLowerCase()) {
+        return switch (region.toLowerCase()) {
             case "ja" -> getJapaneseMinimumMultipliers();
             case "vi" -> getVietnameseMinimumMultipliers();
             default -> getDefaultMinimumMultipliers();
@@ -69,7 +69,7 @@ public class LegalOvertimeRequirements {
     }
 
     /**
-     * Default/Other Locales
+     * Default/Other Regions
      * Sử dụng mức tối thiểu phổ biến
      */
     public OvertimeMultipliers getDefaultMinimumMultipliers() {
@@ -101,15 +101,15 @@ public class LegalOvertimeRequirements {
      * Validate tất cả multipliers trong config
      *
      * @param multipliers Hệ số cần validate
-     * @param locale      Locale để lấy legal minimum
+     * @param region      Region để lấy legal minimum
      * @return true nếu tất cả multipliers đều compliant
      */
-    public boolean validateMultipliers(OvertimeMultipliers multipliers, String locale) {
+    public boolean validateMultipliers(OvertimeMultipliers multipliers, String region) {
         if (multipliers == null) {
             return false;
         }
 
-        OvertimeMultipliers minimum = getMinimumMultipliers(locale);
+        OvertimeMultipliers minimum = getMinimumMultipliers(region);
 
         return isMultiplierCompliant(multipliers.getRegularOvertime(), minimum.getRegularOvertime())
                 && isMultiplierCompliant(multipliers.getNightWork(), minimum.getNightWork())

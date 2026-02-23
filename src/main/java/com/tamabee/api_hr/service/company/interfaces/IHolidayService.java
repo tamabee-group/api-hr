@@ -1,13 +1,14 @@
 package com.tamabee.api_hr.service.company.interfaces;
 
-import com.tamabee.api_hr.dto.request.leave.CreateHolidayRequest;
-import com.tamabee.api_hr.dto.request.leave.UpdateHolidayRequest;
-import com.tamabee.api_hr.dto.response.leave.HolidayResponse;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.time.LocalDate;
-import java.util.List;
+import com.tamabee.api_hr.dto.request.leave.CreateHolidayRequest;
+import com.tamabee.api_hr.dto.request.leave.UpdateHolidayRequest;
+import com.tamabee.api_hr.dto.response.leave.HolidayResponse;
 
 /**
  * Service quản lý ngày nghỉ lễ.
@@ -40,6 +41,11 @@ public interface IHolidayService {
      * @param holidayId ID ngày nghỉ
      */
     void deleteHoliday(Long holidayId);
+
+    /**
+     * Xóa tất cả ngày nghỉ lễ (hard delete)
+     */
+    void deleteAllHolidays();
 
     // ==================== Query Operations ====================
 

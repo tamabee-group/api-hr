@@ -1,16 +1,17 @@
 package com.tamabee.api_hr.dto.response.attendance;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import com.tamabee.api_hr.dto.response.payroll.AppliedSettingsSnapshot;
 import com.tamabee.api_hr.enums.AttendanceStatus;
 import com.tamabee.api_hr.enums.BreakType;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * Response cho bản ghi chấm công.
@@ -47,15 +48,19 @@ public class AttendanceRecordResponse {
     // Trạng thái
     private AttendanceStatus status;
 
-    // Device info
-    private String checkInDeviceId;
-    private String checkOutDeviceId;
-
     // Location info
     private Double checkInLatitude;
     private Double checkInLongitude;
     private Double checkOutLatitude;
     private Double checkOutLongitude;
+
+    // Chấm công ngoài phạm vi
+    private Boolean checkInOutOfRange;
+    private Boolean checkOutOutOfRange;
+
+    // Nguồn chấm công
+    private String checkInSource;
+    private Long kioskId;
 
     // Break time fields
     private Integer totalBreakMinutes;

@@ -1,16 +1,20 @@
 package com.tamabee.api_hr.dto.response.attendance;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import com.tamabee.api_hr.enums.AdjustmentRequestType;
 import com.tamabee.api_hr.enums.AdjustmentStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-
 /**
  * Response chứa thông tin yêu cầu điều chỉnh chấm công.
+ * Hỗ trợ nhiều break items trong 1 request.
  */
 @Data
 @Builder
@@ -19,6 +23,9 @@ import java.time.LocalDateTime;
 public class AdjustmentRequestResponse {
 
     private Long id;
+
+    // Loại yêu cầu: ADJUST, DELETE_RECORD
+    private AdjustmentRequestType requestType;
 
     // Thông tin nhân viên
     private Long employeeId;
@@ -35,25 +42,19 @@ public class AdjustmentRequestResponse {
     private Long assignedTo;
     private String assignedToName;
 
-    // Thông tin break record được điều chỉnh
-    private Long breakRecordId;
-    private Integer breakNumber;
-
     // Thời gian gốc
     private LocalDateTime originalCheckIn;
     private LocalDateTime originalCheckOut;
-
-    // Thời gian break gốc
-    private LocalDateTime originalBreakStart;
-    private LocalDateTime originalBreakEnd;
 
     // Thời gian yêu cầu thay đổi
     private LocalDateTime requestedCheckIn;
     private LocalDateTime requestedCheckOut;
 
-    // Thời gian break yêu cầu thay đổi
-    private LocalDateTime requestedBreakStart;
-    private LocalDateTime requestedBreakEnd;
+    // Danh sách các break items được điều chỉnh
+    private List<BreakItemResponse> breakItems;
+
+    // Tất cả break records của ngày đó (để người duyệt có cái nhìn đầy đủ)
+    private List<BreakRecordResponse> allBreakRecords;
 
     // Lý do yêu cầu
     private String reason;

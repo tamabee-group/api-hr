@@ -31,6 +31,10 @@ public interface UserRepository extends JpaRepository<UserEntity, Long> {
     // Tìm user theo ID (chưa bị xóa)
     Optional<UserEntity> findByIdAndDeletedFalse(Long id);
 
+    // Tìm user theo ID kèm profile (chưa bị xóa)
+    @EntityGraph(attributePaths = { "profile" })
+    Optional<UserEntity> findWithProfileByIdAndDeletedFalse(Long id);
+
     // Kiểm tra user tồn tại theo ID (chưa bị xóa)
     boolean existsByIdAndDeletedFalse(Long id);
 

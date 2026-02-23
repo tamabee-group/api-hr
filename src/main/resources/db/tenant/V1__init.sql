@@ -31,7 +31,6 @@ CREATE TABLE users (
     password VARCHAR(255) NOT NULL,
     role VARCHAR(50) NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'ACTIVE',
-    locale VARCHAR(50) NOT NULL,
     language VARCHAR(10) NOT NULL,
     tenant_domain VARCHAR(50),
     profile_completeness INTEGER NOT NULL DEFAULT 0,
@@ -99,16 +98,10 @@ CREATE INDEX idx_user_profiles_deleted ON user_profiles(deleted);
 
 -- =====================================================
 -- COMPANY SETTINGS - Cấu hình công ty (không cần company_id)
+-- Các config đã migrate sang bảng riêng bên dưới
 -- =====================================================
 CREATE TABLE company_settings (
     id BIGSERIAL PRIMARY KEY,
-    attendance_config JSONB,
-    payroll_config JSONB,
-    overtime_config JSONB,
-    allowance_config JSONB,
-    deduction_config JSONB,
-    break_config JSONB,
-    work_mode VARCHAR(20) NOT NULL DEFAULT 'FLEXIBLE_SHIFT',
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(50),
@@ -117,7 +110,142 @@ CREATE TABLE company_settings (
 );
 
 CREATE INDEX idx_company_settings_deleted ON company_settings(deleted);
-CREATE INDEX idx_company_settings_work_mode ON company_settings(work_mode);
+
+-- =====================================================
+-- ATTENDANCE SETTINGS - Cấu hình chấm công
+-- =====================================================
+CREATE TABLE attendance_settings (
+    id BIGSERIAL PRIMARY KEY,
+    default_work_start_time TIME DEFAULT '09:00',
+    default_work_end_time TIME DEFAULT '18:00',
+    default_break_minutes INTEGER DEFAULT 60,
+    enable_rounding BOOLEAN DEFAULT FALSE,
+    enable_check_in_rounding BOOLEAN DEFAULT FALSE,
+    enable_check_out_rounding BOOLEAN DEFAULT FALSE,
+    enable_break_start_rounding BOOLEAN DEFAULT FALSE,
+    enable_break_end_rounding BOOLEAN DEFAULT FALSE,
+    check_in_rounding_interval VARCHAR(20),
+    check_in_rounding_direction VARCHAR(20),
+    check_out_rounding_interval VARCHAR(20),
+    check_out_rounding_direction VARCHAR(20),
+    break_start_rounding_interval VARCHAR(20),
+    break_start_rounding_direction VARCHAR(20),
+    break_end_rounding_interval VARCHAR(20),
+    break_end_rounding_direction VARCHAR(20),
+    late_grace_minutes INTEGER DEFAULT 0,
+    early_leave_grace_minutes INTEGER DEFAULT 0,
+    require_geo_location BOOLEAN DEFAULT FALSE,
+    geo_fence_radius_meters INTEGER DEFAULT 500,
+    allow_web_check_in BOOLEAN DEFAULT TRUE,
+    saturday_off BOOLEAN DEFAULT TRUE,
+    sunday_off BOOLEAN DEFAULT TRUE,
+    holiday_off BOOLEAN DEFAULT TRUE,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by VARCHAR(50)
+);
+
+CREATE INDEX idx_attendance_settings_deleted ON attendance_settings(deleted);
+
+-- =====================================================
+-- BREAK SETTINGS - Cấu hình giờ giải lao
+-- =====================================================
+CREATE TABLE break_settings (
+    id BIGSERIAL PRIMARY KEY,
+    break_enabled BOOLEAN DEFAULT TRUE,
+    break_type VARCHAR(20) DEFAULT 'UNPAID',
+    default_break_minutes INTEGER DEFAULT 60,
+    minimum_break_minutes INTEGER DEFAULT 45,
+    maximum_break_minutes INTEGER DEFAULT 90,
+    use_legal_minimum BOOLEAN DEFAULT TRUE,
+    region VARCHAR(10) DEFAULT 'ja',
+    fixed_break_mode BOOLEAN DEFAULT FALSE,
+    break_periods_per_attendance INTEGER DEFAULT 1,
+    max_breaks_per_day INTEGER DEFAULT 3,
+    fixed_break_periods JSONB DEFAULT '[]',
+    night_shift_start_time TIME DEFAULT '22:00',
+    night_shift_end_time TIME DEFAULT '05:00',
+    night_shift_minimum_break_minutes INTEGER DEFAULT 45,
+    night_shift_default_break_minutes INTEGER DEFAULT 60,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by VARCHAR(50)
+);
+
+CREATE INDEX idx_break_settings_deleted ON break_settings(deleted);
+
+-- =====================================================
+-- PAYROLL SETTINGS - Cấu hình tính lương
+-- =====================================================
+CREATE TABLE payroll_settings (
+    id BIGSERIAL PRIMARY KEY,
+    default_salary_type VARCHAR(20) DEFAULT 'MONTHLY',
+    pay_day INTEGER DEFAULT 25,
+    cutoff_day INTEGER DEFAULT 20,
+    salary_rounding VARCHAR(20) DEFAULT 'NEAREST',
+    standard_working_days_per_month INTEGER DEFAULT 22,
+    standard_working_hours_per_day INTEGER DEFAULT 8,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by VARCHAR(50)
+);
+
+CREATE INDEX idx_payroll_settings_deleted ON payroll_settings(deleted);
+
+-- =====================================================
+-- OVERTIME SETTINGS - Cấu hình tăng ca
+-- =====================================================
+CREATE TABLE overtime_settings (
+    id BIGSERIAL PRIMARY KEY,
+    overtime_enabled BOOLEAN DEFAULT TRUE,
+    standard_working_hours INTEGER DEFAULT 8,
+    night_start_time TIME DEFAULT '22:00',
+    night_end_time TIME DEFAULT '05:00',
+    regular_overtime_rate DECIMAL(5,2) DEFAULT 1.25,
+    night_work_rate DECIMAL(5,2) DEFAULT 1.25,
+    night_overtime_rate DECIMAL(5,2) DEFAULT 1.50,
+    holiday_overtime_rate DECIMAL(5,2) DEFAULT 1.35,
+    holiday_night_overtime_rate DECIMAL(5,2) DEFAULT 1.60,
+    weekend_overtime_rate DECIMAL(5,2) DEFAULT 1.35,
+    use_legal_minimum BOOLEAN DEFAULT TRUE,
+    region VARCHAR(10) DEFAULT 'ja',
+    max_overtime_hours_per_day INTEGER DEFAULT 4,
+    max_overtime_hours_per_month INTEGER DEFAULT 45,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by VARCHAR(50)
+);
+
+CREATE INDEX idx_overtime_settings_deleted ON overtime_settings(deleted);
+
+-- =====================================================
+-- ATTENDANCE LOCATIONS - Vị trí chấm công
+-- =====================================================
+CREATE TABLE attendance_locations (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    address VARCHAR(500),
+    latitude DOUBLE PRECISION NOT NULL,
+    longitude DOUBLE PRECISION NOT NULL,
+    radius_meters INTEGER NOT NULL DEFAULT 100,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by VARCHAR(50)
+);
+
+CREATE INDEX idx_attendance_locations_deleted ON attendance_locations(deleted);
+CREATE INDEX idx_attendance_locations_active ON attendance_locations(is_active);
 
 CREATE TABLE shift_templates (
     id BIGSERIAL PRIMARY KEY,
@@ -194,12 +322,14 @@ CREATE TABLE attendance_records (
     break_type VARCHAR(20),
     break_compliant BOOLEAN,
     status VARCHAR(50) NOT NULL DEFAULT 'PRESENT',
-    check_in_device_id VARCHAR(255),
-    check_out_device_id VARCHAR(255),
     check_in_latitude DOUBLE PRECISION,
     check_in_longitude DOUBLE PRECISION,
     check_out_latitude DOUBLE PRECISION,
     check_out_longitude DOUBLE PRECISION,
+    check_in_out_of_range BOOLEAN DEFAULT FALSE,
+    check_out_out_of_range BOOLEAN DEFAULT FALSE,
+    check_in_source VARCHAR(20) DEFAULT 'WEB',
+    kiosk_id BIGINT,
     adjustment_reason VARCHAR(500),
     adjusted_by BIGINT,
     adjusted_at TIMESTAMP,
@@ -213,7 +343,7 @@ CREATE TABLE attendance_records (
 CREATE INDEX idx_attendance_records_employee_id ON attendance_records(employee_id);
 CREATE INDEX idx_attendance_records_work_date ON attendance_records(work_date);
 CREATE INDEX idx_attendance_records_status ON attendance_records(status);
-CREATE INDEX idx_attendance_records_employee_date ON attendance_records(employee_id, work_date);
+CREATE UNIQUE INDEX idx_attendance_records_employee_date ON attendance_records(employee_id, work_date);
 
 
 CREATE TABLE break_records (
@@ -227,6 +357,12 @@ CREATE TABLE break_records (
     actual_break_minutes INTEGER DEFAULT 0,
     effective_break_minutes INTEGER DEFAULT 0,
     notes VARCHAR(500),
+    break_start_latitude DOUBLE PRECISION,
+    break_start_longitude DOUBLE PRECISION,
+    break_end_latitude DOUBLE PRECISION,
+    break_end_longitude DOUBLE PRECISION,
+    break_start_out_of_range BOOLEAN DEFAULT FALSE,
+    break_end_out_of_range BOOLEAN DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_by VARCHAR(50),
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
@@ -245,6 +381,7 @@ CREATE TABLE attendance_adjustment_requests (
     employee_id BIGINT NOT NULL,
     attendance_record_id BIGINT,
     work_date DATE,
+    request_type VARCHAR(50) NOT NULL DEFAULT 'ADJUST',
     break_record_id BIGINT,
     assigned_to BIGINT,
     original_check_in TIMESTAMP,
@@ -276,6 +413,27 @@ CREATE INDEX idx_adjustment_requests_work_date ON attendance_adjustment_requests
 CREATE INDEX idx_adjustment_requests_break_record_id ON attendance_adjustment_requests(break_record_id);
 CREATE INDEX idx_adjustment_requests_assigned_to ON attendance_adjustment_requests(assigned_to);
 CREATE INDEX idx_adjustment_requests_status ON attendance_adjustment_requests(status);
+CREATE INDEX idx_adjustment_requests_request_type ON attendance_adjustment_requests(request_type);
+
+-- =====================================================
+-- ADJUSTMENT_BREAK_ITEMS - Chi tiết điều chỉnh break trong yêu cầu
+-- =====================================================
+CREATE TABLE adjustment_break_items (
+    id BIGSERIAL PRIMARY KEY,
+    adjustment_request_id BIGINT NOT NULL,
+    break_record_id BIGINT,  -- NULL khi actionType = CREATE (tạo mới break)
+    break_number INTEGER,
+    action_type VARCHAR(20) NOT NULL DEFAULT 'ADJUST',
+    original_break_start TIMESTAMP,
+    original_break_end TIMESTAMP,
+    requested_break_start TIMESTAMP,
+    requested_break_end TIMESTAMP,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_adjustment_break_items_request FOREIGN KEY (adjustment_request_id) REFERENCES attendance_adjustment_requests(id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE INDEX idx_adjustment_break_items_request_id ON adjustment_break_items(adjustment_request_id);
+CREATE INDEX idx_adjustment_break_items_break_record_id ON adjustment_break_items(break_record_id);
 
 CREATE TABLE holidays (
     id BIGSERIAL PRIMARY KEY,
@@ -294,6 +452,7 @@ CREATE TABLE holidays (
 CREATE INDEX idx_holidays_deleted ON holidays(deleted);
 CREATE INDEX idx_holidays_date ON holidays(date);
 CREATE INDEX idx_holidays_type ON holidays(type);
+CREATE UNIQUE INDEX idx_holidays_date_name ON holidays(date, name) WHERE deleted = false;
 
 CREATE TABLE leave_requests (
     id BIGSERIAL PRIMARY KEY,
@@ -366,49 +525,43 @@ CREATE INDEX idx_emp_salary_employee_id ON employee_salaries(employee_id);
 CREATE INDEX idx_emp_salary_effective ON employee_salaries(employee_id, effective_from);
 CREATE INDEX idx_emp_salary_active ON employee_salaries(employee_id, active);
 
-CREATE TABLE employee_allowances (
+-- =====================================================
+-- SALARY ITEM TEMPLATES - Template phụ cấp/khấu trừ
+-- =====================================================
+CREATE TABLE salary_item_templates (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    type VARCHAR(20) NOT NULL,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by VARCHAR(100)
+);
+
+CREATE INDEX idx_salary_item_template_type ON salary_item_templates(type);
+CREATE INDEX idx_salary_item_template_deleted ON salary_item_templates(deleted);
+
+-- =====================================================
+-- EMPLOYEE SALARY ITEMS - Phụ cấp/khấu trừ của nhân viên
+-- =====================================================
+CREATE TABLE employee_salary_items (
     id BIGSERIAL PRIMARY KEY,
     employee_id BIGINT NOT NULL,
-    allowance_code VARCHAR(50) NOT NULL,
-    allowance_name VARCHAR(200) NOT NULL,
-    allowance_type VARCHAR(50) NOT NULL,
+    template_id BIGINT NOT NULL,
     amount DECIMAL(15,2) NOT NULL,
-    taxable BOOLEAN NOT NULL DEFAULT TRUE,
-    effective_from DATE NOT NULL,
-    effective_to DATE,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
     deleted BOOLEAN NOT NULL DEFAULT FALSE,
     created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(100),
     updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_employee_allowances_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
+    updated_by VARCHAR(100),
+    CONSTRAINT fk_employee_salary_items_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON DELETE CASCADE,
+    CONSTRAINT fk_employee_salary_items_template FOREIGN KEY (template_id) REFERENCES salary_item_templates(id)
 );
 
-CREATE INDEX idx_emp_allowance_employee_id ON employee_allowances(employee_id);
-CREATE INDEX idx_emp_allowance_deleted ON employee_allowances(deleted);
-CREATE INDEX idx_emp_allowance_active ON employee_allowances(employee_id, is_active);
-CREATE INDEX idx_emp_allowance_effective ON employee_allowances(employee_id, effective_from, effective_to);
-
-CREATE TABLE employee_deductions (
-    id BIGSERIAL PRIMARY KEY,
-    employee_id BIGINT NOT NULL,
-    deduction_code VARCHAR(50) NOT NULL,
-    deduction_name VARCHAR(200) NOT NULL,
-    deduction_type VARCHAR(50) NOT NULL,
-    amount DECIMAL(15,2),
-    percentage DECIMAL(5,2),
-    effective_from DATE NOT NULL,
-    effective_to DATE,
-    is_active BOOLEAN NOT NULL DEFAULT TRUE,
-    deleted BOOLEAN NOT NULL DEFAULT FALSE,
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    CONSTRAINT fk_employee_deductions_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
-);
-
-CREATE INDEX idx_emp_deduction_employee_id ON employee_deductions(employee_id);
-CREATE INDEX idx_emp_deduction_deleted ON employee_deductions(deleted);
-CREATE INDEX idx_emp_deduction_active ON employee_deductions(employee_id, is_active);
-CREATE INDEX idx_emp_deduction_effective ON employee_deductions(employee_id, effective_from, effective_to);
+CREATE INDEX idx_employee_salary_item_employee ON employee_salary_items(employee_id);
+CREATE INDEX idx_employee_salary_item_template ON employee_salary_items(template_id);
+CREATE INDEX idx_employee_salary_item_deleted ON employee_salary_items(deleted);
 
 CREATE TABLE payroll_periods (
     id BIGSERIAL PRIMARY KEY,
@@ -418,6 +571,8 @@ CREATE TABLE payroll_periods (
     month INTEGER NOT NULL,
     status VARCHAR(50) NOT NULL DEFAULT 'DRAFT',
     created_by BIGINT NOT NULL,
+    rejection_reason VARCHAR(500),
+    submitted_by BIGINT,
     approved_by BIGINT,
     approved_at TIMESTAMP,
     paid_at TIMESTAMP,
@@ -524,19 +679,6 @@ CREATE INDEX idx_audit_timestamp ON audit_logs(timestamp);
 CREATE INDEX idx_audit_entity_type_id ON audit_logs(entity_type, entity_id);
 CREATE INDEX idx_audit_timestamp_desc ON audit_logs(timestamp DESC);
 
-CREATE TABLE work_mode_change_logs (
-    id BIGSERIAL PRIMARY KEY,
-    previous_mode VARCHAR(20) NOT NULL,
-    new_mode VARCHAR(20) NOT NULL,
-    changed_by VARCHAR(255) NOT NULL,
-    changed_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    reason VARCHAR(500),
-    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP
-);
-
-CREATE INDEX idx_work_mode_change_logs_changed_at ON work_mode_change_logs(changed_at DESC);
-
 
 -- =====================================================
 -- EMAIL VERIFICATIONS - Xác thực email (forgot password)
@@ -576,3 +718,84 @@ CREATE TABLE employee_documents (
 
 CREATE INDEX idx_employee_documents_employee_id ON employee_documents(employee_id);
 CREATE INDEX idx_employee_documents_document_type ON employee_documents(document_type);
+
+
+-- =====================================================
+-- NOTIFICATIONS - Thông báo cho người dùng
+-- Không có soft delete (data lớn, xóa thẳng)
+-- =====================================================
+CREATE TABLE notifications (
+    id BIGSERIAL PRIMARY KEY,
+    user_id BIGINT NOT NULL,
+    code VARCHAR(50) NOT NULL,
+    params TEXT,
+    target_url VARCHAR(255),
+    type VARCHAR(20) NOT NULL,
+    is_read BOOLEAN NOT NULL DEFAULT FALSE,
+    title VARCHAR(255),
+    content TEXT,
+    system_notification_id BIGINT,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_notifications_user FOREIGN KEY (user_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE INDEX idx_notifications_user_id ON notifications(user_id);
+CREATE INDEX idx_notifications_user_read ON notifications(user_id, is_read);
+CREATE INDEX idx_notifications_created_at ON notifications(created_at DESC);
+
+-- =====================================================
+-- SHIFT PREFERENCES - Nguyện vọng ca làm việc của nhân viên
+-- Cho phép employee gửi nguyện vọng ca theo tuần,
+-- hỗ trợ chọn shift template có sẵn hoặc nhập custom time.
+-- =====================================================
+CREATE TABLE shift_preferences (
+    id BIGSERIAL PRIMARY KEY,
+    employee_id BIGINT NOT NULL,
+    year INTEGER NOT NULL,
+    week_number INTEGER NOT NULL,
+    day_of_week INTEGER NOT NULL, -- 1=Monday..7=Sunday (ISO 8601)
+    shift_template_id BIGINT,     -- NULL nếu custom time
+    custom_start_time TIME,        -- NULL nếu chọn template
+    custom_end_time TIME,          -- NULL nếu chọn template
+    reason TEXT,
+    priority VARCHAR(20) NOT NULL DEFAULT 'NORMAL', -- NORMAL, HIGH (có reason)
+    status VARCHAR(20) NOT NULL DEFAULT 'PENDING',  -- PENDING, APPLIED, EXPIRED
+    applied_assignment_id BIGINT,  -- ID assignment tạo khi apply (dùng cho undo)
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    CONSTRAINT fk_preference_employee FOREIGN KEY (employee_id) REFERENCES users(id) ON UPDATE CASCADE ON DELETE CASCADE,
+    CONSTRAINT fk_preference_template FOREIGN KEY (shift_template_id) REFERENCES shift_templates(id) ON UPDATE CASCADE ON DELETE SET NULL,
+    CONSTRAINT chk_preference_shift CHECK (
+        (shift_template_id IS NOT NULL AND custom_start_time IS NULL AND custom_end_time IS NULL) OR
+        (shift_template_id IS NULL AND custom_start_time IS NOT NULL AND custom_end_time IS NOT NULL)
+    )
+);
+
+CREATE INDEX idx_preference_employee ON shift_preferences(employee_id);
+CREATE INDEX idx_preference_week ON shift_preferences(year, week_number);
+CREATE INDEX idx_preference_employee_week ON shift_preferences(employee_id, year, week_number);
+CREATE INDEX idx_preference_status ON shift_preferences(status);
+
+
+-- =====================================================
+-- ATTENDANCE KIOSKS - Máy chấm công cố định
+-- =====================================================
+CREATE TABLE attendance_kiosks (
+    id BIGSERIAL PRIMARY KEY,
+    name VARCHAR(200) NOT NULL,
+    pin_code VARCHAR(10) NOT NULL,
+    location_id BIGINT NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT TRUE,
+    last_active_at TIMESTAMP,
+    deleted BOOLEAN NOT NULL DEFAULT FALSE,
+    created_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    created_by VARCHAR(50),
+    updated_at TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_by VARCHAR(50),
+    CONSTRAINT fk_kiosk_location FOREIGN KEY (location_id) REFERENCES attendance_locations(id) ON UPDATE CASCADE ON DELETE CASCADE
+);
+
+CREATE INDEX idx_kiosk_deleted ON attendance_kiosks(deleted);
+CREATE INDEX idx_kiosk_active ON attendance_kiosks(is_active);
+CREATE INDEX idx_kiosk_pin_code ON attendance_kiosks(pin_code);

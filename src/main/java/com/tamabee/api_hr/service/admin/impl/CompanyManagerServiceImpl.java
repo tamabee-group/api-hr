@@ -17,6 +17,8 @@ import com.tamabee.api_hr.mapper.core.CompanyMapper;
 import com.tamabee.api_hr.repository.company.CompanyRepository;
 import com.tamabee.api_hr.service.admin.interfaces.ICompanyManagerService;
 import com.tamabee.api_hr.service.core.interfaces.IUploadService;
+import com.tamabee.api_hr.datasource.RegionContext;
+import com.tamabee.api_hr.util.RegionUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -46,7 +48,7 @@ public class CompanyManagerServiceImpl implements ICompanyManagerService {
     @Override
     @Transactional(readOnly = true)
     public CompanyResponse getCompanyById(Long id) {
-        CompanyEntity company = companyRepository.findById(id)
+        CompanyEntity company = companyRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> NotFoundException.company(id));
         return companyMapper.toResponse(company);
     }
@@ -54,7 +56,7 @@ public class CompanyManagerServiceImpl implements ICompanyManagerService {
     @Override
     @Transactional
     public CompanyResponse updateCompany(Long id, UpdateCompanyRequest request) {
-        CompanyEntity company = companyRepository.findById(id)
+        CompanyEntity company = companyRepository.findByIdAndDeletedFalse(id)
                 .orElseThrow(() -> NotFoundException.company(id));
 
         // Cập nhật các trường nếu có giá trị
@@ -73,8 +75,8 @@ public class CompanyManagerServiceImpl implements ICompanyManagerService {
         if (request.getIndustry() != null) {
             company.setIndustry(request.getIndustry());
         }
-        if (request.getLocale() != null) {
-            company.setLocale(request.getLocale());
+        if (request.getRegion() != null) {
+            company.setRegion(request.getRegion());
         }
         if (request.getLanguage() != null) {
             company.setLanguage(request.getLanguage());
@@ -131,7 +133,7 @@ public class CompanyManagerServiceImpl implements ICompanyManagerService {
 
         // Set status = INACTIVE và ghi nhận thời điểm deactivate
         company.setStatus(CompanyStatus.INACTIVE);
-        company.setDeactivatedAt(java.time.LocalDateTime.now());
+        company.setDeactivatedAt(java.time.LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())));
         CompanyEntity savedCompany = companyRepository.save(company);
 
         // Remove DataSource khỏi pool (database vẫn giữ lại cho compliance)

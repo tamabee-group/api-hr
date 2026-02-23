@@ -5,6 +5,9 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.time.LocalDateTime;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 import javax.sql.DataSource;
 
@@ -17,6 +20,8 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.transaction.support.TransactionTemplate;
 
+import com.tamabee.api_hr.constants.NotificationCode;
+import com.tamabee.api_hr.datasource.RegionContext;
 import com.tamabee.api_hr.datasource.TenantContext;
 import com.tamabee.api_hr.datasource.TenantDataSourceManager;
 import com.tamabee.api_hr.datasource.TenantProvisioningService;
@@ -31,6 +36,7 @@ import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.entity.wallet.WalletEntity;
 import com.tamabee.api_hr.enums.CompanyStatus;
 import com.tamabee.api_hr.enums.ErrorCode;
+import com.tamabee.api_hr.enums.NotificationType;
 import com.tamabee.api_hr.enums.UserRole;
 import com.tamabee.api_hr.enums.UserStatus;
 import com.tamabee.api_hr.exception.BadRequestException;
@@ -47,8 +53,10 @@ import com.tamabee.api_hr.repository.wallet.WalletRepository;
 import com.tamabee.api_hr.service.admin.interfaces.ISettingService;
 import com.tamabee.api_hr.service.core.interfaces.IAuthService;
 import com.tamabee.api_hr.service.core.interfaces.IEmailService;
+import com.tamabee.api_hr.service.core.interfaces.INotificationService;
 import com.tamabee.api_hr.util.JwtUtil;
 import com.tamabee.api_hr.util.ReferralCodeGenerator;
+import com.tamabee.api_hr.util.RegionUtil;
 import com.tamabee.api_hr.util.TenantDomainValidator;
 
 import lombok.extern.slf4j.Slf4j;
@@ -68,11 +76,13 @@ public class AuthServiceImpl implements IAuthService {
     private final JwtUtil jwtUtil;
     private final ISettingService settingService;
     private final IEmailService emailService;
+    private final INotificationService notificationService;
     private final TenantProvisioningService tenantProvisioningService;
     private final TenantDataSourceManager tenantDataSourceManager;
     private final JdbcTemplate masterJdbcTemplate;
     private final TransactionTemplate transactionTemplate;
 
+    @SuppressWarnings("checkstyle:ParameterNumber")
     public AuthServiceImpl(
             UserRepository userRepository,
             CompanyRepository companyRepository,
@@ -85,6 +95,7 @@ public class AuthServiceImpl implements IAuthService {
             JwtUtil jwtUtil,
             ISettingService settingService,
             IEmailService emailService,
+            INotificationService notificationService,
             TenantProvisioningService tenantProvisioningService,
             TenantDataSourceManager tenantDataSourceManager,
             @Qualifier("masterJdbcTemplate") JdbcTemplate masterJdbcTemplate,
@@ -100,6 +111,7 @@ public class AuthServiceImpl implements IAuthService {
         this.jwtUtil = jwtUtil;
         this.settingService = settingService;
         this.emailService = emailService;
+        this.notificationService = notificationService;
         this.tenantProvisioningService = tenantProvisioningService;
         this.tenantDataSourceManager = tenantDataSourceManager;
         this.masterJdbcTemplate = masterJdbcTemplate;
@@ -136,8 +148,9 @@ public class AuthServiceImpl implements IAuthService {
 
         // 3. Tạo user admin trong tenant DB bằng JDBC trực tiếp
         String tenantDomain = request.getTenantDomain();
+        Long userId = null;
         try {
-            Long userId = createUserWithJdbc(request, tenantDomain);
+            userId = createUserWithJdbc(request, tenantDomain);
             
             // Cập nhật owner cho company (trong master DB)
             updateCompanyOwner(company.getId(), userId);
@@ -159,6 +172,9 @@ public class AuthServiceImpl implements IAuthService {
 
         // 5. Gửi email thông báo (async, không ảnh hưởng đến flow chính)
         sendRegistrationEmails(request, freeTrialEndDate);
+
+        // 6. Gửi thông báo chào mừng công ty mới (không ảnh hưởng đến flow chính)
+        sendWelcomeCompanyNotification(userId, request.getCompanyName(), tenantDomain);
     }
 
     /**
@@ -201,12 +217,68 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     /**
+     * Gửi thông báo chào mừng công ty mới đăng ký
+     * Có retry logic để đợi Flyway migration hoàn thành
+     */
+    private void sendWelcomeCompanyNotification(Long userId, String companyName, String tenantDomain) {
+        // Chạy async với retry để không block flow đăng ký
+        CompletableFuture.runAsync(() -> {
+            int maxRetries = 3;
+            int delayMs = 2000; // 2 giây
+            
+            for (int attempt = 1; attempt <= maxRetries; attempt++) {
+                try {
+                    // Delay trước khi thử để đợi migration hoàn thành
+                    if (attempt > 1) {
+                        Thread.sleep(delayMs * attempt);
+                    } else {
+                        // Delay lần đầu 1 giây
+                        Thread.sleep(1000);
+                    }
+                    
+                    // Tạo params cho thông báo
+                    Map<String, Object> params = new HashMap<>();
+                    params.put("companyName", companyName);
+
+                    // Set tenant context trước khi gọi notification service
+                    String previousTenant = TenantContext.getCurrentTenant();
+                    try {
+                        TenantContext.setCurrentTenant(tenantDomain);
+                        notificationService.createNotification(
+                                userId,
+                                NotificationCode.WELCOME_COMPANY,
+                                params,
+                                "/dashboard",
+                                NotificationType.WELCOME);
+                        log.info("Đã gửi thông báo chào mừng cho công ty mới: {} (userId: {})", companyName, userId);
+                        return; // Thành công, thoát khỏi retry loop
+                    } finally {
+                        // Khôi phục tenant context
+                        if (previousTenant != null) {
+                            TenantContext.setCurrentTenant(previousTenant);
+                        } else {
+                            TenantContext.clear();
+                        }
+                    }
+                } catch (Exception e) {
+                    log.warn("Lần thử {} gửi thông báo chào mừng thất bại: {}", attempt, e.getMessage());
+                    if (attempt == maxRetries) {
+                        log.error("Không thể gửi thông báo chào mừng sau {} lần thử cho công ty: {}", maxRetries, companyName);
+                    }
+                }
+            }
+        });
+    }
+
+    /**
      * Lấy tên người giới thiệu từ referral code
      */
     private String getReferrerName(String referralCode) {
         try {
             DataSource tamabeeDs = tenantDataSourceManager.getDataSource("tamabee");
-            if (tamabeeDs == null) return null;
+            if (tamabeeDs == null) {
+                return null;
+            }
 
             try (Connection conn = tamabeeDs.getConnection()) {
                 String sql = "SELECT up.name FROM user_profiles up WHERE UPPER(up.referral_code) = ? AND up.deleted = false";
@@ -231,7 +303,9 @@ public class AuthServiceImpl implements IAuthService {
     private Long getReferrerEmployeeId(String referralCode) {
         try {
             DataSource tamabeeDs = tenantDataSourceManager.getDataSource("tamabee");
-            if (tamabeeDs == null) return null;
+            if (tamabeeDs == null) {
+                return null;
+            }
 
             try (Connection conn = tamabeeDs.getConnection()) {
                 String sql = "SELECT up.user_id FROM user_profiles up WHERE UPPER(up.referral_code) = ? AND up.deleted = false";
@@ -432,9 +506,9 @@ public class AuthServiceImpl implements IAuthService {
                 
                 // Insert user
                 String userSql = """
-                    INSERT INTO users (employee_code, email, password, role, status, locale, language, 
+                    INSERT INTO users (employee_code, email, password, role, status, language, 
                                       tenant_domain, profile_completeness, deleted, created_at, updated_at)
-                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, false, NOW(), NOW())
+                    VALUES (?, ?, ?, ?, ?, ?, ?, ?, false, NOW(), NOW())
                     RETURNING id
                     """;
                 
@@ -445,10 +519,9 @@ public class AuthServiceImpl implements IAuthService {
                     ps.setString(3, passwordEncoder.encode(request.getPassword()));
                     ps.setString(4, UserRole.ADMIN_COMPANY.name());
                     ps.setString(5, UserStatus.ACTIVE.name());
-                    ps.setString(6, request.getLocale());
-                    ps.setString(7, request.getLanguage());
-                    ps.setString(8, tenantDomain);
-                    ps.setInt(9, 8); // profileCompleteness = 8% (1/12 fields filled - name)
+                    ps.setString(6, request.getLanguage());
+                    ps.setString(7, tenantDomain);
+                    ps.setInt(8, 8); // profileCompleteness = 8% (1/12 fields filled - name)
                     
                     log.info("Executing INSERT user SQL for email: {}", request.getEmail());
                     try (ResultSet rs = ps.executeQuery()) {
@@ -477,6 +550,10 @@ public class AuthServiceImpl implements IAuthService {
                     log.info("Inserted user_profile for userId: {}", userId);
                 }
                 
+                // Tạo default salary item templates theo region của company
+                createDefaultSalaryItemTemplates(conn, request.getRegion());
+                log.info("Created default salary item templates for region: {}", request.getRegion());
+                
                 conn.commit();
                 log.info("COMMITTED: Created user {} with employee code {} in tenant {}", userId, employeeCode, tenantDomain);
                 return userId;
@@ -497,7 +574,8 @@ public class AuthServiceImpl implements IAuthService {
      * Nếu trùng thì thử năm tiếp theo
      */
     private String generateAdminEmployeeCode(Connection conn) throws Exception {
-        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate today = java.time.LocalDate.now(
+                RegionUtil.getTimezone(RegionContext.getCurrentRegion()));
         int year = today.getYear();
         String monthDay = String.format("%02d%02d", today.getMonthValue(), today.getDayOfMonth());
         
@@ -519,7 +597,8 @@ public class AuthServiceImpl implements IAuthService {
      * @param dateOfBirth format yyyy-MM-dd hoặc dd/MM/yyyy
      */
     public static String generateUserEmployeeCode(Connection conn, String dateOfBirth) throws Exception {
-        java.time.LocalDate today = java.time.LocalDate.now();
+        java.time.LocalDate today = java.time.LocalDate.now(
+                RegionUtil.getTimezone(RegionContext.getCurrentRegion()));
         int year = today.getYear();
         
         // Parse ngày sinh
@@ -577,6 +656,60 @@ public class AuthServiceImpl implements IAuthService {
     }
 
     /**
+     * Tạo default salary item templates theo region của company.
+     * - ja: Templates tiếng Nhật (通勤手当, 住宅手当, 健康保険, 厚生年金, 雇用保険, 所得税)
+     * - vi/en: Templates tiếng Việt (Phụ cấp đi lại, Phụ cấp ăn trưa, BHXH, BHYT, BHTN, Thuế TNCN)
+     */
+    private void createDefaultSalaryItemTemplates(Connection conn, String region) throws Exception {
+        String[][] templates;
+        
+        if ("ja".equals(region)) {
+            // Templates tiếng Nhật
+            templates = new String[][] {
+                // Allowances (手当)
+                {"通勤手当", "ALLOWANCE"},      // Phụ cấp đi lại
+                {"住宅手当", "ALLOWANCE"},      // Phụ cấp nhà ở
+                {"家族手当", "ALLOWANCE"},      // Phụ cấp gia đình
+                {"役職手当", "ALLOWANCE"},      // Phụ cấp chức vụ
+                // Deductions (控除)
+                {"健康保険", "DEDUCTION"},      // Bảo hiểm y tế
+                {"厚生年金", "DEDUCTION"},      // Bảo hiểm hưu trí
+                {"雇用保険", "DEDUCTION"},      // Bảo hiểm thất nghiệp
+                {"所得税", "DEDUCTION"},        // Thuế thu nhập
+                {"住民税", "DEDUCTION"}         // Thuế cư trú
+            };
+        } else {
+            // Templates tiếng Việt (mặc định cho vi và en)
+            templates = new String[][] {
+                // Allowances (Phụ cấp)
+                {"Phụ cấp đi lại", "ALLOWANCE"},
+                {"Phụ cấp ăn trưa", "ALLOWANCE"},
+                {"Phụ cấp điện thoại", "ALLOWANCE"},
+                {"Phụ cấp chức vụ", "ALLOWANCE"},
+                // Deductions (Khấu trừ)
+                {"Bảo hiểm xã hội", "DEDUCTION"},
+                {"Bảo hiểm y tế", "DEDUCTION"},
+                {"Bảo hiểm thất nghiệp", "DEDUCTION"},
+                {"Thuế thu nhập cá nhân", "DEDUCTION"}
+            };
+        }
+        
+        String sql = """
+            INSERT INTO salary_item_templates (name, type, deleted, created_by, updated_by, created_at, updated_at)
+            VALUES (?, ?, false, 'system', 'system', NOW(), NOW())
+            """;
+        
+        try (PreparedStatement ps = conn.prepareStatement(sql)) {
+            for (String[] template : templates) {
+                ps.setString(1, template[0]);
+                ps.setString(2, template[1]);
+                ps.addBatch();
+            }
+            ps.executeBatch();
+        }
+    }
+
+    /**
      * Cập nhật owner_id cho company trong master DB bằng JDBC
      */
     private void updateCompanyOwner(Long companyId, Long ownerId) {
@@ -598,7 +731,7 @@ public class AuthServiceImpl implements IAuthService {
             totalMonths += settingService.getReferralBonusMonths();
         }
 
-        return LocalDateTime.now().plusMonths(totalMonths);
+        return LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())).plusMonths(totalMonths);
     }
 
     private void validateEmailVerified(String email) {
@@ -716,7 +849,8 @@ public class AuthServiceImpl implements IAuthService {
 
         // Generate tokens
         String userName = user.getProfile() != null ? user.getProfile().getName() : null;
-        String userLocale = user.getLocale() != null ? user.getLocale() : "vi";
+        CompanyEntity companyForLogin = getCompanyEntity(companyId, tenantDomain);
+        String companyRegion = companyForLogin != null ? companyForLogin.getRegion() : "vi";
         String accessToken = jwtUtil.generateAccessToken(
                 user.getId(),
                 user.getEmail(),
@@ -726,7 +860,8 @@ public class AuthServiceImpl implements IAuthService {
                 planId,
                 user.getEmployeeCode(),
                 userName,
-                userLocale);
+                user.getLanguage(),
+                companyRegion);
 
         String refreshToken = jwtUtil.generateRefreshToken(
                 user.getId(),
@@ -735,7 +870,7 @@ public class AuthServiceImpl implements IAuthService {
         // Lấy company name và logo từ master DB
         String companyName = getCompanyName(companyId, tenantDomain);
         String companyLogo = getCompanyLogo(companyId, tenantDomain);
-        UserResponse userResponse = userMapper.toResponse(user, companyName, companyLogo, tenantDomain, planId, companyStatus);
+        UserResponse userResponse = userMapper.toResponse(user, companyForLogin, companyName, companyLogo, tenantDomain, planId, companyStatus);
 
         return new LoginResponse(accessToken, refreshToken, userResponse);
     }
@@ -745,6 +880,21 @@ public class AuthServiceImpl implements IAuthService {
     public void resetPassword(String email, String newPassword) {
         UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
                 .orElseThrow(() -> NotFoundException.user(email));
+
+        user.setPassword(passwordEncoder.encode(newPassword));
+        userRepository.save(user);
+    }
+
+    @Override
+    @Transactional
+    public void changePassword(String email, String currentPassword, String newPassword) {
+        UserEntity user = userRepository.findByEmailAndDeletedFalse(email)
+                .orElseThrow(() -> NotFoundException.user(email));
+
+        // Kiểm tra mật khẩu hiện tại
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new BadRequestException("Mật khẩu hiện tại không đúng", ErrorCode.INCORRECT_PASSWORD);
+        }
 
         user.setPassword(passwordEncoder.encode(newPassword));
         userRepository.save(user);
@@ -819,7 +969,8 @@ public class AuthServiceImpl implements IAuthService {
         Long planId = getPlanId(companyId);
 
         String userName = user.getProfile() != null ? user.getProfile().getName() : null;
-        String userLocale = user.getLocale() != null ? user.getLocale() : "vi";
+        CompanyEntity companyForRefresh = getCompanyEntity(companyId, tenantDomain);
+        String companyRegion = companyForRefresh != null ? companyForRefresh.getRegion() : "vi";
         CompanyStatus companyStatus = getCompanyStatus(companyId, tenantDomain);
         String newAccessToken = jwtUtil.generateAccessToken(
                 user.getId(),
@@ -830,12 +981,13 @@ public class AuthServiceImpl implements IAuthService {
                 planId,
                 user.getEmployeeCode(),
                 userName,
-                userLocale);
+                user.getLanguage(),
+                companyRegion);
 
         // Lấy tên và logo công ty
         String companyName = getCompanyName(companyId, tenantDomain);
         String companyLogo = getCompanyLogo(companyId, tenantDomain);
-        UserResponse userResponse = userMapper.toResponse(user, companyName, companyLogo, tenantDomain, planId, companyStatus);
+        UserResponse userResponse = userMapper.toResponse(user, companyForRefresh, companyName, companyLogo, tenantDomain, planId, companyStatus);
 
         return new LoginResponse(newAccessToken, refreshToken, userResponse);
     }
@@ -861,7 +1013,10 @@ public class AuthServiceImpl implements IAuthService {
         // Lấy tên và logo công ty
         String companyName = getCompanyName(companyId, tenantDomain);
         String companyLogo = getCompanyLogo(companyId, tenantDomain);
-        return userMapper.toResponse(user, companyName, companyLogo, tenantDomain, planId, companyStatus);
+        CompanyEntity company = getCompanyEntity(companyId, tenantDomain);
+        UserResponse response = userMapper.toResponse(user, company, companyName, companyLogo, tenantDomain, planId, companyStatus);
+        
+        return response;
     }
 
     /**
@@ -908,6 +1063,42 @@ public class AuthServiceImpl implements IAuthService {
         try {
             return masterJdbcTemplate.queryForObject(sql, String.class, param);
         } catch (EmptyResultDataAccessException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Lấy CompanyEntity từ companyId hoặc tenantDomain.
+     * Query master DB bằng JDBC vì bảng companies chỉ tồn tại ở master.
+     */
+    private CompanyEntity getCompanyEntity(Long companyId, String tenantDomain) {
+        try {
+            String sql;
+            Object param;
+            if (companyId != null && companyId > 0) {
+                sql = "SELECT id, name, region, language, logo, tenant_domain, status FROM companies WHERE id = ? AND deleted = false";
+                param = companyId;
+            } else if (tenantDomain != null) {
+                sql = "SELECT id, name, region, language, logo, tenant_domain, status FROM companies WHERE tenant_domain = ? AND deleted = false";
+                param = tenantDomain;
+            } else {
+                return null;
+            }
+            return masterJdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+                CompanyEntity entity = new CompanyEntity();
+                entity.setId(rs.getLong("id"));
+                entity.setName(rs.getString("name"));
+                entity.setRegion(rs.getString("region"));
+                entity.setLanguage(rs.getString("language"));
+                entity.setLogo(rs.getString("logo"));
+                entity.setTenantDomain(rs.getString("tenant_domain"));
+                entity.setStatus(CompanyStatus.valueOf(rs.getString("status")));
+                return entity;
+            }, param);
+        } catch (EmptyResultDataAccessException e) {
+            return null;
+        } catch (Exception e) {
+            log.warn("Không thể lấy CompanyEntity: {}", e.getMessage());
             return null;
         }
     }

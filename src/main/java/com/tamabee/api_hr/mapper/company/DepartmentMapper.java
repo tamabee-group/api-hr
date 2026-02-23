@@ -61,7 +61,9 @@ public class DepartmentMapper {
     }
 
     public DepartmentSummary toSummary(DepartmentEntity entity) {
-        if (entity == null) return null;
+        if (entity == null) {
+            return null;
+        }
         return DepartmentSummary.builder()
                 .id(entity.getId())
                 .name(entity.getName())
@@ -69,7 +71,9 @@ public class DepartmentMapper {
     }
 
     private DepartmentSummary toParentSummary(DepartmentEntity parent) {
-        if (parent == null) return null;
+        if (parent == null) {
+            return null;
+        }
         return DepartmentSummary.builder()
                 .id(parent.getId())
                 .name(parent.getName())
@@ -77,7 +81,9 @@ public class DepartmentMapper {
     }
 
     public ManagerSummary toManagerSummary(UserEntity manager) {
-        if (manager == null) return null;
+        if (manager == null) {
+            return null;
+        }
         UserProfileEntity profile = manager.getProfile();
         return ManagerSummary.builder()
                 .id(manager.getId())
@@ -87,7 +93,9 @@ public class DepartmentMapper {
     }
 
     public DefaultApproverResponse toDefaultApproverResponse(UserEntity manager, String departmentName) {
-        if (manager == null) return null;
+        if (manager == null) {
+            return null;
+        }
         UserProfileEntity profile = manager.getProfile();
         return DefaultApproverResponse.builder()
                 .id(manager.getId())

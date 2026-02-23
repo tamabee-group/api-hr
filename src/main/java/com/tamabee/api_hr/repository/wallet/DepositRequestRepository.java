@@ -102,4 +102,9 @@ public interface DepositRequestRepository extends JpaRepository<DepositRequestEn
     @Modifying
     @Query("DELETE FROM DepositRequestEntity d WHERE d.companyId = :companyId")
     void deleteAllByCompanyId(@Param("companyId") Long companyId);
+
+    /**
+     * Đếm số deposit requests theo status (chưa bị xóa)
+     */
+    long countByDeletedFalseAndStatus(DepositStatus status);
 }

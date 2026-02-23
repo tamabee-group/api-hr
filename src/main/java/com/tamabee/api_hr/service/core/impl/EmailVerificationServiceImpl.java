@@ -1,8 +1,9 @@
 package com.tamabee.api_hr.service.core.impl;
 
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
 import java.time.LocalDateTime;
 import java.time.Year;
-import java.util.Random;
 import java.util.UUID;
 
 import org.springframework.beans.factory.annotation.Value;
@@ -11,11 +12,13 @@ import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tamabee.api_hr.datasource.RegionContext;
 import com.tamabee.api_hr.entity.core.EmailVerificationEntity;
 import com.tamabee.api_hr.enums.ErrorCode;
 import com.tamabee.api_hr.exception.InternalServerException;
 import com.tamabee.api_hr.repository.core.EmailVerificationRepository;
 import com.tamabee.api_hr.service.core.interfaces.IEmailVerificationService;
+import com.tamabee.api_hr.util.RegionUtil;
 
 import jakarta.mail.MessagingException;
 import jakarta.mail.internet.MimeMessage;
@@ -32,6 +35,7 @@ public class EmailVerificationServiceImpl implements IEmailVerificationService {
     private final EmailVerificationRepository emailVerificationRepository;
     private final JavaMailSender mailSender;
     private final String frontendUrl;
+    private final String mailFrom;
     
     // Logo URLs từ GitHub raw
     private static final String LOGO_URL = "https://raw.githubusercontent.com/tamabee-group/api-hr/main/src/main/resources/templates/images/logo.png";
@@ -40,10 +44,12 @@ public class EmailVerificationServiceImpl implements IEmailVerificationService {
     public EmailVerificationServiceImpl(
             EmailVerificationRepository emailVerificationRepository,
             JavaMailSender mailSender,
-            @Value("${app.frontend-url:https://tamabee.vn}") String frontendUrl) {
+            @Value("${app.frontend-url:https://tamabee.vn}") String frontendUrl,
+            @Value("${app.mail-from:Tamabee <info@tamabee.vn>}") String mailFrom) {
         this.emailVerificationRepository = emailVerificationRepository;
         this.mailSender = mailSender;
         this.frontendUrl = frontendUrl;
+        this.mailFrom = mailFrom;
     }
     
     /**
@@ -75,8 +81,8 @@ public class EmailVerificationServiceImpl implements IEmailVerificationService {
         verification.setEmail(email);
         verification.setCode(code);
         verification.setCompanyName(companyName);
-        verification.setCreatedAt(LocalDateTime.now());
-        verification.setExpiredAt(LocalDateTime.now().plusMinutes(10));
+        verification.setCreatedAt(LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())));
+        verification.setExpiredAt(LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())).plusMinutes(10));
         verification.setUsed(false);
 
         emailVerificationRepository.save(verification);
@@ -109,7 +115,7 @@ public class EmailVerificationServiceImpl implements IEmailVerificationService {
     @Transactional(readOnly = true)
     public boolean verifyCode(String email, String code) {
         return emailVerificationRepository
-                .findValidCode(email, code, LocalDateTime.now())
+                .findValidCode(email, code, LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())))
                 .isPresent();
     }
 
@@ -124,10 +130,10 @@ public class EmailVerificationServiceImpl implements IEmailVerificationService {
     @Transactional
     public boolean verifyAndMarkUsed(String email, String code) {
         return emailVerificationRepository
-                .findValidCode(email, code, LocalDateTime.now())
+                .findValidCode(email, code, LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())))
                 .map(verification -> {
                     verification.setUsed(true);
-                    verification.setUpdatedAt(LocalDateTime.now());
+                    verification.setUpdatedAt(LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())));
                     emailVerificationRepository.save(verification);
                     return true;
                 })
@@ -150,8 +156,8 @@ public class EmailVerificationServiceImpl implements IEmailVerificationService {
         verification.setEmail(email);
         verification.setCode(token); // Dùng field code để lưu token
         verification.setCompanyName(""); // Không cần company name cho reset password
-        verification.setCreatedAt(LocalDateTime.now());
-        verification.setExpiredAt(LocalDateTime.now().plusMinutes(30)); // 30 phút
+        verification.setCreatedAt(LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())));
+        verification.setExpiredAt(LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())).plusMinutes(30)); // 30 phút
         verification.setUsed(false);
 
         emailVerificationRepository.save(verification);
@@ -179,7 +185,7 @@ public class EmailVerificationServiceImpl implements IEmailVerificationService {
     @Transactional(readOnly = true)
     public String verifyResetToken(String token) {
         return emailVerificationRepository
-                .findValidCode(token, LocalDateTime.now())
+                .findValidCode(token, LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())))
                 .map(EmailVerificationEntity::getEmail)
                 .orElse(null);
     }
@@ -191,21 +197,23 @@ public class EmailVerificationServiceImpl implements IEmailVerificationService {
     @Transactional
     public String verifyResetTokenAndMarkUsed(String token) {
         return emailVerificationRepository
-                .findValidCode(token, LocalDateTime.now())
+                .findValidCode(token, LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())))
                 .map(verification -> {
                     verification.setUsed(true);
-                    verification.setUpdatedAt(LocalDateTime.now());
+                    verification.setUpdatedAt(LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())));
                     emailVerificationRepository.save(verification);
                     return verification.getEmail();
                 })
                 .orElse(null);
     }
 
+    private static final SecureRandom SECURE_RANDOM = new SecureRandom();
+
     /**
      * Tạo mã xác thực 6 chữ số ngẫu nhiên
      */
     private String generateSixDigitCode() {
-        return String.format("%06d", new Random().nextInt(1000000));
+        return String.format("%06d", SECURE_RANDOM.nextInt(1000000));
     }
 
     /**
@@ -216,7 +224,7 @@ public class EmailVerificationServiceImpl implements IEmailVerificationService {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-            helper.setFrom("Tamabee <tamabee.info@gmail.com>");
+            helper.setFrom(mailFrom);
             helper.setTo(to);
 
             String subject = getSubject(language);
@@ -259,7 +267,7 @@ public class EmailVerificationServiceImpl implements IEmailVerificationService {
                         "Không tìm thấy template email: " + templatePath,
                         ErrorCode.EMAIL_TEMPLATE_NOT_FOUND);
             }
-            String template = new String(resource.readAllBytes());
+            String template = new String(resource.readAllBytes(), StandardCharsets.UTF_8);
             
             return template
                     .replace("{companyName}", companyName)
@@ -283,7 +291,7 @@ public class EmailVerificationServiceImpl implements IEmailVerificationService {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-            helper.setFrom("Tamabee <tamabee.info@gmail.com>");
+            helper.setFrom(mailFrom);
             helper.setTo(to);
 
             String subject = getPasswordResetSubject(language);
@@ -326,7 +334,7 @@ public class EmailVerificationServiceImpl implements IEmailVerificationService {
                         "Không tìm thấy template email: " + templatePath,
                         ErrorCode.EMAIL_TEMPLATE_NOT_FOUND);
             }
-            String template = new String(resource.readAllBytes());
+            String template = new String(resource.readAllBytes(), StandardCharsets.UTF_8);
             
             // Build reset link với tenant domain
             String resetLink = buildResetLink(token, language, tenantDomain);

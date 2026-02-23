@@ -16,6 +16,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tamabee.api_hr.datasource.RegionContext;
 import com.tamabee.api_hr.datasource.TenantDataSourceManager;
 import com.tamabee.api_hr.dto.request.wallet.CommissionFilterRequest;
 import com.tamabee.api_hr.dto.response.wallet.CommissionOverallSummaryResponse;
@@ -35,6 +36,7 @@ import com.tamabee.api_hr.repository.wallet.EmployeeCommissionRepository;
 import com.tamabee.api_hr.repository.wallet.WalletRepository;
 import com.tamabee.api_hr.service.admin.interfaces.ICommissionService;
 import com.tamabee.api_hr.service.admin.interfaces.ISettingService;
+import com.tamabee.api_hr.util.RegionUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -100,7 +102,9 @@ public class CommissionServiceImpl implements ICommissionService {
     private ReferrerInfo getReferrerInfo(Long userId) {
         try {
             DataSource tamabeeDs = tenantDataSourceManager.getDataSource("tamabee");
-            if (tamabeeDs == null) return null;
+            if (tamabeeDs == null) {
+                return null;
+            }
 
             try (Connection conn = tamabeeDs.getConnection()) {
                 String sql = "SELECT employee_code, role FROM users WHERE id = ? AND deleted = false";
@@ -234,7 +238,7 @@ public class CommissionServiceImpl implements ICommissionService {
         }
 
         commission.setStatus(CommissionStatus.PAID);
-        commission.setPaidAt(LocalDateTime.now());
+        commission.setPaidAt(LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())));
         commission.setPaidBy(getCurrentUserEmployeeCode());
 
         EmployeeCommissionEntity savedCommission = commissionRepository.save(commission);
@@ -321,7 +325,9 @@ public class CommissionServiceImpl implements ICommissionService {
     private String getEmployeeCodeByEmail(String email) {
         try {
             DataSource tamabeeDs = tenantDataSourceManager.getDataSource("tamabee");
-            if (tamabeeDs == null) return null;
+            if (tamabeeDs == null) {
+                return null;
+            }
 
             try (Connection conn = tamabeeDs.getConnection()) {
                 String sql = "SELECT employee_code FROM users WHERE email = ? AND deleted = false";
@@ -343,7 +349,9 @@ public class CommissionServiceImpl implements ICommissionService {
     private String getEmployeeNameByCode(String employeeCode) {
         try {
             DataSource tamabeeDs = tenantDataSourceManager.getDataSource("tamabee");
-            if (tamabeeDs == null) return employeeCode;
+            if (tamabeeDs == null) {
+                return employeeCode;
+            }
 
             try (Connection conn = tamabeeDs.getConnection()) {
                 String sql = """

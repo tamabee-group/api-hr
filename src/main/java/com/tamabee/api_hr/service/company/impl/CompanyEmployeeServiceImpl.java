@@ -1,18 +1,23 @@
 package com.tamabee.api_hr.service.company.impl;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Set;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.tamabee.api_hr.constants.NotificationCode;
 import com.tamabee.api_hr.datasource.TenantContext;
 import com.tamabee.api_hr.dto.request.user.CreateCompanyEmployeeRequest;
 import com.tamabee.api_hr.dto.request.user.UpdateUserProfileRequest;
@@ -20,31 +25,35 @@ import com.tamabee.api_hr.dto.response.employee.EmployeePersonalInfoResponse;
 import com.tamabee.api_hr.dto.response.employee.UserSummaryResponse;
 import com.tamabee.api_hr.dto.response.user.ApproverResponse;
 import com.tamabee.api_hr.dto.response.user.UserResponse;
+import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.company.DepartmentEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.entity.user.UserProfileEntity;
 import com.tamabee.api_hr.enums.ErrorCode;
+import com.tamabee.api_hr.enums.NotificationType;
 import com.tamabee.api_hr.enums.UserRole;
 import com.tamabee.api_hr.enums.UserStatus;
 import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.ConflictException;
+import com.tamabee.api_hr.exception.ForbiddenException;
 import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.mapper.core.UserMapper;
 import com.tamabee.api_hr.repository.company.DepartmentRepository;
 import com.tamabee.api_hr.repository.user.UserRepository;
 import com.tamabee.api_hr.service.company.interfaces.ICompanyEmployeeService;
 import com.tamabee.api_hr.service.core.interfaces.IEmailService;
+import com.tamabee.api_hr.service.core.interfaces.INotificationService;
 import com.tamabee.api_hr.service.core.interfaces.IUploadService;
 import com.tamabee.api_hr.util.EmployeeCodeGenerator;
 import com.tamabee.api_hr.util.ReferralCodeGenerator;
 
-import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 
 /**
  * Service implementation quản lý nhân viên công ty
  */
+@Slf4j
 @Service
-@RequiredArgsConstructor
 public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
 
     // Các role được phép tạo cho nhân viên công ty
@@ -65,19 +74,41 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
     private final PasswordEncoder passwordEncoder;
     private final IEmailService emailService;
     private final IUploadService uploadService;
+    private final INotificationService notificationService;
+    private final JdbcTemplate masterJdbcTemplate;
+
+    public CompanyEmployeeServiceImpl(
+            UserRepository userRepository,
+            DepartmentRepository departmentRepository,
+            UserMapper userMapper,
+            PasswordEncoder passwordEncoder,
+            IEmailService emailService,
+            IUploadService uploadService,
+            INotificationService notificationService,
+            @Qualifier("masterJdbcTemplate") JdbcTemplate masterJdbcTemplate) {
+        this.userRepository = userRepository;
+        this.departmentRepository = departmentRepository;
+        this.userMapper = userMapper;
+        this.passwordEncoder = passwordEncoder;
+        this.emailService = emailService;
+        this.uploadService = uploadService;
+        this.notificationService = notificationService;
+        this.masterJdbcTemplate = masterJdbcTemplate;
+    }
 
     @Override
     @Transactional(readOnly = true)
     public Page<UserResponse> getCompanyEmployees(Pageable pageable) {
         Page<UserEntity> employees = userRepository.findByDeletedFalse(pageable);
-        return employees.map(userMapper::toResponse);
+        CompanyEntity company = getCurrentCompanyEntity();
+        return employees.map(employee -> userMapper.toResponse(employee, company));
     }
 
     @Override
     @Transactional(readOnly = true)
     public UserResponse getCompanyEmployee(Long employeeId) {
         UserEntity employee = findEmployeeById(employeeId);
-        return userMapper.toResponse(employee);
+        return userMapper.toResponse(employee, getCurrentCompanyEntity());
     }
 
     @Override
@@ -105,7 +136,6 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
         employee.setRole(assignedRole);
         employee.setStatus(UserStatus.INACTIVE); // Mặc định INACTIVE, chỉ ACTIVE khi có hợp đồng
         employee.setLanguage(request.getLanguage());
-        employee.setLocale(request.getLanguage()); // Dùng language làm locale
         employee.setTenantDomain(currentTenant);
 
         // Tạo mã giới thiệu duy nhất
@@ -141,13 +171,22 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
                 temporaryPassword,
                 savedEmployee.getLanguage());
 
-        return userMapper.toResponse(savedEmployee);
+        // Gửi thông báo chào mừng nhân viên mới
+        sendWelcomeEmployeeNotification(savedEmployee.getId(), currentTenant);
+
+        return userMapper.toResponse(savedEmployee, getCurrentCompanyEntity());
     }
 
     @Override
     @Transactional
     public UserResponse updateCompanyEmployee(Long employeeId, UpdateUserProfileRequest request) {
         UserEntity employee = findEmployeeById(employeeId);
+
+        // Cập nhật role nếu có yêu cầu
+        if (request.getRole() != null) {
+            validateRoleChange(request.getRole());
+            employee.setRole(request.getRole());
+        }
 
         // Cập nhật thông tin user
         if (request.getEmail() != null) {
@@ -172,7 +211,7 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
         employee.calculateProfileCompleteness();
 
         UserEntity savedEmployee = userRepository.save(employee);
-        return userMapper.toResponse(savedEmployee);
+        return userMapper.toResponse(savedEmployee, getCurrentCompanyEntity());
     }
 
     @Override
@@ -202,8 +241,11 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
     @Override
     @Transactional(readOnly = true)
     public List<ApproverResponse> getApprovers() {
-        // Lấy danh sách admin và manager trong tenant hiện tại
-        List<UserRole> approverRoles = Arrays.asList(UserRole.ADMIN_COMPANY, UserRole.MANAGER_COMPANY);
+        // Lấy danh sách admin và manager trong tenant hiện tại (bao gồm cả Tamabee roles)
+        List<UserRole> approverRoles = Arrays.asList(
+                UserRole.ADMIN_COMPANY, UserRole.MANAGER_COMPANY,
+                UserRole.ADMIN_TAMABEE, UserRole.MANAGER_TAMABEE
+        );
         List<UserEntity> approvers = userRepository.findByRoleInAndDeletedFalse(approverRoles);
 
         return approvers.stream()
@@ -310,6 +352,37 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
     }
 
     /**
+     * Kiểm tra quyền thay đổi role
+     * Chỉ Admin mới được nâng/hạ role, Manager không được set role Admin
+     */
+    private void validateRoleChange(UserRole newRole) {
+        // Lấy role của người đang thao tác từ SecurityContext
+        var authentication = org.springframework.security.core.context.SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || authentication.getAuthorities() == null) {
+            throw new ForbiddenException("Không có quyền thay đổi role");
+        }
+
+        String currentUserRole = authentication.getAuthorities().stream()
+                .findFirst()
+                .map(a -> a.getAuthority().replace("ROLE_", ""))
+                .orElse("");
+
+        // Manager không được set role Admin
+        if (currentUserRole.equals("MANAGER_COMPANY") || currentUserRole.equals("MANAGER_TAMABEE")) {
+            if (newRole == UserRole.ADMIN_COMPANY || newRole == UserRole.ADMIN_TAMABEE) {
+                throw new ForbiddenException("Manager không có quyền gán role Admin");
+            }
+        }
+
+        // Chỉ Admin hoặc Manager mới được thay đổi role
+        boolean isAdmin = currentUserRole.equals("ADMIN_COMPANY") || currentUserRole.equals("ADMIN_TAMABEE");
+        boolean isManager = currentUserRole.equals("MANAGER_COMPANY") || currentUserRole.equals("MANAGER_TAMABEE");
+        if (!isAdmin && !isManager) {
+            throw new ForbiddenException("Không có quyền thay đổi role");
+        }
+    }
+
+    /**
      * Xác định role phù hợp dựa trên tenant
      * - Tenant "tamabee": chuyển đổi role COMPANY sang TAMABEE tương ứng
      * - Tenant khác: giữ nguyên role COMPANY
@@ -366,72 +439,100 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
 
         UserProfileEntity profile = employee.getProfile();
 
-        if (request.getName() != null)
+        if (request.getName() != null) {
             profile.setName(request.getName());
-        if (request.getPhone() != null)
+        }
+        if (request.getPhone() != null) {
             profile.setPhone(request.getPhone());
-        if (request.getZipCode() != null)
+        }
+        if (request.getZipCode() != null) {
             profile.setZipCode(request.getZipCode());
-        if (request.getAddress() != null)
+        }
+        if (request.getAddress() != null) {
             profile.setAddress(request.getAddress());
+        }
         // Basic info
-        if (request.getDateOfBirth() != null)
+        if (request.getDateOfBirth() != null) {
             profile.setDateOfBirth(request.getDateOfBirth());
-        if (request.getGender() != null)
+        }
+        if (request.getGender() != null) {
             profile.setGender(request.getGender());
-        if (request.getNationality() != null)
+        }
+        if (request.getNationality() != null) {
             profile.setNationality(request.getNationality());
-        if (request.getMaritalStatus() != null)
+        }
+        if (request.getMaritalStatus() != null) {
             profile.setMaritalStatus(request.getMaritalStatus());
-        if (request.getNationalId() != null)
+        }
+        if (request.getNationalId() != null) {
             profile.setNationalId(request.getNationalId());
+        }
         // Work info
-        if (request.getJobTitle() != null)
+        if (request.getJobTitle() != null) {
             profile.setJobTitle(request.getJobTitle());
+        }
         if (request.getDepartmentId() != null) {
             DepartmentEntity department = departmentRepository.findByIdAndDeletedFalse(request.getDepartmentId())
                     .orElseThrow(() -> new NotFoundException("Không tìm thấy phòng ban", ErrorCode.DEPARTMENT_NOT_FOUND));
             profile.setDepartmentEntity(department);
         }
-        if (request.getEmploymentType() != null)
+        if (request.getEmploymentType() != null) {
             profile.setEmploymentType(request.getEmploymentType());
-        if (request.getJoiningDate() != null)
+        }
+        if (request.getJoiningDate() != null) {
             profile.setJoiningDate(request.getJoiningDate());
-        if (request.getWorkLocation() != null)
+        }
+        if (request.getWorkLocation() != null) {
             profile.setWorkLocation(request.getWorkLocation());
+        }
         // Bank info - Common
-        if (request.getBankAccountType() != null)
+        if (request.getBankAccountType() != null) {
             profile.setBankAccountType(request.getBankAccountType());
-        if (request.getJapanBankType() != null)
+        }
+        if (request.getJapanBankType() != null) {
             profile.setJapanBankType(request.getJapanBankType());
-        if (request.getBankName() != null)
+        }
+        if (request.getBankName() != null) {
             profile.setBankName(request.getBankName());
-        if (request.getBankAccount() != null)
+        }
+        if (request.getBankAccount() != null) {
             profile.setBankAccount(request.getBankAccount());
-        if (request.getBankAccountName() != null)
+        }
+        if (request.getBankAccountName() != null) {
             profile.setBankAccountName(request.getBankAccountName());
+        }
         // Bank info - Japan specific
-        if (request.getBankCode() != null)
+        if (request.getBankCode() != null) {
             profile.setBankCode(request.getBankCode());
-        if (request.getBankBranchCode() != null)
+        }
+        if (request.getBankBranchCode() != null) {
             profile.setBankBranchCode(request.getBankBranchCode());
-        if (request.getBankBranchName() != null)
+        }
+        if (request.getBankBranchName() != null) {
             profile.setBankBranchName(request.getBankBranchName());
-        if (request.getBankAccountCategory() != null)
+        }
+        if (request.getBankAccountCategory() != null) {
             profile.setBankAccountCategory(request.getBankAccountCategory());
+        }
         // Bank info - Japan Post Bank (ゆうちょ銀行)
-        if (request.getBankSymbol() != null)
+        if (request.getBankSymbol() != null) {
             profile.setBankSymbol(request.getBankSymbol());
-        if (request.getBankNumber() != null)
+        }
+        if (request.getBankNumber() != null) {
             profile.setBankNumber(request.getBankNumber());
-        if (request.getEmergencyContactName() != null)
+        }
+        if (request.getEmergencyContactName() != null) {
             profile.setEmergencyContactName(request.getEmergencyContactName());
-        if (request.getEmergencyContactPhone() != null)
+        }
+        if (request.getEmergencyContactPhone() != null) {
             profile.setEmergencyContactPhone(request.getEmergencyContactPhone());
-        if (request.getEmergencyContactRelation() != null)
+        }
+        if (request.getEmergencyContactRelation() != null) {
             profile.setEmergencyContactRelation(request.getEmergencyContactRelation());
-        if (request.getEmergencyContactAddress() != null)
+        }
+        if (request.getEmergencyContactAddress() != null) {
             profile.setEmergencyContactAddress(request.getEmergencyContactAddress());
+        }
     }
 
     /**
@@ -470,5 +571,82 @@ public class CompanyEmployeeServiceImpl implements ICompanyEmployeeService {
 
         // Hard delete user (cascade sẽ xóa profile)
         userRepository.delete(employee);
+    }
+
+    /**
+     * Gửi thông báo chào mừng nhân viên mới
+     */
+    private void sendWelcomeEmployeeNotification(Long employeeId, String tenantDomain) {
+        try {
+            // Lấy tên công ty từ master DB
+            String companyName = getCompanyNameByTenantDomain(tenantDomain);
+            if (companyName == null) {
+                log.warn("Không tìm thấy công ty với tenant domain: {}", tenantDomain);
+                return;
+            }
+
+            // Tạo params cho thông báo
+            Map<String, Object> params = new HashMap<>();
+            params.put("companyName", companyName);
+
+            // Gửi thông báo chào mừng
+            notificationService.createNotification(
+                    employeeId,
+                    NotificationCode.WELCOME_EMPLOYEE,
+                    params,
+                    "/me",
+                    NotificationType.WELCOME);
+
+            log.info("Đã gửi thông báo chào mừng cho nhân viên mới: {}", employeeId);
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi thông báo chào mừng nhân viên: {}", e.getMessage());
+        }
+    }
+
+    /**
+     * Lấy tên công ty từ tenant domain
+     */
+    private String getCompanyNameByTenantDomain(String tenantDomain) {
+        if (tenantDomain == null || "tamabee".equals(tenantDomain)) {
+            return "Tamabee";
+        }
+        
+        try {
+            String sql = "SELECT name FROM companies WHERE tenant_domain = ? AND deleted = false";
+            return masterJdbcTemplate.queryForObject(sql, String.class, tenantDomain);
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy tên công ty: {}", e.getMessage());
+            return null;
+        }
+    }
+
+    /**
+     * Lấy CompanyEntity từ tenant domain hiện tại.
+     * Region là thuộc tính của company, dùng để set vào UserResponse.
+     */
+    private CompanyEntity getCurrentCompanyEntity() {
+        String tenantDomain = TenantContext.getCurrentTenant();
+        if (tenantDomain == null) {
+            return null;
+        }
+        try {
+            String sql = "SELECT id, name, region, logo, status, tenant_domain FROM companies WHERE tenant_domain = ? AND deleted = false";
+            return masterJdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+                CompanyEntity company = new CompanyEntity();
+                company.setId(rs.getLong("id"));
+                company.setName(rs.getString("name"));
+                company.setRegion(rs.getString("region"));
+                company.setLogo(rs.getString("logo"));
+                company.setTenantDomain(rs.getString("tenant_domain"));
+                String status = rs.getString("status");
+                if (status != null) {
+                    company.setStatus(com.tamabee.api_hr.enums.CompanyStatus.valueOf(status));
+                }
+                return company;
+            }, tenantDomain);
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy company entity từ master DB: {}", e.getMessage());
+            return null;
+        }
     }
 }

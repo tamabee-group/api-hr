@@ -2,6 +2,7 @@ package com.tamabee.api_hr.dto.request.user;
 
 import java.time.LocalDate;
 
+import com.tamabee.api_hr.enums.UserRole;
 import com.tamabee.api_hr.enums.UserStatus;
 import com.tamabee.api_hr.validation.MinAge;
 
@@ -11,6 +12,9 @@ import lombok.Data;
 @Data
 public class UpdateUserProfileRequest {
     private String name;
+
+    // Role - chỉ Admin mới được thay đổi
+    private UserRole role;
 
     @Email
     private String email;

@@ -1,17 +1,18 @@
 package com.tamabee.api_hr.dto.request.payroll;
 
+import java.time.LocalDate;
+
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-
 /**
  * Request DTO để tạo kỳ lương mới
+ * Có thể truyền year/month hoặc periodStart/periodEnd
+ * Nếu chỉ truyền periodStart/periodEnd, year/month sẽ được extract từ periodStart
  */
 @Data
 @Builder
@@ -19,12 +20,10 @@ import java.time.LocalDate;
 @AllArgsConstructor
 public class PayrollPeriodRequest {
 
-    @NotNull(message = "Năm không được để trống")
     @Min(value = 2020, message = "Năm phải từ 2020 trở đi")
     @Max(value = 2100, message = "Năm không được vượt quá 2100")
     private Integer year;
 
-    @NotNull(message = "Tháng không được để trống")
     @Min(value = 1, message = "Tháng phải từ 1 đến 12")
     @Max(value = 12, message = "Tháng phải từ 1 đến 12")
     private Integer month;

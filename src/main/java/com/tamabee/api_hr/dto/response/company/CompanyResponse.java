@@ -15,7 +15,7 @@ public class CompanyResponse {
     private String address;
     private String industry;
     private String zipcode;
-    private String locale;
+    private String region;
     private String language;
     private Long referredByEmployeeId;
     private String logo;

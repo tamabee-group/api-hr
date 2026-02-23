@@ -7,6 +7,7 @@ import com.tamabee.api_hr.dto.request.attendance.BatchDeleteShiftAssignmentReque
 import com.tamabee.api_hr.dto.request.attendance.BatchShiftAssignmentRequest;
 import com.tamabee.api_hr.dto.request.attendance.ShiftAssignmentQuery;
 import com.tamabee.api_hr.dto.request.attendance.ShiftAssignmentRequest;
+import com.tamabee.api_hr.dto.request.attendance.ShiftNotifyRequest;
 import com.tamabee.api_hr.dto.request.attendance.ShiftSwapRequest;
 import com.tamabee.api_hr.dto.request.attendance.ShiftTemplateRequest;
 import com.tamabee.api_hr.dto.request.attendance.SwapRequestQuery;
@@ -92,4 +93,16 @@ public interface IShiftService {
      * Lấy danh sách yêu cầu đổi ca với filter.
      */
     Page<ShiftSwapRequestResponse> getSwapRequests(SwapRequestQuery query, Pageable pageable);
+
+    // ==================== Shift Notification ====================
+
+    /**
+     * Gửi thông báo phân ca đến nhân viên.
+     * Nếu employeeIds rỗng, gửi đến tất cả nhân viên có assignment trong tuần.
+     * Tạo notification, gửi email, và push WebSocket real-time.
+     *
+     * @param request Thông tin thông báo (year, weekNumber, employeeIds, message)
+     * @return Số lượng nhân viên đã được gửi thông báo
+     */
+    int notifyShiftSchedule(ShiftNotifyRequest request);
 }

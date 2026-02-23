@@ -3,6 +3,8 @@ package com.tamabee.api_hr.mapper.company;
 import java.time.LocalDate;
 import java.time.temporal.ChronoUnit;
 
+import com.tamabee.api_hr.datasource.RegionContext;
+import com.tamabee.api_hr.util.RegionUtil;
 import org.springframework.stereotype.Component;
 
 import com.tamabee.api_hr.dto.request.payroll.ContractRequest;
@@ -76,7 +78,7 @@ public class EmploymentContractMapper {
         // Tính số ngày còn lại đến khi hết hạn
         Integer daysUntilExpiry = null;
         if (entity.getEndDate() != null) {
-            LocalDate today = LocalDate.now();
+            LocalDate today = LocalDate.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion()));
             if (entity.getEndDate().isBefore(today)) {
                 // Đã hết hạn
                 daysUntilExpiry = 0;

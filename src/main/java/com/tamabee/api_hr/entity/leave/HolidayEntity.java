@@ -1,12 +1,18 @@
 package com.tamabee.api_hr.entity.leave;
 
+import java.time.LocalDate;
+
 import com.tamabee.api_hr.entity.BaseEntity;
 import com.tamabee.api_hr.enums.HolidayType;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
-import java.time.LocalDate;
 
 /**
  * Entity lưu trữ ngày nghỉ lễ.

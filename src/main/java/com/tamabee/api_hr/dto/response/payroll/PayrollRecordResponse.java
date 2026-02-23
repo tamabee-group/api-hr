@@ -1,17 +1,18 @@
 package com.tamabee.api_hr.dto.response.payroll;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import com.tamabee.api_hr.enums.BreakType;
 import com.tamabee.api_hr.enums.PaymentStatus;
-import com.tamabee.api_hr.enums.PayrollStatus;
+import com.tamabee.api_hr.enums.PayrollPeriodStatus;
 import com.tamabee.api_hr.enums.SalaryType;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * Response cho bản ghi lương của nhân viên
@@ -35,7 +36,8 @@ public class PayrollRecordResponse {
 
     // Lương cơ bản
     private SalaryType salaryType;
-    private BigDecimal baseSalary;
+    private BigDecimal salaryRate; // Mức lương gốc (giờ/ngày/ca/tháng)
+    private BigDecimal baseSalary; // Lương đã tính toán
     private Integer workingDays;
     private Integer workingHours;
 
@@ -68,7 +70,7 @@ public class PayrollRecordResponse {
     private BigDecimal netSalary;
 
     // Trạng thái
-    private PayrollStatus status;
+    private PayrollPeriodStatus status;
     private PaymentStatus paymentStatus;
     private LocalDateTime paidAt;
     private String paymentReference;

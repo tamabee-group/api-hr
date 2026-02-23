@@ -7,7 +7,9 @@ import java.sql.SQLException;
 import java.sql.Timestamp;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
@@ -19,17 +21,22 @@ import org.springframework.jdbc.support.KeyHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tamabee.api_hr.constants.NotificationCode;
+import com.tamabee.api_hr.datasource.RegionContext;
 import com.tamabee.api_hr.dto.request.wallet.DepositFilterRequest;
 import com.tamabee.api_hr.dto.request.wallet.DepositRequestCreateRequest;
 import com.tamabee.api_hr.dto.response.wallet.DepositRequestResponse;
 import com.tamabee.api_hr.enums.DepositStatus;
 import com.tamabee.api_hr.enums.ErrorCode;
+import com.tamabee.api_hr.enums.NotificationType;
 import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.service.admin.interfaces.ISettingService;
 import com.tamabee.api_hr.service.company.interfaces.ICompanyDepositService;
 import com.tamabee.api_hr.service.core.interfaces.IEmailService;
+import com.tamabee.api_hr.service.core.interfaces.INotificationService;
 import com.tamabee.api_hr.service.core.interfaces.IUploadService;
+import com.tamabee.api_hr.util.RegionUtil;
 import com.tamabee.api_hr.util.SecurityUtil;
 
 import lombok.extern.slf4j.Slf4j;
@@ -47,18 +54,21 @@ public class CompanyDepositServiceImpl implements ICompanyDepositService {
     private final IUploadService uploadService;
     private final IEmailService emailService;
     private final ISettingService settingService;
+    private final INotificationService notificationService;
 
     public CompanyDepositServiceImpl(
             @Qualifier("masterJdbcTemplate") JdbcTemplate masterJdbcTemplate,
             SecurityUtil securityUtil,
             IUploadService uploadService,
             IEmailService emailService,
-            ISettingService settingService) {
+            ISettingService settingService,
+            INotificationService notificationService) {
         this.masterJdbcTemplate = masterJdbcTemplate;
         this.securityUtil = securityUtil;
         this.uploadService = uploadService;
         this.emailService = emailService;
         this.settingService = settingService;
+        this.notificationService = notificationService;
     }
 
     @Override
@@ -190,11 +200,14 @@ public class CompanyDepositServiceImpl implements ICompanyDepositService {
         String requesterName = securityUtil.getCurrentUserName();
         String requesterRole = securityUtil.getCurrentUserRole();
         String requesterEmail = securityUtil.getCurrentUserEmail();
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion()));
 
         String sql = """
             INSERT INTO deposit_requests 
-            (company_id, amount, transfer_proof_url, status, requested_by, requester_name, requester_role, requester_email, requester_language, deleted, created_at, updated_at)
+            (company_id, amount, transfer_proof_url, status, 
+            requested_by, requester_name, requester_role, 
+            requester_email, requester_language, 
+            deleted, created_at, updated_at)
             VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, false, ?, ?)
             """;
 
@@ -230,6 +243,9 @@ public class CompanyDepositServiceImpl implements ICompanyDepositService {
             requesterEmail
         );
 
+        // Gửi notification real-time cho Tamabee staff
+        notifyTamabeeStaffOnDepositSubmit(id, companyName, request.getAmount());
+
         return getById(id);
     }
 
@@ -254,7 +270,7 @@ public class CompanyDepositServiceImpl implements ICompanyDepositService {
         }
 
         String sql = "UPDATE deposit_requests SET deleted = true, updated_at = ? WHERE id = ?";
-        masterJdbcTemplate.update(sql, Timestamp.valueOf(LocalDateTime.now()), id);
+        masterJdbcTemplate.update(sql, Timestamp.valueOf(LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion()))), id);
 
         log.info("Hủy yêu cầu nạp tiền: id={}, companyId={}", id, companyId);
         return deposit;
@@ -279,5 +295,26 @@ public class CompanyDepositServiceImpl implements ICompanyDepositService {
             throw NotFoundException.deposit(id);
         }
         return results.get(0);
+    }
+
+    /**
+     * Gửi notification cho Tamabee staff khi có deposit mới
+     */
+    private void notifyTamabeeStaffOnDepositSubmit(Long depositId, String companyName, BigDecimal amount) {
+        try {
+            Map<String, Object> params = new HashMap<>();
+            params.put("companyName", companyName);
+            params.put("amount", amount.toString());
+
+            notificationService.notifyTamabeeStaff(
+                    NotificationCode.DEPOSIT_SUBMITTED,
+                    params,
+                    "/admin/deposits?id=" + depositId,
+                    NotificationType.WALLET);
+
+            log.info("Đã gửi notification deposit mới cho Tamabee staff: depositId={}", depositId);
+        } catch (Exception e) {
+            log.error("Lỗi khi gửi notification deposit mới: {}", e.getMessage());
+        }
     }
 }

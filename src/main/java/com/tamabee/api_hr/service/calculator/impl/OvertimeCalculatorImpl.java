@@ -1,21 +1,23 @@
 package com.tamabee.api_hr.service.calculator.impl;
 
-import com.tamabee.api_hr.dto.config.OvertimeConfig;
-import com.tamabee.api_hr.dto.config.OvertimeMultipliers;
-import com.tamabee.api_hr.dto.result.DailyOvertimeDetail;
-import com.tamabee.api_hr.dto.result.OvertimeResult;
-import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
-import com.tamabee.api_hr.service.calculator.interfaces.IOvertimeCalculator;
-import com.tamabee.api_hr.service.calculator.LegalOvertimeRequirements;
-import lombok.RequiredArgsConstructor;
-import org.springframework.stereotype.Component;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.time.Duration;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.List;
+
+import org.springframework.stereotype.Component;
+
+import com.tamabee.api_hr.dto.config.OvertimeConfig;
+import com.tamabee.api_hr.dto.config.OvertimeMultipliers;
+import com.tamabee.api_hr.dto.result.DailyOvertimeDetail;
+import com.tamabee.api_hr.dto.result.OvertimeResult;
+import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
+import com.tamabee.api_hr.service.calculator.LegalOvertimeRequirements;
+import com.tamabee.api_hr.service.calculator.interfaces.IOvertimeCalculator;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Calculator tính toán tăng ca
@@ -61,8 +63,9 @@ public class OvertimeCalculatorImpl implements IOvertimeCalculator {
         int accumulatedMinutes = 0;
 
         for (DailyOvertimeDetail detail : dailyDetails) {
-            if (detail == null)
+            if (detail == null) {
                 continue;
+            }
 
             int dailyRegular = detail.getRegularMinutes() != null ? detail.getRegularMinutes() : 0;
             int dailyNight = detail.getNightMinutes() != null ? detail.getNightMinutes() : 0;
@@ -79,8 +82,9 @@ public class OvertimeCalculatorImpl implements IOvertimeCalculator {
             // Kiểm tra cap theo tháng
             if (accumulatedMinutes + dailyTotal > maxMonthlyMinutes) {
                 int remaining = maxMonthlyMinutes - accumulatedMinutes;
-                if (remaining <= 0)
+                if (remaining <= 0) {
                     break;
+                }
 
                 double ratio = (double) remaining / dailyTotal;
                 dailyRegular = (int) Math.floor(dailyRegular * ratio);
@@ -234,8 +238,8 @@ public class OvertimeCalculatorImpl implements IOvertimeCalculator {
     }
 
     @Override
-    public OvertimeMultipliers getLegalMinimumMultipliers(String locale) {
-        return legalOvertimeRequirements.getMinimumMultipliers(locale);
+    public OvertimeMultipliers getLegalMinimumMultipliers(String region) {
+        return legalOvertimeRequirements.getMinimumMultipliers(region);
     }
 
     @Override
@@ -244,8 +248,8 @@ public class OvertimeCalculatorImpl implements IOvertimeCalculator {
             return false;
         }
 
-        String locale = config.getLocale() != null ? config.getLocale() : "ja";
-        OvertimeMultipliers minimum = legalOvertimeRequirements.getMinimumMultipliers(locale);
+        String region = config.getRegion() != null ? config.getRegion() : "ja";
+        OvertimeMultipliers minimum = legalOvertimeRequirements.getMinimumMultipliers(region);
 
         // Kiểm tra từng multiplier
         return isMultiplierValid(config.getRegularOvertimeRate(), minimum.getRegularOvertime())

@@ -62,6 +62,10 @@ public interface ShiftAssignmentRepository
         /**
          * Kiểm tra overlap thời gian ca làm việc cho nhân viên trong ngày
          * Kiểm tra xem ca mới có trùng giờ với các ca đã có không
+         * Hỗ trợ cả ca bình thường và ca qua đêm (overnight shift)
+         * 
+         * Ca bình thường: startTime < endTime (vd: 09:00 - 18:00)
+         * Ca qua đêm: startTime > endTime (vd: 22:00 - 06:00)
          */
         @Query("SELECT COUNT(sa) > 0 FROM ShiftAssignmentEntity sa " +
                         "JOIN ShiftTemplateEntity st ON sa.shiftTemplateId = st.id " +
@@ -69,7 +73,20 @@ public interface ShiftAssignmentRepository
                         "AND sa.workDate = :workDate " +
                         "AND sa.status != 'CANCELLED' " +
                         "AND (" +
-                        "  (st.startTime < :endTime AND st.endTime > :startTime)" +
+                        // Case 1: Cả 2 ca đều là ca bình thường (startTime < endTime)
+                        "  (st.startTime < st.endTime AND :startTime < :endTime AND " +
+                        "   st.startTime < :endTime AND st.endTime > :startTime) " +
+                        "  OR " +
+                        // Case 2: Ca hiện tại là ca qua đêm, ca mới là ca bình thường
+                        "  (st.startTime >= st.endTime AND :startTime < :endTime AND " +
+                        "   (:startTime < st.endTime OR :endTime > st.startTime)) " +
+                        "  OR " +
+                        // Case 3: Ca hiện tại là ca bình thường, ca mới là ca qua đêm
+                        "  (st.startTime < st.endTime AND :startTime >= :endTime AND " +
+                        "   (st.startTime < :endTime OR st.endTime > :startTime)) " +
+                        "  OR " +
+                        // Case 4: Cả 2 ca đều là ca qua đêm - luôn trùng
+                        "  (st.startTime >= st.endTime AND :startTime >= :endTime)" +
                         ")")
         boolean existsTimeOverlap(
                         @Param("employeeId") Long employeeId,

@@ -1,12 +1,12 @@
 package com.tamabee.api_hr.dto.response.payroll;
 
+import java.math.BigDecimal;
+import java.time.LocalTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.time.LocalTime;
 
 /**
  * Response chứa cấu hình tăng ca của công ty
@@ -19,9 +19,6 @@ public class OvertimeConfigResponse {
 
     // Bật/tắt tính overtime
     private Boolean overtimeEnabled;
-
-    // Yêu cầu phê duyệt
-    private Boolean requireApproval;
 
     // Số giờ làm việc tiêu chuẩn
     private Integer standardWorkingHours;
@@ -41,8 +38,8 @@ public class OvertimeConfigResponse {
     // Sử dụng legal minimum hay custom
     private Boolean useLegalMinimum;
 
-    // Locale cho legal requirements
-    private String locale;
+    // Region cho legal requirements
+    private String region;
 
     // Giới hạn tăng ca
     private Integer maxOvertimeHoursPerDay;

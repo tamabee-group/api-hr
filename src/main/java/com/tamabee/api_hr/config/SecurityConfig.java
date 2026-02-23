@@ -43,12 +43,17 @@ public class SecurityConfig {
                 .formLogin(formLogin -> formLogin.disable())
                 .sessionManagement(session -> session.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
                 .authorizeHttpRequests(auth -> auth
+                        // WebSocket endpoints - SockJS cần truy cập /info, /iframe.html trước khi connect
+                        // Authentication được xử lý bởi WebSocketAuthInterceptor khi STOMP CONNECT
+                        .requestMatchers("/ws/**").permitAll()
                         // Public endpoints - không cần authentication
                         .requestMatchers("/api/auth/**").permitAll()
                         .requestMatchers("/api/plans/active").permitAll()
                         .requestMatchers("/api/plans/settings").permitAll()
                         .requestMatchers("/uploads/**").permitAll()
                         .requestMatchers("/actuator/**").permitAll()
+                        // Swagger / OpenAPI
+                        .requestMatchers("/swagger-ui/**", "/swagger-ui.html", "/v3/api-docs/**").permitAll()
                         // Tất cả các request khác cần authentication
                         .anyRequest().authenticated())
                 .exceptionHandling(ex -> ex

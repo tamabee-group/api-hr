@@ -1,16 +1,8 @@
 package com.tamabee.api_hr.controller.company;
 
-import com.tamabee.api_hr.dto.request.leave.CreateHolidayRequest;
-import com.tamabee.api_hr.dto.request.leave.UpdateHolidayRequest;
-import com.tamabee.api_hr.dto.response.leave.HolidayResponse;
-import com.tamabee.api_hr.entity.user.UserEntity;
-import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.dto.common.BaseResponse;
-import com.tamabee.api_hr.repository.user.UserRepository;
-import com.tamabee.api_hr.service.company.interfaces.IHolidayService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -20,19 +12,37 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
-import java.util.List;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.dto.request.leave.CreateHolidayRequest;
+import com.tamabee.api_hr.dto.request.leave.UpdateHolidayRequest;
+import com.tamabee.api_hr.dto.response.leave.HolidayResponse;
+import com.tamabee.api_hr.entity.user.UserEntity;
+import com.tamabee.api_hr.enums.RoleConstants;
+import com.tamabee.api_hr.exception.NotFoundException;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.IHolidayService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Controller quản lý ngày nghỉ lễ của công ty.
- * ADMIN_COMPANY có quyền CRUD ngày nghỉ.
+ * ADMIN và MANAGER có quyền xem, chỉ ADMIN có quyền CRUD.
  */
 @RestController
 @RequestMapping("/api/company/holidays")
 @RequiredArgsConstructor
-@PreAuthorize(RoleConstants.HAS_ADMIN_COMPANY)
+@PreAuthorize(RoleConstants.HAS_COMPANY_ACCESS)
 public class HolidayController {
 
     private final IHolidayService holidayService;
@@ -67,6 +77,7 @@ public class HolidayController {
      * POST /api/company/holidays
      */
     @PostMapping
+    @PreAuthorize(RoleConstants.HAS_ADMIN_COMPANY)
     public ResponseEntity<BaseResponse<HolidayResponse>> createHoliday(
             @Valid @RequestBody CreateHolidayRequest request) {
         HolidayResponse holiday = holidayService.createHoliday(request);
@@ -79,6 +90,7 @@ public class HolidayController {
      * PUT /api/company/holidays/{id}
      */
     @PutMapping("/{id}")
+    @PreAuthorize(RoleConstants.HAS_ADMIN_COMPANY)
     public ResponseEntity<BaseResponse<HolidayResponse>> updateHoliday(
             @PathVariable Long id,
             @Valid @RequestBody UpdateHolidayRequest request) {
@@ -91,9 +103,21 @@ public class HolidayController {
      * DELETE /api/company/holidays/{id}
      */
     @DeleteMapping("/{id}")
+    @PreAuthorize(RoleConstants.HAS_ADMIN_COMPANY)
     public ResponseEntity<BaseResponse<Void>> deleteHoliday(@PathVariable Long id) {
         holidayService.deleteHoliday(id);
         return ResponseEntity.ok(BaseResponse.success(null, "Xóa ngày nghỉ thành công"));
+    }
+
+    /**
+     * Xóa tất cả ngày nghỉ
+     * DELETE /api/company/holidays
+     */
+    @DeleteMapping
+    @PreAuthorize(RoleConstants.HAS_ADMIN_COMPANY)
+    public ResponseEntity<BaseResponse<Void>> deleteAllHolidays() {
+        holidayService.deleteAllHolidays();
+        return ResponseEntity.ok(BaseResponse.success(null, "Xóa tất cả ngày nghỉ thành công"));
     }
 
     /**

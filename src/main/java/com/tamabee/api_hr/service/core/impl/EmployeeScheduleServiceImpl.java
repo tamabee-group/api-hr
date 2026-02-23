@@ -8,6 +8,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import com.tamabee.api_hr.dto.request.attendance.EmployeeSwapRequest;
+import com.tamabee.api_hr.dto.response.attendance.EmployeeScheduleDataResponse;
 import com.tamabee.api_hr.dto.response.attendance.ShiftAssignmentResponse;
 import com.tamabee.api_hr.dto.response.attendance.ShiftSwapRequestResponse;
 import com.tamabee.api_hr.entity.attendance.ShiftAssignmentEntity;
@@ -39,6 +40,18 @@ public class EmployeeScheduleServiceImpl implements IEmployeeScheduleService {
         private final ShiftSwapRequestRepository shiftSwapRequestRepository;
         private final ShiftTemplateRepository shiftTemplateRepository;
         private final ShiftMapper shiftMapper;
+
+        @Override
+        @Transactional(readOnly = true)
+        public EmployeeScheduleDataResponse getAllScheduleData(Long employeeId, LocalDate startDate, LocalDate endDate) {
+                List<ShiftAssignmentResponse> shifts = getMySchedule(employeeId, startDate, endDate);
+                List<ShiftSwapRequestResponse> swapRequests = getSwapHistory(employeeId);
+
+                return EmployeeScheduleDataResponse.builder()
+                                .shifts(shifts)
+                                .swapRequests(swapRequests)
+                                .build();
+        }
 
         @Override
         @Transactional(readOnly = true)

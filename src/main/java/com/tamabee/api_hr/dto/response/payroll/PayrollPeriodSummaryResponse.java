@@ -1,13 +1,14 @@
 package com.tamabee.api_hr.dto.response.payroll;
 
-import com.tamabee.api_hr.enums.PayrollStatus;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import com.tamabee.api_hr.enums.PayrollPeriodStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 /**
  * Response cho tổng hợp lương của công ty theo kỳ
@@ -25,7 +26,7 @@ public class PayrollPeriodSummaryResponse {
     private String period; // Format: "2025-01"
 
     // Trạng thái
-    private PayrollStatus status;
+    private PayrollPeriodStatus status;
     private LocalDateTime finalizedAt;
     private Long finalizedBy;
     private String finalizedByName;

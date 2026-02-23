@@ -4,6 +4,7 @@ import java.time.LocalDate;
 import java.util.List;
 
 import com.tamabee.api_hr.dto.request.attendance.EmployeeSwapRequest;
+import com.tamabee.api_hr.dto.response.attendance.EmployeeScheduleDataResponse;
 import com.tamabee.api_hr.dto.response.attendance.ShiftAssignmentResponse;
 import com.tamabee.api_hr.dto.response.attendance.ShiftSwapRequestResponse;
 
@@ -11,6 +12,11 @@ import com.tamabee.api_hr.dto.response.attendance.ShiftSwapRequestResponse;
  * Service interface cho employee xem lịch làm việc
  */
 public interface IEmployeeScheduleService {
+
+    /**
+     * Lấy tất cả dữ liệu lịch làm việc (ca + lịch sử đổi ca) trong 1 API call
+     */
+    EmployeeScheduleDataResponse getAllScheduleData(Long employeeId, LocalDate startDate, LocalDate endDate);
 
     /**
      * Lấy lịch làm việc của nhân viên trong khoảng thời gian

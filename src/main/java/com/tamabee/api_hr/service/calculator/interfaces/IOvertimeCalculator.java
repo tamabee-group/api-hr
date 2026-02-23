@@ -59,12 +59,12 @@ public interface IOvertimeCalculator {
                         OvertimeConfig config);
 
         /**
-         * Lấy legal minimum multipliers theo locale
+         * Lấy legal minimum multipliers theo region
          *
-         * @param locale Locale code (ja, vi, en, ...)
+         * @param region Region code (ja, vi, ...)
          * @return Hệ số tăng ca tối thiểu
          */
-        OvertimeMultipliers getLegalMinimumMultipliers(String locale);
+        OvertimeMultipliers getLegalMinimumMultipliers(String region);
 
         /**
          * Validate custom multipliers không thấp hơn legal minimum

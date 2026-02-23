@@ -1,0 +1,191 @@
+# ============================================================
+# Tamabee API-HR — Docker Compose Production
+# ============================================================
+# VPS: VIETNIX — Ubuntu 24.04 — 8GB RAM — 4 Core — 40GB Disk
+# Nginx: Cài trực tiếp trên VPS (không qua Docker)
+#
+# Services:
+#   - api-hr:        Spring Boot API (port 8081)
+#   - postgres:      PostgreSQL 16 (port 5432)
+#   - prometheus:    Metrics collector (port 9090)
+#   - grafana:       Dashboard (port 3001)
+#   - node-exporter: VPS system metrics
+#
+# Sử dụng:
+#   docker compose up -d            # Khởi động
+#   docker compose logs -f api-hr   # Xem logs
+#   docker compose down             # Tắt
+#   docker compose up -d --build    # Rebuild & khởi động
+# ============================================================
+
+services:
+  # ---- PostgreSQL Database ----
+  postgres:
+    image: postgres:16-alpine
+    container_name: tamabee-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-tamabee_master}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD} # Bắt buộc set trong .env
+      POSTGRES_INITDB_ARGS: "--encoding=UTF-8 --lc-collate=C --lc-ctype=C"
+    volumes:
+      - postgres-data:/var/lib/postgresql/data
+    ports:
+      - "127.0.0.1:5432:5432" # Chỉ expose localhost (bảo mật)
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-postgres}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    deploy:
+      resources:
+        limits:
+          memory: 2G # 2GB cho PostgreSQL
+          cpus: "1.0"
+    networks:
+      - tamabee-network
+
+  # ---- Spring Boot API ----
+  api-hr:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: tamabee-api-hr
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    environment:
+      # Database
+      DATABASE_URL: jdbc:postgresql://postgres:5432/${POSTGRES_DB:-tamabee_master}
+      DATABASE_USERNAME: ${POSTGRES_USER:-postgres}
+      DATABASE_PASSWORD: ${POSTGRES_PASSWORD}
+      # JWT
+      JWT_SECRET: ${JWT_SECRET} # Bắt buộc set trong .env
+      JWT_ACCESS_TOKEN_EXPIRATION: ${JWT_ACCESS_TOKEN_EXPIRATION:-3600000}
+      JWT_REFRESH_TOKEN_EXPIRATION: ${JWT_REFRESH_TOKEN_EXPIRATION:-2592000000}
+      # Mail
+      MAIL_HOST: ${MAIL_HOST:-mail.tamabee.vn}
+      MAIL_PORT: ${MAIL_PORT:-465}
+      MAIL_USERNAME: ${MAIL_USERNAME}
+      MAIL_PASSWORD: ${MAIL_PASSWORD}
+      MAIL_FROM: ${MAIL_FROM:-Tamabee <info@tamabee.vn>}
+      # App
+      ADMIN_EMAIL: ${ADMIN_EMAIL}
+      FRONTEND_URL: ${FRONTEND_URL}
+      BASE_URL: ${BASE_URL:-https://tamabee.vn}
+      # Google
+      GOOGLE_CALENDAR_API_KEY: ${GOOGLE_CALENDAR_API_KEY:-}
+    volumes:
+      - uploads-data:/app/uploads
+    ports:
+      - "127.0.0.1:8081:8081" # API port — Nginx trên VPS sẽ proxy tới đây
+      - "127.0.0.1:9090:9090" # Actuator — chỉ localhost (cho Prometheus)
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost:9090/actuator/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      start_period: 60s
+      retries: 3
+    deploy:
+      resources:
+        limits:
+          memory: 3G # 3GB cho Spring Boot
+          cpus: "2.0"
+    networks:
+      - tamabee-network
+
+  # ---- Prometheus (Metrics Collector) ----
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: tamabee-prometheus
+    restart: unless-stopped
+    volumes:
+      - ./prometheus/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus-data:/prometheus
+    ports:
+      - "127.0.0.1:9091:9090" # Chỉ localhost (truy cập qua SSH tunnel)
+    command:
+      - "--config.file=/etc/prometheus/prometheus.yml"
+      - "--storage.tsdb.path=/prometheus"
+      - "--storage.tsdb.retention.time=30d" # Giữ data 30 ngày
+      - "--storage.tsdb.retention.size=5GB" # Max 5GB storage
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    networks:
+      - tamabee-network
+
+  # ---- Grafana (Dashboard) ----
+  grafana:
+    image: grafana/grafana:latest
+    container_name: tamabee-grafana
+    restart: unless-stopped
+    depends_on:
+      - prometheus
+    environment:
+      GF_SECURITY_ADMIN_USER: ${GRAFANA_USER:-admin}
+      GF_SECURITY_ADMIN_PASSWORD: ${GRAFANA_PASSWORD:-admin} # Thay đổi password này trên production
+      GF_SERVER_ROOT_URL: ${GRAFANA_ROOT_URL:-http://localhost:3001}
+      GF_SERVER_HTTP_PORT: "3001"
+    volumes:
+      - grafana-data:/var/lib/grafana
+      - ./grafana/provisioning:/etc/grafana/provisioning:ro
+    ports:
+      - "127.0.0.1:3001:3001" # Chỉ localhost (truy cập qua SSH tunnel)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "0.5"
+    networks:
+      - tamabee-network
+
+  # ---- Node Exporter (VPS System Metrics) ----
+  node-exporter:
+    image: prom/node-exporter:latest
+    container_name: tamabee-node-exporter
+    restart: unless-stopped
+    volumes:
+      - /proc:/host/proc:ro
+      - /sys:/host/sys:ro
+      - /:/rootfs:ro
+    command:
+      - "--path.procfs=/host/proc"
+      - "--path.sysfs=/host/sys"
+      - "--path.rootfs=/rootfs"
+      - "--collector.filesystem.mount-points-exclude=^/(sys|proc|dev|host|etc)($$|/)"
+    deploy:
+      resources:
+        limits:
+          memory: 128M
+          cpus: "0.25"
+    networks:
+      - tamabee-network
+
+# ---- Volumes ----
+volumes:
+  postgres-data:
+    driver: local
+  uploads-data:
+    driver: local
+  prometheus-data:
+    driver: local
+  grafana-data:
+    driver: local
+
+# ---- Network ----
+networks:
+  tamabee-network:
+    driver: bridge

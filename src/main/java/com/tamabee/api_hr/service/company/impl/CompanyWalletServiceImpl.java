@@ -15,12 +15,14 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tamabee.api_hr.datasource.RegionContext;
 import com.tamabee.api_hr.dto.request.wallet.TransactionFilterRequest;
 import com.tamabee.api_hr.dto.response.wallet.WalletResponse;
 import com.tamabee.api_hr.dto.response.wallet.WalletTransactionResponse;
 import com.tamabee.api_hr.enums.TransactionType;
 import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.service.company.interfaces.ICompanyWalletService;
+import com.tamabee.api_hr.util.RegionUtil;
 import com.tamabee.api_hr.util.SecurityUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -165,7 +167,10 @@ public class CompanyWalletServiceImpl implements ICompanyWalletService {
         
         // Tính toán isFreeTrialActive
         LocalDateTime freeTrialEndDate = response.getFreeTrialEndDate();
-        response.setIsFreeTrialActive(freeTrialEndDate != null && freeTrialEndDate.isAfter(LocalDateTime.now()));
+        response.setIsFreeTrialActive(
+                freeTrialEndDate != null && freeTrialEndDate.isAfter(
+                        LocalDateTime.now(RegionUtil.getTimezone(
+                                RegionContext.getCurrentRegion()))));
         
         return response;
     }

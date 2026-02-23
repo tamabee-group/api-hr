@@ -31,6 +31,7 @@ public enum ErrorCode {
         TOKEN_EXPIRED("TOKEN_EXPIRED", "Token đã hết hạn"),
         INVALID_CODE("INVALID_CODE", "Mã xác thực không hợp lệ hoặc đã hết hạn"),
         EMAIL_NOT_VERIFIED("EMAIL_NOT_VERIFIED", "Email chưa được xác thực"),
+        INCORRECT_PASSWORD("INCORRECT_PASSWORD", "Mật khẩu hiện tại không đúng"),
 
         // === USER ===
         USER_NOT_FOUND("USER_NOT_FOUND", "Không tìm thấy người dùng"),
@@ -44,6 +45,7 @@ public enum ErrorCode {
         COMPANY_NOT_FOUND("COMPANY_NOT_FOUND", "Không tìm thấy công ty"),
         COMPANY_NAME_EXISTS("COMPANY_NAME_EXISTS", "Tên công ty đã tồn tại"),
         INVALID_REFERRAL_CODE("INVALID_REFERRAL_CODE", "Mã giới thiệu không hợp lệ"),
+        INVALID_REGION("INVALID_REGION", "Giá trị region không hợp lệ"),
 
         // === TENANT DOMAIN ===
         INVALID_TENANT_DOMAIN("INVALID_TENANT_DOMAIN",
@@ -59,6 +61,9 @@ public enum ErrorCode {
         PLAN_IN_USE("PLAN_IN_USE", "Gói dịch vụ đang được sử dụng, không thể xóa"),
         PLAN_NOT_ACTIVE("PLAN_NOT_ACTIVE", "Gói dịch vụ không còn hoạt động"),
         PLAN_EXCEEDS_EMPLOYEE_LIMIT("PLAN_EXCEEDS_EMPLOYEE_LIMIT", "Số nhân viên vượt quá giới hạn của gói"),
+        UPGRADE_GRACE_PERIOD_EXPIRED("UPGRADE_GRACE_PERIOD_EXPIRED", "Đã hết thời gian cho phép hủy nâng cấp"),
+        CANNOT_CANCEL_UPGRADE("CANNOT_CANCEL_UPGRADE", "Không thể hủy nâng cấp"),
+        PLAN_CHANGE_SPAM("PLAN_CHANGE_SPAM", "Đã đổi gói quá 3 lần trong ngày"),
 
         // === SETTING ===
         SETTING_NOT_FOUND("SETTING_NOT_FOUND", "Không tìm thấy cấu hình"),
@@ -136,7 +141,6 @@ public enum ErrorCode {
         DEVICE_REGISTRATION_REQUIRED("DEVICE_REGISTRATION_REQUIRED", "Yêu cầu đăng ký thiết bị"),
         GEO_LOCATION_REQUIRED("GEO_LOCATION_REQUIRED", "Yêu cầu vị trí địa lý"),
         GEO_FENCE_VIOLATION("GEO_FENCE_VIOLATION", "Vị trí nằm ngoài khu vực cho phép"),
-        INVALID_DEVICE("INVALID_DEVICE", "Thiết bị chưa được đăng ký"),
         OUTSIDE_GEOFENCE("OUTSIDE_GEOFENCE", "Vị trí nằm ngoài khu vực cho phép"),
         INVALID_ATTENDANCE_TIME("INVALID_ATTENDANCE_TIME", "Thời gian chấm công không hợp lệ"),
 
@@ -148,6 +152,8 @@ public enum ErrorCode {
         INVALID_ADJUSTMENT_TIME("INVALID_ADJUSTMENT_TIME", "Thời gian điều chỉnh không hợp lệ"),
         ADJUSTMENT_NO_CHANGES("ADJUSTMENT_NO_CHANGES", "Phải thay đổi ít nhất một thời gian check-in hoặc check-out"),
         REJECTION_REASON_REQUIRED("REJECTION_REASON_REQUIRED", "Lý do từ chối không được để trống"),
+        BREAK_TIME_OUT_OF_RANGE("BREAK_TIME_OUT_OF_RANGE", "Thời gian giải lao phải nằm trong khoảng chấm công"),
+        INVALID_BREAK_TIME("INVALID_BREAK_TIME", "Thời gian giải lao không hợp lệ"),
 
         // === FILE ===
         FILE_UPLOAD_FAILED("FILE_UPLOAD_FAILED", "Lỗi khi tải file lên"),
@@ -158,6 +164,7 @@ public enum ErrorCode {
 
         // === DOCUMENT ===
         DOCUMENT_NOT_FOUND("DOCUMENT_NOT_FOUND", "Không tìm thấy tài liệu"),
+        INVALID_DOCUMENT_TYPE("INVALID_DOCUMENT_TYPE", "Loại tài liệu không hợp lệ"),
 
         // === EMAIL ===
         EMAIL_SEND_FAILED("EMAIL_SEND_FAILED", "Không thể gửi email"),
@@ -171,6 +178,7 @@ public enum ErrorCode {
         ATTENDANCE_NOT_COMPLETE("ATTENDANCE_NOT_COMPLETE", "Dữ liệu chấm công chưa đầy đủ"),
         PAYROLL_PERIOD_NOT_FOUND("PAYROLL_PERIOD_NOT_FOUND", "Không tìm thấy kỳ lương"),
         PAYROLL_PERIOD_EXISTS("PAYROLL_PERIOD_EXISTS", "Kỳ lương đã tồn tại cho tháng này"),
+        PAYROLL_FUTURE_PERIOD_NOT_ALLOWED("PAYROLL_FUTURE_PERIOD_NOT_ALLOWED", "Không thể tạo kỳ lương cho tháng tương lai"),
         PAYROLL_ALREADY_APPROVED("PAYROLL_ALREADY_APPROVED", "Kỳ lương đã được duyệt, không thể chỉnh sửa"),
         PAYROLL_ALREADY_PAID("PAYROLL_ALREADY_PAID", "Kỳ lương đã được thanh toán, không thể chỉnh sửa"),
         PAYROLL_INVALID_STATUS_TRANSITION("PAYROLL_INVALID_STATUS_TRANSITION",
@@ -197,6 +205,11 @@ public enum ErrorCode {
         HOLIDAY_NOT_FOUND("HOLIDAY_NOT_FOUND", "Không tìm thấy ngày nghỉ lễ"),
         HOLIDAY_DATE_EXISTS("HOLIDAY_DATE_EXISTS", "Ngày nghỉ lễ đã tồn tại"),
 
+        // === GOOGLE CALENDAR ===
+        GOOGLE_CALENDAR_ERROR("GOOGLE_CALENDAR_ERROR", "Lỗi khi gọi Google Calendar API"),
+        GOOGLE_CALENDAR_NOT_CONFIGURED("GOOGLE_CALENDAR_NOT_CONFIGURED",
+                        "Google Calendar API key chưa được cấu hình"),
+
         // === LEAVE ===
         LEAVE_REQUEST_NOT_FOUND("LEAVE_REQUEST_NOT_FOUND", "Không tìm thấy yêu cầu nghỉ phép"),
         LEAVE_ALREADY_PROCESSED("LEAVE_ALREADY_PROCESSED", "Yêu cầu nghỉ phép đã được xử lý"),
@@ -210,6 +223,14 @@ public enum ErrorCode {
         // === AUDIT LOG ===
         AUDIT_LOG_NOT_FOUND("AUDIT_LOG_NOT_FOUND", "Không tìm thấy audit log"),
 
+        // === NOTIFICATION ===
+        NOTIFICATION_NOT_FOUND("NOTIFICATION_NOT_FOUND", "Không tìm thấy thông báo"),
+        SYSTEM_NOTIFICATION_NOT_FOUND("SYSTEM_NOTIFICATION_NOT_FOUND", "Không tìm thấy thông báo hệ thống"),
+
+        // === FEEDBACK ===
+        FEEDBACK_NOT_FOUND("FEEDBACK_NOT_FOUND", "Không tìm thấy feedback"),
+        INVALID_STATUS_TRANSITION("INVALID_STATUS_TRANSITION", "Chuyển trạng thái không hợp lệ"),
+
         // === SHIFT ===
         SHIFT_TEMPLATE_NOT_FOUND("SHIFT_TEMPLATE_NOT_FOUND", "Không tìm thấy mẫu ca làm việc"),
         SHIFT_ASSIGNMENT_NOT_FOUND("SHIFT_ASSIGNMENT_NOT_FOUND", "Không tìm thấy phân ca"),
@@ -218,6 +239,13 @@ public enum ErrorCode {
         SHIFT_SWAP_REQUEST_NOT_FOUND("SHIFT_SWAP_REQUEST_NOT_FOUND", "Không tìm thấy yêu cầu đổi ca"),
         SHIFT_SWAP_ALREADY_PROCESSED("SHIFT_SWAP_ALREADY_PROCESSED", "Yêu cầu đổi ca đã được xử lý"),
         SHIFT_TEMPLATE_IN_USE("SHIFT_TEMPLATE_IN_USE", "Mẫu ca đang được sử dụng, không thể xóa"),
+        SHIFT_TEMPLATE_INACTIVE("SHIFT_TEMPLATE_INACTIVE", "Mẫu ca không tồn tại hoặc đã bị vô hiệu"),
+        SHIFT_PREFERENCE_NOT_FOUND("SHIFT_PREFERENCE_NOT_FOUND", "Không tìm thấy nguyện vọng ca làm việc"),
+        SHIFT_PREFERENCE_PAST_WEEK("SHIFT_PREFERENCE_PAST_WEEK", "Không thể tạo nguyện vọng cho tuần đã qua"),
+        SHIFT_PREFERENCE_ALREADY_APPLIED("SHIFT_PREFERENCE_ALREADY_APPLIED", "Nguyện vọng đã được áp dụng, không thể sửa đổi"),
+        SHIFT_PREFERENCE_DUPLICATE("SHIFT_PREFERENCE_DUPLICATE", "Nguyện vọng đã tồn tại cho ca này"),
+        SHIFT_PREFERENCE_INVALID_DAY("SHIFT_PREFERENCE_INVALID_DAY", "Ngày trong tuần không hợp lệ"),
+        SHIFT_PREFERENCE_INVALID_CUSTOM_TIME("SHIFT_PREFERENCE_INVALID_CUSTOM_TIME", "Giờ bắt đầu phải trước giờ kết thúc"),
 
         // === SALARY CONFIG ===
         SALARY_CONFIG_NOT_FOUND("SALARY_CONFIG_NOT_FOUND", "Không tìm thấy cấu hình lương"),
@@ -234,6 +262,11 @@ public enum ErrorCode {
         DEDUCTION_AMOUNT_OR_PERCENTAGE_REQUIRED("DEDUCTION_AMOUNT_OR_PERCENTAGE_REQUIRED",
                         "Phải nhập số tiền hoặc phần trăm khấu trừ"),
 
+        // === SALARY ITEM TEMPLATE ===
+        TEMPLATE_NOT_FOUND("TEMPLATE_NOT_FOUND", "Không tìm thấy template"),
+        TEMPLATE_IN_USE("TEMPLATE_IN_USE", "Template đang được sử dụng, không thể xóa"),
+        SALARY_ITEM_NOT_FOUND("SALARY_ITEM_NOT_FOUND", "Không tìm thấy phụ cấp/khấu trừ"),
+
         // === CONTRACT ===
         CONTRACT_NOT_FOUND("CONTRACT_NOT_FOUND", "Không tìm thấy hợp đồng"),
         CONTRACT_OVERLAP_EXISTS("CONTRACT_OVERLAP_EXISTS", "Hợp đồng bị trùng thời gian với hợp đồng hiện có"),
@@ -247,6 +280,14 @@ public enum ErrorCode {
 
         // === LOCATION ===
         INVALID_LOCATION("INVALID_LOCATION", "Tọa độ vị trí không hợp lệ"),
+        LOCATION_NOT_FOUND("LOCATION_NOT_FOUND", "Không tìm thấy vị trí chấm công"),
+
+        // === KIOSK ===
+        KIOSK_NOT_FOUND("KIOSK_NOT_FOUND", "Không tìm thấy máy chấm công"),
+        KIOSK_INVALID_PIN("KIOSK_INVALID_PIN", "Mã PIN không đúng"),
+        KIOSK_INACTIVE("KIOSK_INACTIVE", "Máy chấm công đã bị vô hiệu hóa"),
+        KIOSK_PIN_EXISTS("KIOSK_PIN_EXISTS", "Mã PIN đã được sử dụng"),
+        KIOSK_EMPLOYEE_NOT_FOUND("KIOSK_EMPLOYEE_NOT_FOUND", "Không tìm thấy nhân viên với mã này"),
 
         // === DEPARTMENT ===
         DEPARTMENT_NOT_FOUND("DEPARTMENT_NOT_FOUND", "Không tìm thấy phòng ban"),

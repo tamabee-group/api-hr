@@ -1,5 +1,6 @@
 package com.tamabee.api_hr.util;
 
+import java.nio.charset.StandardCharsets;
 import java.security.Key;
 import java.util.Date;
 import java.util.Map;
@@ -23,7 +24,7 @@ public class JwtUtil {
     private long refreshTokenExpiration;
 
     private Key getSigningKey() {
-        return Keys.hmacShaKeyFor(secret.getBytes());
+        return Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8));
     }
 
     /**
@@ -37,10 +38,12 @@ public class JwtUtil {
      * @param planId       ID của plan (null cho Tamabee users = all features)
      * @param employeeCode Mã nhân viên
      * @param name         Tên nhân viên
-     * @param language     Ngôn ngữ của user (vi, en, ja)
+     * @param language     Ngôn ngữ giao diện của user (vi, en, ja)
+     * @param region       Region của company (vi, ja) — quyết định timezone
      */
     public String generateAccessToken(Long userId, String email, String role,
-            Long companyId, String tenantDomain, Long planId, String employeeCode, String name, String language) {
+            Long companyId, String tenantDomain, Long planId, String employeeCode, String name,
+            String language, String region) {
         return Jwts.builder()
                 .claim("userId", userId)
                 .claim("email", email)
@@ -51,6 +54,7 @@ public class JwtUtil {
                 .claim("employeeCode", employeeCode)
                 .claim("name", name)
                 .claim("language", language)
+                .claim("region", region)
                 .claim("type", "access")
                 .subject(email)
                 .issuedAt(new Date())
@@ -58,6 +62,7 @@ public class JwtUtil {
                 .signWith(getSigningKey())
                 .compact();
     }
+
 
     public String generateRefreshToken(Long userId, String email) {
         return Jwts.builder()
@@ -73,7 +78,7 @@ public class JwtUtil {
     public Map<String, Object> validateToken(String token) {
         try {
             return Jwts.parser()
-                    .verifyWith(Keys.hmacShaKeyFor(secret.getBytes()))
+                    .verifyWith(Keys.hmacShaKeyFor(secret.getBytes(StandardCharsets.UTF_8)))
                     .build()
                     .parseSignedClaims(token)
                     .getPayload();

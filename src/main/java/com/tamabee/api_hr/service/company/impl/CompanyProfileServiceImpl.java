@@ -7,17 +7,22 @@ import java.time.LocalDateTime;
 
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tamabee.api_hr.datasource.RegionContext;
 import com.tamabee.api_hr.datasource.TenantContext;
 import com.tamabee.api_hr.dto.request.company.UpdateCompanyProfileRequest;
 import com.tamabee.api_hr.dto.response.company.CompanyProfileResponse;
 import com.tamabee.api_hr.enums.CompanyStatus;
+import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.ConflictException;
 import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.repository.user.UserRepository;
 import com.tamabee.api_hr.service.company.interfaces.ICompanyProfileService;
+import com.tamabee.api_hr.util.RegionUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -44,7 +49,7 @@ public class CompanyProfileServiceImpl implements ICompanyProfileService {
         
         String sql = """
             SELECT c.id, c.name, c.owner_name, c.email, c.phone, c.address, 
-                   c.industry, c.zipcode, c.locale, c.language, c.logo, 
+                   c.industry, c.zipcode, c.region, c.language, c.logo, 
                    c.tenant_domain, c.status, c.plan_id, c.created_at, c.updated_at,
                    p.name_vi, p.name_en, p.name_ja, p.monthly_price, p.max_employees,
                    w.balance, w.last_billing_date, w.next_billing_date, w.free_trial_end_date
@@ -106,6 +111,45 @@ public class CompanyProfileServiceImpl implements ICompanyProfileService {
             throw NotFoundException.company(tenantDomain);
         }
         
+        // Chỉ ADMIN_TAMABEE mới được thay đổi region/language
+        if (request.getRegion() != null || request.getLanguage() != null) {
+            boolean isTamabeeAdmin = SecurityContextHolder.getContext().getAuthentication()
+                    .getAuthorities().stream()
+                    .map(GrantedAuthority::getAuthority)
+                    .anyMatch(a -> a.equals("ROLE_ADMIN_TAMABEE"));
+            
+            if (isTamabeeAdmin) {
+                // Validate region nếu được cung cấp
+                if (request.getRegion() != null && !RegionUtil.isValidRegion(request.getRegion())) {
+                    throw BadRequestException.invalidRegion(request.getRegion());
+                }
+
+                StringBuilder regionSql = new StringBuilder("UPDATE companies SET ");
+                java.util.List<Object> params = new java.util.ArrayList<>();
+                boolean hasField = false;
+                
+                if (request.getRegion() != null) {
+                    regionSql.append("region = ?");
+                    params.add(request.getRegion());
+                    hasField = true;
+                }
+                if (request.getLanguage() != null) {
+                    if (hasField) {
+                        regionSql.append(", ");
+                    }
+                    regionSql.append("language = ?");
+                    params.add(request.getLanguage());
+                }
+                regionSql.append(", updated_at = NOW() WHERE tenant_domain = ? AND deleted = false");
+                params.add(tenantDomain);
+                
+                masterJdbcTemplate.update(regionSql.toString(), params.toArray());
+                log.info("ADMIN_TAMABEE updated region/language for company: {}", tenantDomain);
+            } else {
+                log.warn("Non-ADMIN_TAMABEE user attempted to change region/language for company: {}", tenantDomain);
+            }
+        }
+        
         return getMyCompanyProfile();
     }
 
@@ -135,7 +179,9 @@ public class CompanyProfileServiceImpl implements ICompanyProfileService {
         LocalDateTime freeTrialEndDate = toLocalDateTime(rs.getTimestamp("free_trial_end_date"));
         
         // Tính toán isFreeTrialActive dựa trên free_trial_end_date
-        Boolean isFreeTrialActive = freeTrialEndDate != null && freeTrialEndDate.isAfter(LocalDateTime.now());
+        Boolean isFreeTrialActive = freeTrialEndDate != null
+                && freeTrialEndDate.isAfter(LocalDateTime.now(
+                        RegionUtil.getTimezone(RegionContext.getCurrentRegion())));
         
         return CompanyProfileResponse.builder()
                 .id(rs.getLong("id"))
@@ -146,7 +192,7 @@ public class CompanyProfileServiceImpl implements ICompanyProfileService {
                 .address(rs.getString("address"))
                 .industry(rs.getString("industry"))
                 .zipcode(rs.getString("zipcode"))
-                .locale(rs.getString("locale"))
+                .region(rs.getString("region"))
                 .language(rs.getString("language"))
                 .logo(rs.getString("logo"))
                 .tenantDomain(rs.getString("tenant_domain"))

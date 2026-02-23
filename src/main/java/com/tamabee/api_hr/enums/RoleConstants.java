@@ -39,7 +39,10 @@ public final class RoleConstants {
 
     // All Company Access - Tất cả nhân viên (Admin, Manager, Employee) của cả
     // Tamabee và Company
-    public static final String HAS_ALL_COMPANY_ACCESS = "hasAnyRole('ADMIN_COMPANY', 'MANAGER_COMPANY', 'EMPLOYEE_COMPANY', 'ADMIN_TAMABEE', 'MANAGER_TAMABEE', 'EMPLOYEE_TAMABEE')";
+    public static final String HAS_ALL_COMPANY_ACCESS =
+            "hasAnyRole('ADMIN_COMPANY', 'MANAGER_COMPANY', "
+            + "'EMPLOYEE_COMPANY', 'ADMIN_TAMABEE', "
+            + "'MANAGER_TAMABEE', 'EMPLOYEE_TAMABEE')";
 
     // ========== Multi-Tenant Access (Tamabee + Company) ==========
     // Cho phép Tamabee admins access cả platform management và HR features
@@ -51,5 +54,8 @@ public final class RoleConstants {
     public static final String HAS_MANAGER_ACCESS = "hasAnyRole('ADMIN_TAMABEE', 'MANAGER_TAMABEE', 'ADMIN_COMPANY', 'MANAGER_COMPANY')";
 
     // All HR access - Tất cả users có thể sử dụng HR features
-    public static final String HAS_HR_ACCESS = "hasAnyRole('ADMIN_TAMABEE', 'MANAGER_TAMABEE', 'EMPLOYEE_TAMABEE', 'ADMIN_COMPANY', 'MANAGER_COMPANY', 'EMPLOYEE_COMPANY')";
+    public static final String HAS_HR_ACCESS =
+            "hasAnyRole('ADMIN_TAMABEE', 'MANAGER_TAMABEE', "
+            + "'EMPLOYEE_TAMABEE', 'ADMIN_COMPANY', "
+            + "'MANAGER_COMPANY', 'EMPLOYEE_COMPANY')";
 }

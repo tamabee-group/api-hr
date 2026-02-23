@@ -102,6 +102,18 @@ public interface IEmailService {
     void sendCleanupReport(List<String> deletedCompanies, int retentionDays);
 
     /**
+     * Gửi email thông báo cho Tamabee admin khi có feedback mới từ khách hàng
+     *
+     * @param feedbackType   loại feedback
+     * @param title          tiêu đề feedback
+     * @param userName       tên người gửi
+     * @param userEmail      email người gửi
+     * @param companyName    tên công ty
+     */
+    void sendFeedbackNotification(String feedbackType, String title, String userName,
+            String userEmail, String companyName);
+
+    /**
      * Gửi email thông báo tài khoản đã được kích hoạt lại sau khi nạp tiền
      *
      * @param email       email của company
@@ -110,4 +122,75 @@ public interface IEmailService {
      * @param language    ngôn ngữ (vi, en, ja)
      */
     void sendReactivationNotification(String email, String companyName, BigDecimal balance, String language);
+
+    /**
+     * Gửi email thông báo lương cho nhân viên
+     *
+     * @param email            email nhân viên
+     * @param employeeName     tên nhân viên
+     * @param period           kỳ lương (ví dụ: "01/2025")
+     * @param baseSalary       lương cơ bản
+     * @param totalOvertime    tổng tăng ca
+     * @param totalAllowances  tổng phụ cấp
+     * @param totalDeductions  tổng khấu trừ
+     * @param netSalary        lương thực nhận
+     * @param paymentDate      ngày thanh toán
+     * @param language         ngôn ngữ (vi, en, ja)
+     */
+    void sendPayrollNotification(String email, String employeeName, String period, String baseSalary,
+            String totalOvertime, String totalAllowances, String totalDeductions, String netSalary,
+            String paymentDate, String language);
+
+    /**
+     * Gửi email thông báo cho admin khi có kỳ lương gửi duyệt
+     *
+     * @param email          email admin
+     * @param recipientName  tên admin
+     * @param submitterName  tên người gửi duyệt
+     * @param period         kỳ lương (ví dụ: "01/2026")
+     * @param totalEmployees số nhân viên
+     * @param totalNetSalary tổng thực nhận (đã format)
+     * @param language       ngôn ngữ (vi, en, ja)
+     */
+    void sendPayrollSubmittedNotification(String email, String recipientName, String submitterName,
+            String period, String totalEmployees, String totalNetSalary, String language);
+
+    /**
+     * Gửi email thông báo cho người gửi duyệt khi kỳ lương được phê duyệt
+     *
+     * @param email          email người gửi duyệt
+     * @param recipientName  tên người gửi duyệt
+     * @param period         kỳ lương (ví dụ: "01/2026")
+     * @param totalEmployees số nhân viên
+     * @param totalNetSalary tổng thực nhận (đã format)
+     * @param language       ngôn ngữ (vi, en, ja)
+     */
+    void sendPayrollApprovedNotification(String email, String recipientName,
+            String period, String totalEmployees, String totalNetSalary, String language);
+
+    /**
+     * Gửi email thông báo cho người gửi duyệt khi kỳ lương bị từ chối
+     *
+     * @param email           email người gửi duyệt
+     * @param recipientName   tên người gửi duyệt
+     * @param period          kỳ lương (ví dụ: "01/2026")
+     * @param totalEmployees  số nhân viên
+     * @param totalNetSalary  tổng thực nhận (đã format)
+     * @param rejectionReason lý do từ chối
+     * @param language        ngôn ngữ (vi, en, ja)
+     */
+    void sendPayrollRejectedNotification(String email, String recipientName,
+            String period, String totalEmployees, String totalNetSalary, String rejectionReason, String language);
+
+    /**
+     * Gửi email thông báo lịch phân ca cho nhân viên
+     *
+     * @param email         email nhân viên
+     * @param employeeName  tên nhân viên
+     * @param weekInfo      thông tin tuần (ví dụ: "Tuần 25: 16/06 - 22/06/2025")
+     * @param message       tin nhắn tùy chỉnh từ manager (nullable)
+     * @param language      ngôn ngữ (vi, en, ja)
+     */
+    void sendShiftScheduleNotification(String email, String employeeName, String weekInfo,
+            String message, String language);
 }

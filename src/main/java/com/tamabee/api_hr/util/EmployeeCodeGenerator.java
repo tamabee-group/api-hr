@@ -2,6 +2,7 @@ package com.tamabee.api_hr.util;
 
 import java.time.LocalDate;
 
+import com.tamabee.api_hr.datasource.RegionContext;
 import com.tamabee.api_hr.repository.user.UserRepository;
 
 /**
@@ -17,7 +18,7 @@ public class EmployeeCodeGenerator {
      * Nếu trùng thì tăng năm
      */
     public static String generateForAdmin(UserRepository userRepository) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion()));
         int year = today.getYear();
         String monthDay = String.format("%02d%02d", today.getMonthValue(), today.getDayOfMonth());
         
@@ -41,7 +42,7 @@ public class EmployeeCodeGenerator {
      * @return Mã nhân viên 8 số duy nhất
      */
     public static String generateForUser(LocalDate dateOfBirth, UserRepository userRepository) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion()));
         int year = today.getYear();
         
         // Parse ngày sinh

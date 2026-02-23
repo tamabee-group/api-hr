@@ -1,0 +1,27 @@
+#!/usr/bin/env sh
+#
+# Tamabee API-HR Commit Message Hook
+# ====================================
+# Validate commit message theo Conventional Commits.
+# Giống hệt commit-msg hook ở frontend (tama-hr).
+#
+
+commit_msg=$(cat "$1")
+pattern="^(feat|fix|docs|style|refactor|test|chore|perf|ci|build)(\(.+\))?: .{1,100}$"
+
+if ! echo "$commit_msg" | grep -qE "$pattern"; then
+    echo ""
+    echo "❌ Message commit không đúng định dạng!"
+    echo ""
+    echo "Expected: type(scope): message"
+    echo ""
+    echo "Types: feat, fix, docs, style, refactor, test, chore, perf, ci, build"
+    echo ""
+    echo "Ví dụ:"
+    echo "  feat(auth): add login page"
+    echo "  fix(payroll): correct salary calculation"
+    echo "  docs: update API documentation"
+    echo "  chore: update dependencies"
+    echo ""
+    exit 1
+fi

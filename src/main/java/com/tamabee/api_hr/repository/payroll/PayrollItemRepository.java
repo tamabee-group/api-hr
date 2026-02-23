@@ -116,4 +116,10 @@ public interface PayrollItemRepository extends JpaRepository<PayrollItemEntity, 
          * Lấy payroll items theo status (phân trang)
          */
         Page<PayrollItemEntity> findByStatus(String status, Pageable pageable);
+
+        /**
+         * Lấy payroll items theo employee và danh sách period IDs (phân trang)
+         */
+        Page<PayrollItemEntity> findByEmployeeIdAndPayrollPeriodIdIn(
+                        Long employeeId, java.util.Set<Long> payrollPeriodIds, Pageable pageable);
 }

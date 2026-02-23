@@ -1,5 +1,8 @@
 package com.tamabee.api_hr.service.company.interfaces;
 
+import java.util.List;
+
+import com.tamabee.api_hr.dto.response.PlanChangeHistoryResponse;
 import com.tamabee.api_hr.dto.response.SubscriptionStatusResponse;
 
 /**
@@ -40,4 +43,21 @@ public interface ISubscriptionService {
      * @return thông tin subscription sau khi reactivate
      */
     SubscriptionStatusResponse reactivate(String language);
+
+    /**
+     * Lấy lịch sử thay đổi plan của company hiện tại
+     *
+     * @param language ngôn ngữ để hiển thị tên plan
+     * @return danh sách lịch sử thay đổi plan
+     */
+    List<PlanChangeHistoryResponse> getPlanChangeHistory(String language);
+
+    /**
+     * Hủy upgrade gần nhất (trong grace period 15 phút)
+     * Trả về plan trước đó và xóa record upgrade khỏi history
+     *
+     * @param language ngôn ngữ để hiển thị tên plan
+     * @return thông tin subscription sau khi hủy upgrade
+     */
+    SubscriptionStatusResponse cancelUpgrade(String language);
 }

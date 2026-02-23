@@ -1,14 +1,20 @@
 package com.tamabee.api_hr.entity.payroll;
 
-import com.tamabee.api_hr.entity.BaseEntity;
-import com.tamabee.api_hr.enums.PayrollPeriodStatus;
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
+import com.tamabee.api_hr.entity.BaseEntity;
+import com.tamabee.api_hr.enums.PayrollPeriodStatus;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * Entity lưu trữ kỳ lương.
@@ -47,6 +53,13 @@ public class PayrollPeriodEntity extends BaseEntity {
     // ID người tạo
     @Column(nullable = false)
     private Long createdBy;
+
+    // Lý do từ chối
+    @Column(length = 500)
+    private String rejectionReason;
+
+    // ID người gửi duyệt
+    private Long submittedBy;
 
     // ID người duyệt
     private Long approvedBy;

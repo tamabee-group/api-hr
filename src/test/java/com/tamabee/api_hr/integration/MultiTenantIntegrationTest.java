@@ -12,16 +12,11 @@ import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.Mock;
-import static org.mockito.Mockito.verify;
-import static org.mockito.Mockito.when;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 import com.tamabee.api_hr.datasource.TenantContext;
 import com.tamabee.api_hr.datasource.TenantDataSourceManager;
-import com.tamabee.api_hr.dto.response.wallet.PlanFeaturesResponse;
-import com.tamabee.api_hr.enums.FeatureCode;
 import com.tamabee.api_hr.enums.UserRole;
-import com.tamabee.api_hr.service.core.interfaces.IPlanFeaturesService;
 import com.tamabee.api_hr.util.JwtUtil;
 import com.tamabee.api_hr.util.TenantDomainValidator;
 
@@ -42,12 +37,10 @@ class MultiTenantIntegrationTest {
     private static final String DEFAULT_EMPLOYEE_CODE = "EMP001";
     private static final String DEFAULT_NAME = "Test User";
     private static final String DEFAULT_LANGUAGE = "vi";
+    private static final String DEFAULT_REGION = "vi";
 
     @Mock
     private TenantDataSourceManager tenantDataSourceManager;
-
-    @Mock
-    private IPlanFeaturesService planFeaturesService;
 
     private JwtUtil jwtUtil;
 
@@ -148,7 +141,7 @@ class MultiTenantIntegrationTest {
 
             // When
             String token = jwtUtil.generateAccessToken(userId, email, role, companyId, tenantDomain, planId,
-                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
+                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE, DEFAULT_REGION);
             Map<String, Object> claims = jwtUtil.validateToken(token);
 
             // Then
@@ -229,9 +222,9 @@ class MultiTenantIntegrationTest {
 
             // When
             String token1 = jwtUtil.generateAccessToken(1L, "user1@a.com", "ADMIN_COMPANY", 1L, tenant1, 1L,
-                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
+                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE, DEFAULT_REGION);
             String token2 = jwtUtil.generateAccessToken(2L, "user2@b.com", "ADMIN_COMPANY", 2L, tenant2, 1L,
-                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
+                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE, DEFAULT_REGION);
 
             Map<String, Object> claims1 = jwtUtil.validateToken(token1);
             Map<String, Object> claims2 = jwtUtil.validateToken(token2);
@@ -274,7 +267,7 @@ class MultiTenantIntegrationTest {
 
             // When
             String token = jwtUtil.generateAccessToken(userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT, null,
-                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
+                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE, DEFAULT_REGION);
             Map<String, Object> claims = jwtUtil.validateToken(token);
 
             // Then
@@ -291,7 +284,7 @@ class MultiTenantIntegrationTest {
 
             // When
             String token = jwtUtil.generateAccessToken(userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT, null,
-                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
+                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE, DEFAULT_REGION);
             Map<String, Object> claims = jwtUtil.validateToken(token);
 
             // Then
@@ -308,7 +301,7 @@ class MultiTenantIntegrationTest {
 
             // When
             String token = jwtUtil.generateAccessToken(userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT, null,
-                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
+                    DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE, DEFAULT_REGION);
             Map<String, Object> claims = jwtUtil.validateToken(token);
 
             // Then
@@ -337,7 +330,7 @@ class MultiTenantIntegrationTest {
             // When & Then
             for (String role : tamabeeRoles) {
                 String token = jwtUtil.generateAccessToken(1L, "user@tamabee.vn", role, TAMABEE_COMPANY_ID,
-                        TAMABEE_TENANT, null, DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
+                        TAMABEE_TENANT, null, DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE, DEFAULT_REGION);
                 Map<String, Object> claims = jwtUtil.validateToken(token);
 
                 assertThat(claims.get("tenantDomain"))
@@ -362,159 +355,6 @@ class MultiTenantIntegrationTest {
 
             // Cleanup
             TenantContext.clear();
-        }
-    }
-
-    // ==================== 13.4 Test Plan Features API ====================
-
-    @Nested
-    @DisplayName("13.4 Plan Features API Tests")
-    class PlanFeaturesApiTests {
-
-        @Test
-        @DisplayName("Plan Features API should return features for valid planId")
-        void planFeaturesApi_shouldReturnFeaturesForValidPlanId() {
-            // Given
-            Long planId = 1L;
-            PlanFeaturesResponse mockResponse = PlanFeaturesResponse.builder()
-                    .planId(planId)
-                    .planName("Basic Plan")
-                    .features(List.of(
-                            PlanFeaturesResponse.FeatureItem.builder()
-                                    .code(FeatureCode.ATTENDANCE)
-                                    .name("Attendance")
-                                    .enabled(true)
-                                    .build(),
-                            PlanFeaturesResponse.FeatureItem.builder()
-                                    .code(FeatureCode.LEAVE_MANAGEMENT)
-                                    .name("Leave Management")
-                                    .enabled(true)
-                                    .build()))
-                    .build();
-
-            when(planFeaturesService.getFeaturesByPlanId(planId)).thenReturn(mockResponse);
-
-            // When
-            PlanFeaturesResponse response = planFeaturesService.getFeaturesByPlanId(planId);
-
-            // Then
-            assertThat(response).isNotNull();
-            assertThat(response.getPlanId()).isEqualTo(planId);
-            assertThat(response.getPlanName()).isEqualTo("Basic Plan");
-            assertThat(response.getFeatures()).hasSize(2);
-            verify(planFeaturesService).getFeaturesByPlanId(planId);
-        }
-
-        @Test
-        @DisplayName("Tamabee user (no planId) should get all features enabled")
-        void tamabeeUser_shouldGetAllFeaturesEnabled() {
-            // Given
-            PlanFeaturesResponse mockResponse = PlanFeaturesResponse.builder()
-                    .planId(null)
-                    .planName("All Features")
-                    .features(List.of(
-                            PlanFeaturesResponse.FeatureItem.builder()
-                                    .code(FeatureCode.ATTENDANCE)
-                                    .name("Attendance")
-                                    .enabled(true)
-                                    .build(),
-                            PlanFeaturesResponse.FeatureItem.builder()
-                                    .code(FeatureCode.LEAVE_MANAGEMENT)
-                                    .name("Leave Management")
-                                    .enabled(true)
-                                    .build(),
-                            PlanFeaturesResponse.FeatureItem.builder()
-                                    .code(FeatureCode.PAYROLL)
-                                    .name("Payroll")
-                                    .enabled(true)
-                                    .build()))
-                    .build();
-
-            when(planFeaturesService.getAllFeaturesEnabled()).thenReturn(mockResponse);
-
-            // When
-            PlanFeaturesResponse response = planFeaturesService.getAllFeaturesEnabled();
-
-            // Then
-            assertThat(response).isNotNull();
-            assertThat(response.getPlanId()).isNull();
-            assertThat(response.getFeatures()).isNotEmpty();
-            assertThat(response.getFeatures())
-                    .allMatch(PlanFeaturesResponse.FeatureItem::isEnabled);
-            verify(planFeaturesService).getAllFeaturesEnabled();
-        }
-
-        @Test
-        @DisplayName("Plan Features response should contain required fields")
-        void planFeaturesResponse_shouldContainRequiredFields() {
-            // Given
-            Long planId = 2L;
-            PlanFeaturesResponse mockResponse = PlanFeaturesResponse.builder()
-                    .planId(planId)
-                    .planName("Pro Plan")
-                    .features(List.of(
-                            PlanFeaturesResponse.FeatureItem.builder()
-                                    .code(FeatureCode.ATTENDANCE)
-                                    .name("Attendance Management")
-                                    .enabled(true)
-                                    .build()))
-                    .build();
-
-            when(planFeaturesService.getFeaturesByPlanId(planId)).thenReturn(mockResponse);
-
-            // When
-            PlanFeaturesResponse response = planFeaturesService.getFeaturesByPlanId(planId);
-
-            // Then
-            assertThat(response.getPlanId()).isNotNull();
-            assertThat(response.getPlanName()).isNotNull();
-            assertThat(response.getFeatures()).isNotNull();
-
-            PlanFeaturesResponse.FeatureItem feature = response.getFeatures().get(0);
-            assertThat(feature.getCode()).isNotNull();
-            assertThat(feature.getName()).isNotNull();
-        }
-
-        @Test
-        @DisplayName("Different plans should have different feature sets")
-        void differentPlans_shouldHaveDifferentFeatureSets() {
-            // Given
-            Long basicPlanId = 1L;
-            Long proPlanId = 2L;
-
-            PlanFeaturesResponse basicResponse = PlanFeaturesResponse.builder()
-                    .planId(basicPlanId)
-                    .planName("Basic")
-                    .features(List.of(
-                            PlanFeaturesResponse.FeatureItem.builder()
-                                    .code(FeatureCode.ATTENDANCE)
-                                    .enabled(true)
-                                    .build()))
-                    .build();
-
-            PlanFeaturesResponse proResponse = PlanFeaturesResponse.builder()
-                    .planId(proPlanId)
-                    .planName("Pro")
-                    .features(List.of(
-                            PlanFeaturesResponse.FeatureItem.builder()
-                                    .code(FeatureCode.ATTENDANCE)
-                                    .enabled(true)
-                                    .build(),
-                            PlanFeaturesResponse.FeatureItem.builder()
-                                    .code(FeatureCode.PAYROLL)
-                                    .enabled(true)
-                                    .build()))
-                    .build();
-
-            when(planFeaturesService.getFeaturesByPlanId(basicPlanId)).thenReturn(basicResponse);
-            when(planFeaturesService.getFeaturesByPlanId(proPlanId)).thenReturn(proResponse);
-
-            // When
-            PlanFeaturesResponse basic = planFeaturesService.getFeaturesByPlanId(basicPlanId);
-            PlanFeaturesResponse pro = planFeaturesService.getFeaturesByPlanId(proPlanId);
-
-            // Then
-            assertThat(basic.getFeatures().size()).isLessThan(pro.getFeatures().size());
         }
     }
 }

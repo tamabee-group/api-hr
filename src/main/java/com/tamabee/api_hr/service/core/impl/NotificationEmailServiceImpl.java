@@ -1,19 +1,20 @@
 package com.tamabee.api_hr.service.core.impl;
 
 import java.math.BigDecimal;
+import java.nio.charset.StandardCharsets;
 import java.text.NumberFormat;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.List;
 import java.util.Locale;
 
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
 import org.springframework.stereotype.Service;
 
+import com.tamabee.api_hr.datasource.RegionContext;
 import com.tamabee.api_hr.entity.attendance.AttendanceAdjustmentRequestEntity;
-import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
 import com.tamabee.api_hr.entity.leave.LeaveRequestEntity;
 import com.tamabee.api_hr.entity.payroll.PayrollItemEntity;
 import com.tamabee.api_hr.entity.payroll.PayrollPeriodEntity;
@@ -26,10 +27,9 @@ import com.tamabee.api_hr.repository.payroll.PayrollItemRepository;
 import com.tamabee.api_hr.repository.payroll.PayrollPeriodRepository;
 import com.tamabee.api_hr.repository.user.UserRepository;
 import com.tamabee.api_hr.service.core.interfaces.INotificationEmailService;
-import com.tamabee.api_hr.util.LocaleUtil;
+import com.tamabee.api_hr.util.RegionUtil;
 
 import jakarta.mail.internet.MimeMessage;
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
@@ -38,7 +38,6 @@ import lombok.extern.slf4j.Slf4j;
  */
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class NotificationEmailServiceImpl implements INotificationEmailService {
 
     private final JavaMailSender mailSender;
@@ -48,8 +47,26 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
     private final AttendanceAdjustmentRequestRepository adjustmentRequestRepository;
     private final LeaveRequestRepository leaveRequestRepository;
     private final BreakRecordRepository breakRecordRepository;
+    private final String mailFrom;
 
-    private static final String FROM_EMAIL = "Tamabee <tamabee.info@gmail.com>";
+    public NotificationEmailServiceImpl(
+            JavaMailSender mailSender,
+            UserRepository userRepository,
+            PayrollItemRepository payrollItemRepository,
+            PayrollPeriodRepository payrollPeriodRepository,
+            AttendanceAdjustmentRequestRepository adjustmentRequestRepository,
+            LeaveRequestRepository leaveRequestRepository,
+            BreakRecordRepository breakRecordRepository,
+            @Value("${app.mail-from:Tamabee <info@tamabee.vn>}") String mailFrom) {
+        this.mailSender = mailSender;
+        this.userRepository = userRepository;
+        this.payrollItemRepository = payrollItemRepository;
+        this.payrollPeriodRepository = payrollPeriodRepository;
+        this.adjustmentRequestRepository = adjustmentRequestRepository;
+        this.leaveRequestRepository = leaveRequestRepository;
+        this.breakRecordRepository = breakRecordRepository;
+        this.mailFrom = mailFrom;
+    }
     
     // Logo URLs từ GitHub raw
     private static final String LOGO_URL = "https://raw.githubusercontent.com/tamabee-group/api-hr/main/src/main/resources/templates/images/logo.png";
@@ -84,14 +101,14 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
                 return;
             }
 
-            String language = getLanguageFromLocale(employee.getLocale());
+            String language = getLanguageFromRegion(employee.getLanguage());
             String employeeName = getEmployeeName(employee);
             String periodStr = formatPeriod(period.getYear(), period.getMonth(), language);
 
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-            helper.setFrom(FROM_EMAIL);
+            helper.setFrom(mailFrom);
             helper.setTo(employee.getEmail());
             helper.setSubject(getSalaryNotificationSubject(language, periodStr));
 
@@ -104,7 +121,7 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
                     .replace("{totalOvertime}", formatCurrency(payrollItem.getTotalOvertimePay(), language))
                     .replace("{totalAllowances}", formatCurrency(payrollItem.getTotalAllowances(), language))
                     .replace("{totalDeductions}", formatCurrency(payrollItem.getTotalDeductions(), language))
-                    .replace("{paymentDate}", formatDate(LocalDateTime.now(), language));
+                    .replace("{paymentDate}", formatDate(LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())), language));
 
             helper.setText(replaceLogoWithUrl(content), true);
             mailSender.send(mimeMessage);
@@ -147,7 +164,7 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
                 return;
             }
 
-            String language = getLanguageFromLocale(employee.getLocale());
+            String language = getLanguageFromRegion(employee.getLanguage());
             String employeeName = getEmployeeName(employee);
 
             // Lấy tên người phê duyệt
@@ -162,7 +179,7 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-            helper.setFrom(FROM_EMAIL);
+            helper.setFrom(mailFrom);
             helper.setTo(employee.getEmail());
             helper.setSubject(getAdjustmentApprovedSubject(language));
 
@@ -198,7 +215,7 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
                 return;
             }
 
-            String language = getLanguageFromLocale(employee.getLocale());
+            String language = getLanguageFromRegion(employee.getLanguage());
             String employeeName = getEmployeeName(employee);
 
             // Lấy tên người từ chối
@@ -213,7 +230,7 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-            helper.setFrom(FROM_EMAIL);
+            helper.setFrom(mailFrom);
             helper.setTo(employee.getEmail());
             helper.setSubject(getAdjustmentRejectedSubject(language));
 
@@ -252,7 +269,7 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
                 return;
             }
 
-            String language = getLanguageFromLocale(employee.getLocale());
+            String language = getLanguageFromRegion(employee.getLanguage());
             String employeeName = getEmployeeName(employee);
 
             // Lấy tên người phê duyệt
@@ -267,7 +284,7 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-            helper.setFrom(FROM_EMAIL);
+            helper.setFrom(mailFrom);
             helper.setTo(employee.getEmail());
             helper.setSubject(getLeaveApprovedSubject(language));
 
@@ -298,7 +315,7 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
                 return;
             }
 
-            String language = getLanguageFromLocale(employee.getLocale());
+            String language = getLanguageFromRegion(employee.getLanguage());
             String employeeName = getEmployeeName(employee);
 
             // Lấy tên người từ chối
@@ -313,7 +330,7 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
             MimeMessage mimeMessage = mailSender.createMimeMessage();
             MimeMessageHelper helper = new MimeMessageHelper(mimeMessage, true, "UTF-8");
 
-            helper.setFrom(FROM_EMAIL);
+            helper.setFrom(mailFrom);
             helper.setTo(employee.getEmail());
             helper.setSubject(getLeaveRejectedSubject(language));
 
@@ -338,13 +355,17 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
     // ==================== Private Helper Methods ====================
 
     /**
-     * Lấy language code từ locale/timezone
+     * Lấy language code từ region code
+     * Region "vi" → language "vi", "ja" → "ja", default → "en"
      */
-    private String getLanguageFromLocale(String locale) {
-        if (locale == null) {
-            return "en";
+    private String getLanguageFromRegion(String language) {
+        if (language == null) {
+            return "vi";
         }
-        return LocaleUtil.timezoneToLocale(locale);
+        if (RegionUtil.isValidRegion(language)) {
+            return language;
+        }
+        return "vi";
     }
 
     /**
@@ -369,7 +390,7 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
                 resource = getClass().getResourceAsStream("/templates/email/en/" + templateName + ".html");
             }
             if (resource != null) {
-                return new String(resource.readAllBytes());
+                return new String(resource.readAllBytes(), StandardCharsets.UTF_8);
             }
             return getDefaultTemplate(templateName);
         } catch (Exception e) {
@@ -479,13 +500,13 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
             return "0";
         }
 
-        Locale locale = switch (language) {
+        Locale region = switch (language) {
             case "vi" -> Locale.of("vi", "VN");
             case "ja" -> Locale.JAPAN;
             default -> Locale.US;
         };
 
-        NumberFormat formatter = NumberFormat.getCurrencyInstance(locale);
+        NumberFormat formatter = NumberFormat.getCurrencyInstance(region);
         return formatter.format(amount);
     }
 
@@ -557,194 +578,192 @@ public class NotificationEmailServiceImpl implements INotificationEmailService {
             case "vi" -> switch (leaveType) {
                 case ANNUAL -> "Nghỉ phép năm";
                 case SICK -> "Nghỉ ốm";
-                case PERSONAL -> "Nghỉ việc riêng";
+                case MATERNITY -> "Nghỉ thai sản (nữ)";
+                case PATERNITY -> "Nghỉ thai sản (nam)";
+                case BEREAVEMENT -> "Nghỉ tang";
                 case UNPAID -> "Nghỉ không lương";
+                case OTHER -> "Khác";
             };
             case "ja" -> switch (leaveType) {
                 case ANNUAL -> "年次有給休暇";
                 case SICK -> "病気休暇";
-                case PERSONAL -> "私用休暇";
+                case MATERNITY -> "産休（女性）";
+                case PATERNITY -> "産休（男性）";
+                case BEREAVEMENT -> "忌引休暇";
                 case UNPAID -> "無給休暇";
+                case OTHER -> "その他";
             };
             default -> switch (leaveType) {
                 case ANNUAL -> "Annual Leave";
                 case SICK -> "Sick Leave";
-                case PERSONAL -> "Personal Leave";
+                case MATERNITY -> "Maternity Leave";
+                case PATERNITY -> "Paternity Leave";
+                case BEREAVEMENT -> "Bereavement Leave";
                 case UNPAID -> "Unpaid Leave";
+                case OTHER -> "Other";
             };
         };
     }
 
     /**
      * Build break section HTML cho email adjustment approved
+     * Hỗ trợ nhiều break items trong 1 request
      */
     private String buildBreakSectionApproved(AttendanceAdjustmentRequestEntity request, String language) {
-        // Nếu không có thông tin break, trả về empty string
-        if (request.getOriginalBreakStart() == null && request.getRequestedBreakStart() == null
-                && request.getBreakRecordId() == null) {
+        // Nếu không có break items, trả về empty string
+        if (request.getBreakItems() == null || request.getBreakItems().isEmpty()) {
             return "";
-        }
-
-        // Lấy breakNumber từ BreakRecordEntity nếu có breakRecordId
-        // BreakRecord không có soft delete
-        Integer breakNumber = null;
-        if (request.getBreakRecordId() != null) {
-            BreakRecordEntity breakRecord = breakRecordRepository.findById(request.getBreakRecordId())
-                    .orElse(null);
-            if (breakRecord != null) {
-                breakNumber = breakRecord.getBreakNumber();
-            }
         }
 
         StringBuilder sb = new StringBuilder();
 
-        // Header cho break section
-        String originalBreakLabel = switch (language) {
-            case "vi" -> "Giờ giải lao ban đầu:";
-            case "ja" -> "元の休憩時間:";
-            default -> "Original Break Time:";
-        };
-
-        String approvedBreakLabel = switch (language) {
-            case "vi" -> "Giờ giải lao đã duyệt:";
-            case "ja" -> "承認された休憩時間:";
-            default -> "Approved Break Time:";
-        };
-
-        String breakStartLabel = switch (language) {
-            case "vi" -> "Bắt đầu:";
-            case "ja" -> "開始:";
-            default -> "Start:";
-        };
-
-        String breakEndLabel = switch (language) {
-            case "vi" -> "Kết thúc:";
-            case "ja" -> "終了:";
-            default -> "End:";
+        // Labels
+        String breakSectionLabel = switch (language) {
+            case "vi" -> "Điều chỉnh giờ giải lao:";
+            case "ja" -> "休憩時間の調整:";
+            default -> "Break Time Adjustments:";
         };
 
         String breakNumberLabel = switch (language) {
-            case "vi" -> "Lần nghỉ thứ:";
-            case "ja" -> "休憩回数:";
-            default -> "Break #:";
+            case "vi" -> "Lần nghỉ thứ";
+            case "ja" -> "休憩";
+            default -> "Break #";
         };
 
-        // Original break times
-        sb.append(
-                "<tr><td colspan=\"2\" style=\"padding: 12px 0 4px 0; color: #666; font-size: 13px; font-weight: bold;\">")
-                .append(originalBreakLabel).append("</td></tr>");
+        String originalLabel = switch (language) {
+            case "vi" -> "Ban đầu:";
+            case "ja" -> "元:";
+            default -> "Original:";
+        };
 
-        if (breakNumber != null) {
-            sb.append("<tr><td style=\"padding: 4px 0 4px 16px; color: #666;\">").append(breakNumberLabel)
-                    .append("</td>")
-                    .append("<td style=\"padding: 4px 0; text-align: right;\">").append(breakNumber)
+        String approvedLabel = switch (language) {
+            case "vi" -> "Đã duyệt:";
+            case "ja" -> "承認:";
+            default -> "Approved:";
+        };
+
+        String deleteLabel = switch (language) {
+            case "vi" -> "Đã xóa";
+            case "ja" -> "削除済み";
+            default -> "Deleted";
+        };
+
+        // Header
+        sb.append("<tr><td colspan=\"2\" style=\"padding: 12px 0 4px 0; color: #666; font-size: 13px; font-weight: bold;\">")
+                .append(breakSectionLabel).append("</td></tr>");
+
+        // Render từng break item
+        for (var item : request.getBreakItems()) {
+            Integer breakNumber = item.getBreakNumber();
+            String breakLabel = breakNumber != null ? breakNumberLabel + " " + breakNumber : breakNumberLabel;
+
+            sb.append("<tr><td colspan=\"2\" style=\"padding: 8px 0 4px 8px; color: #333; font-weight: 500;\">")
+                    .append(breakLabel).append("</td></tr>");
+
+            // Original time
+            sb.append("<tr><td style=\"padding: 2px 0 2px 16px; color: #666; font-size: 12px;\">").append(originalLabel).append("</td>")
+                    .append("<td style=\"padding: 2px 0; text-align: right; font-size: 12px;\">")
+                    .append(formatTime(item.getOriginalBreakStart(), language))
+                    .append(" - ")
+                    .append(formatTime(item.getOriginalBreakEnd(), language))
                     .append("</td></tr>");
+
+            // Approved time hoặc Deleted
+            if (item.getActionType() == com.tamabee.api_hr.enums.BreakActionType.DELETE) {
+                sb.append("<tr><td style=\"padding: 2px 0 2px 16px; color: #666; font-size: 12px;\">").append(approvedLabel).append("</td>")
+                        .append("<td style=\"padding: 2px 0; text-align: right; font-size: 12px; color: #dc3545; font-weight: bold;\">")
+                        .append(deleteLabel).append("</td></tr>");
+            } else {
+                sb.append("<tr><td style=\"padding: 2px 0 2px 16px; color: #666; font-size: 12px;\">").append(approvedLabel).append("</td>")
+                        .append("<td style=\"padding: 2px 0; text-align: right; font-size: 12px; color: #28a745; font-weight: bold;\">")
+                        .append(formatTime(item.getRequestedBreakStart(), language))
+                        .append(" - ")
+                        .append(formatTime(item.getRequestedBreakEnd(), language))
+                        .append("</td></tr>");
+            }
         }
-
-        sb.append("<tr><td style=\"padding: 4px 0 4px 16px; color: #666;\">").append(breakStartLabel).append("</td>")
-                .append("<td style=\"padding: 4px 0; text-align: right;\">")
-                .append(formatTime(request.getOriginalBreakStart(), language)).append("</td></tr>");
-        sb.append("<tr><td style=\"padding: 4px 0 4px 16px; color: #666;\">").append(breakEndLabel).append("</td>")
-                .append("<td style=\"padding: 4px 0; text-align: right;\">")
-                .append(formatTime(request.getOriginalBreakEnd(), language)).append("</td></tr>");
-
-        // Approved break times
-        sb.append(
-                "<tr><td colspan=\"2\" style=\"padding: 12px 0 4px 0; color: #28a745; font-size: 13px; font-weight: bold;\">")
-                .append(approvedBreakLabel).append("</td></tr>");
-        sb.append("<tr><td style=\"padding: 4px 0 4px 16px; color: #666;\">").append(breakStartLabel).append("</td>")
-                .append("<td style=\"padding: 4px 0; text-align: right; font-weight: bold; color: #28a745;\">")
-                .append(formatTime(request.getRequestedBreakStart(), language)).append("</td></tr>");
-        sb.append("<tr><td style=\"padding: 4px 0 4px 16px; color: #666;\">").append(breakEndLabel).append("</td>")
-                .append("<td style=\"padding: 4px 0; text-align: right; font-weight: bold; color: #28a745;\">")
-                .append(formatTime(request.getRequestedBreakEnd(), language)).append("</td></tr>");
 
         return sb.toString();
     }
 
+        // Header cho break section
     /**
      * Build break section HTML cho email adjustment rejected
+     * Hỗ trợ nhiều break items trong 1 request
      */
     private String buildBreakSectionRejected(AttendanceAdjustmentRequestEntity request, String language) {
-        // Nếu không có thông tin break, trả về empty string
-        if (request.getOriginalBreakStart() == null && request.getRequestedBreakStart() == null
-                && request.getBreakRecordId() == null) {
+        // Nếu không có break items, trả về empty string
+        if (request.getBreakItems() == null || request.getBreakItems().isEmpty()) {
             return "";
-        }
-
-        // Lấy breakNumber từ BreakRecordEntity nếu có breakRecordId
-        // BreakRecord không có soft delete
-        Integer breakNumber = null;
-        if (request.getBreakRecordId() != null) {
-            BreakRecordEntity breakRecord = breakRecordRepository.findById(request.getBreakRecordId())
-                    .orElse(null);
-            if (breakRecord != null) {
-                breakNumber = breakRecord.getBreakNumber();
-            }
         }
 
         StringBuilder sb = new StringBuilder();
 
-        // Header cho break section
-        String originalBreakLabel = switch (language) {
-            case "vi" -> "Giờ giải lao ban đầu:";
-            case "ja" -> "元の休憩時間:";
-            default -> "Original Break Time:";
-        };
-
-        String requestedBreakLabel = switch (language) {
-            case "vi" -> "Giờ giải lao yêu cầu:";
-            case "ja" -> "申請した休憩時間:";
-            default -> "Requested Break Time:";
-        };
-
-        String breakStartLabel = switch (language) {
-            case "vi" -> "Bắt đầu:";
-            case "ja" -> "開始:";
-            default -> "Start:";
-        };
-
-        String breakEndLabel = switch (language) {
-            case "vi" -> "Kết thúc:";
-            case "ja" -> "終了:";
-            default -> "End:";
+        // Labels
+        String breakSectionLabel = switch (language) {
+            case "vi" -> "Yêu cầu điều chỉnh giờ giải lao:";
+            case "ja" -> "休憩時間の調整申請:";
+            default -> "Break Time Adjustment Requests:";
         };
 
         String breakNumberLabel = switch (language) {
-            case "vi" -> "Lần nghỉ thứ:";
-            case "ja" -> "休憩回数:";
-            default -> "Break #:";
+            case "vi" -> "Lần nghỉ thứ";
+            case "ja" -> "休憩";
+            default -> "Break #";
         };
 
-        // Original break times
-        sb.append(
-                "<tr><td colspan=\"2\" style=\"padding: 12px 0 4px 0; color: #666; font-size: 13px; font-weight: bold;\">")
-                .append(originalBreakLabel).append("</td></tr>");
+        String originalLabel = switch (language) {
+            case "vi" -> "Ban đầu:";
+            case "ja" -> "元:";
+            default -> "Original:";
+        };
 
-        if (breakNumber != null) {
-            sb.append("<tr><td style=\"padding: 4px 0 4px 16px; color: #666;\">").append(breakNumberLabel)
-                    .append("</td>")
-                    .append("<td style=\"padding: 4px 0; text-align: right;\">").append(breakNumber)
+        String requestedLabel = switch (language) {
+            case "vi" -> "Yêu cầu:";
+            case "ja" -> "申請:";
+            default -> "Requested:";
+        };
+
+        String deleteRequestLabel = switch (language) {
+            case "vi" -> "Yêu cầu xóa";
+            case "ja" -> "削除申請";
+            default -> "Delete Request";
+        };
+
+        // Header
+        sb.append("<tr><td colspan=\"2\" style=\"padding: 12px 0 4px 0; color: #666; font-size: 13px; font-weight: bold;\">")
+                .append(breakSectionLabel).append("</td></tr>");
+
+        // Render từng break item
+        for (var item : request.getBreakItems()) {
+            Integer breakNumber = item.getBreakNumber();
+            String breakLabel = breakNumber != null ? breakNumberLabel + " " + breakNumber : breakNumberLabel;
+
+            sb.append("<tr><td colspan=\"2\" style=\"padding: 8px 0 4px 8px; color: #333; font-weight: 500;\">")
+                    .append(breakLabel).append("</td></tr>");
+
+            // Original time
+            sb.append("<tr><td style=\"padding: 2px 0 2px 16px; color: #666; font-size: 12px;\">").append(originalLabel).append("</td>")
+                    .append("<td style=\"padding: 2px 0; text-align: right; font-size: 12px;\">")
+                    .append(formatTime(item.getOriginalBreakStart(), language))
+                    .append(" - ")
+                    .append(formatTime(item.getOriginalBreakEnd(), language))
                     .append("</td></tr>");
+
+            // Requested time hoặc Delete request
+            if (item.getActionType() == com.tamabee.api_hr.enums.BreakActionType.DELETE) {
+                sb.append("<tr><td style=\"padding: 2px 0 2px 16px; color: #666; font-size: 12px;\">").append(requestedLabel).append("</td>")
+                        .append("<td style=\"padding: 2px 0; text-align: right; font-size: 12px; color: #dc3545;\">")
+                        .append(deleteRequestLabel).append("</td></tr>");
+            } else {
+                sb.append("<tr><td style=\"padding: 2px 0 2px 16px; color: #666; font-size: 12px;\">").append(requestedLabel).append("</td>")
+                        .append("<td style=\"padding: 2px 0; text-align: right; font-size: 12px; color: #dc3545;\">")
+                        .append(formatTime(item.getRequestedBreakStart(), language))
+                        .append(" - ")
+                        .append(formatTime(item.getRequestedBreakEnd(), language))
+                        .append("</td></tr>");
+            }
         }
-
-        sb.append("<tr><td style=\"padding: 4px 0 4px 16px; color: #666;\">").append(breakStartLabel).append("</td>")
-                .append("<td style=\"padding: 4px 0; text-align: right;\">")
-                .append(formatTime(request.getOriginalBreakStart(), language)).append("</td></tr>");
-        sb.append("<tr><td style=\"padding: 4px 0 4px 16px; color: #666;\">").append(breakEndLabel).append("</td>")
-                .append("<td style=\"padding: 4px 0; text-align: right;\">")
-                .append(formatTime(request.getOriginalBreakEnd(), language)).append("</td></tr>");
-
-        // Requested break times (rejected)
-        sb.append(
-                "<tr><td colspan=\"2\" style=\"padding: 12px 0 4px 0; color: #dc3545; font-size: 13px; font-weight: bold;\">")
-                .append(requestedBreakLabel).append("</td></tr>");
-        sb.append("<tr><td style=\"padding: 4px 0 4px 16px; color: #666;\">").append(breakStartLabel).append("</td>")
-                .append("<td style=\"padding: 4px 0; text-align: right; color: #dc3545;\">")
-                .append(formatTime(request.getRequestedBreakStart(), language)).append("</td></tr>");
-        sb.append("<tr><td style=\"padding: 4px 0 4px 16px; color: #666;\">").append(breakEndLabel).append("</td>")
-                .append("<td style=\"padding: 4px 0; text-align: right; color: #dc3545;\">")
-                .append(formatTime(request.getRequestedBreakEnd(), language)).append("</td></tr>");
 
         return sb.toString();
     }

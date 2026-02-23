@@ -32,15 +32,19 @@ public class RegisterRequest {
     @Size(min = 8, message = "Password must be at least 8 characters")
     private String password;
 
-    @NotBlank(message = "Locale is required")
-    private String locale;
+    @NotBlank(message = "Region is required")
+    private String region;
 
     @NotBlank(message = "Language is required")
     private String language;
 
     @NotBlank(message = "Tenant domain is required")
     @Size(min = 3, max = 30, message = "Tenant domain must be between 3 and 30 characters")
-    @Pattern(regexp = "^[a-z0-9]([a-z0-9-]{1,28}[a-z0-9])?$|^[a-z0-9]{3}$", message = "Tenant domain must contain only lowercase letters, numbers, and hyphens, and cannot start or end with a hyphen")
+    @Pattern(
+            regexp = "^[a-z0-9]([a-z0-9-]{1,28}[a-z0-9])?$|^[a-z0-9]{3}$",
+            message = "Tenant domain must contain only lowercase letters, numbers, "
+                    + "and hyphens, and cannot start or end with a hyphen"
+    )
     private String tenantDomain;
 
     private String zipcode;

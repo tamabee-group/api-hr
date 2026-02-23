@@ -1,6 +1,9 @@
 package com.tamabee.api_hr.repository.wallet;
 
-import com.tamabee.api_hr.entity.wallet.WalletEntity;
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -8,9 +11,7 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.Optional;
+import com.tamabee.api_hr.entity.wallet.WalletEntity;
 
 /**
  * Repository cho quản lý ví tiền của công ty
@@ -35,7 +36,9 @@ public interface WalletRepository extends JpaRepository<WalletEntity, Long> {
         /**
          * Lấy danh sách wallets với filter theo balance (phân trang)
          */
-        @Query("SELECT w FROM WalletEntity w WHERE w.deleted = false AND w.balance >= :minBalance AND w.balance <= :maxBalance ORDER BY w.createdAt DESC")
+    @Query("SELECT w FROM WalletEntity w WHERE w.deleted = false "
+            + "AND w.balance >= :minBalance AND w.balance <= :maxBalance "
+            + "ORDER BY w.createdAt DESC")
         Page<WalletEntity> findByBalanceBetween(
                         @Param("minBalance") BigDecimal minBalance,
                         @Param("maxBalance") BigDecimal maxBalance,

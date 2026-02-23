@@ -1,13 +1,8 @@
 package com.tamabee.api_hr.controller.core;
 
-import com.tamabee.api_hr.dto.response.payroll.PayrollItemResponse;
-import com.tamabee.api_hr.entity.user.UserEntity;
-import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.dto.common.BaseResponse;
-import com.tamabee.api_hr.repository.user.UserRepository;
-import com.tamabee.api_hr.service.company.interfaces.IPayrollPeriodService;
-import lombok.RequiredArgsConstructor;
+import java.net.URLEncoder;
+import java.nio.charset.StandardCharsets;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -17,10 +12,21 @@ import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.net.URLEncoder;
-import java.nio.charset.StandardCharsets;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.dto.response.payroll.PayrollItemResponse;
+import com.tamabee.api_hr.entity.user.UserEntity;
+import com.tamabee.api_hr.enums.RoleConstants;
+import com.tamabee.api_hr.exception.NotFoundException;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.IPayrollPeriodService;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Controller cho nhân viên xem lương của mình.
@@ -42,11 +48,12 @@ public class EmployeePayrollController {
     @GetMapping
     public ResponseEntity<BaseResponse<Page<PayrollItemResponse>>> getMyPayrollHistory(
             @RequestParam(defaultValue = "0") int page,
-            @RequestParam(defaultValue = "10") int size) {
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(required = false) String status) {
         UserEntity currentUser = getCurrentUser();
         Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "id"));
         Page<PayrollItemResponse> items = payrollPeriodService.getEmployeePayslips(
-                currentUser.getId(), pageable);
+                currentUser.getId(), status, pageable);
         return ResponseEntity.ok(BaseResponse.success(items, "Lấy lịch sử lương thành công"));
     }
 

@@ -3,15 +3,14 @@ package com.tamabee.api_hr.dto.response.attendance;
 import java.time.LocalDate;
 import java.util.List;
 
-import com.tamabee.api_hr.enums.BreakType;
-
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 /**
- * Response chứa tổng hợp giờ giải lao của nhân viên trong ngày
+ * Response chứa tổng hợp giờ giải lao của nhân viên trong ngày.
+ * Đơn giản: giải lao luôn bị trừ khỏi giờ làm việc.
  */
 @Data
 @Builder
@@ -33,15 +32,6 @@ public class BreakSummaryResponse {
 
     // Số lần giải lao
     private Integer breakCount;
-
-    // Loại giải lao áp dụng
-    private BreakType breakType;
-
-    // Có tuân thủ minimum break không
-    private Boolean breakCompliant;
-
-    // Số phút giải lao tối thiểu yêu cầu
-    private Integer minimumBreakRequired;
 
     // Danh sách các bản ghi giải lao
     private List<BreakRecordResponse> breakRecords;

@@ -1,16 +1,17 @@
 package com.tamabee.api_hr.dto.response.payroll;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+import java.util.List;
+
 import com.tamabee.api_hr.enums.BreakType;
 import com.tamabee.api_hr.enums.PayrollItemStatus;
 import com.tamabee.api_hr.enums.SalaryType;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
-import java.util.List;
 
 /**
  * Response DTO cho chi tiết lương nhân viên
@@ -31,6 +32,7 @@ public class PayrollItemResponse {
     // Thông tin kỳ lương
     private Integer year;
     private Integer month;
+    private LocalDateTime paidAt;
 
     // Thông tin lương
     private SalaryType salaryType;

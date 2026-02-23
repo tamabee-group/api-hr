@@ -1,6 +1,7 @@
 package com.tamabee.api_hr.datasource;
 
 import java.io.IOException;
+import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.Set;
 
@@ -30,7 +31,7 @@ public class TenantFilter extends OncePerRequestFilter {
 
     /**
      * Các path prefix cần query từ master DB (không set tenant).
-     * Bao gồm: plans, settings, register/check-domain, companies, deposits, commissions
+     * Bao gồm: plans, settings, register/check-domain, companies, deposits, commissions, schedulers
      */
     private static final Set<String> MASTER_ONLY_PATHS = Set.of(
             "/api/auth/register",
@@ -43,14 +44,31 @@ public class TenantFilter extends OncePerRequestFilter {
             "/api/admin/companies",
             "/api/admin/deposits",
             "/api/admin/commissions",
-            "/api/admin/commission-settings");
+            "/api/admin/commission-settings",
+            "/api/admin/schedulers",
+            "/api/admin/feedbacks",
+            "/api/admin/system-notifications",
+            "/api/admin/pending-counts",
+            "/api/employee/commissions",
+            "/api/users/me/feedbacks");
+
+    /**
+     * Các path cần lấy tenant từ host (không từ JWT).
+     * Dùng cho các endpoint mà JWT có thể hết hạn hoặc không có.
+     */
+    private static final Set<String> HOST_TENANT_PATHS = Set.of(
+            "/api/auth/login",
+            "/api/auth/refresh-token",
+            "/api/auth/forgot-password",
+            "/api/auth/reset-password");
 
     /**
      * Các path prefix cần query từ tenant "tamabee" (Tamabee admin endpoints).
      * Dùng cho các endpoint cần query cả users (tenant) và companies (master).
      */
     private static final Set<String> TAMABEE_TENANT_PATHS = Set.of(
-            "/api/admin/employees");
+            "/api/admin/employees",
+            "/api/employee/referrals");
 
     @Override
     protected void doFilterInternal(HttpServletRequest request,
@@ -66,6 +84,7 @@ public class TenantFilter extends OncePerRequestFilter {
                 chain.doFilter(request, response);
             } finally {
                 TenantContext.clear();
+                RegionContext.clear();
             }
             return;
         }
@@ -78,6 +97,24 @@ public class TenantFilter extends OncePerRequestFilter {
                 chain.doFilter(request, response);
             } finally {
                 TenantContext.clear();
+                RegionContext.clear();
+            }
+            return;
+        }
+
+        // Kiểm tra nếu là host-tenant path (login, refresh-token, etc.)
+        // Luôn lấy tenant từ host, không từ JWT (vì JWT có thể hết hạn)
+        if (isHostTenantPath(path)) {
+            String tenantFromHost = extractTenantFromHost(request);
+            log.info("TenantFilter: path={} is host-tenant, using tenant from host: {}", path, tenantFromHost);
+            if (tenantFromHost != null && !tenantFromHost.isEmpty()) {
+                TenantContext.setCurrentTenant(tenantFromHost);
+            }
+            try {
+                chain.doFilter(request, response);
+            } finally {
+                TenantContext.clear();
+                RegionContext.clear();
             }
             return;
         }
@@ -102,6 +139,7 @@ public class TenantFilter extends OncePerRequestFilter {
             chain.doFilter(request, response);
         } finally {
             TenantContext.clear();
+            RegionContext.clear();
         }
     }
 
@@ -117,6 +155,13 @@ public class TenantFilter extends OncePerRequestFilter {
      */
     private boolean isTamabeeTenantPath(String path) {
         return TAMABEE_TENANT_PATHS.stream().anyMatch(path::startsWith);
+    }
+
+    /**
+     * Kiểm tra path có phải host-tenant path không (lấy tenant từ host, không từ JWT)
+     */
+    private boolean isHostTenantPath(String path) {
+        return HOST_TENANT_PATHS.stream().anyMatch(path::startsWith);
     }
 
     /**
@@ -162,7 +207,7 @@ public class TenantFilter extends OncePerRequestFilter {
         try {
             String[] parts = token.split("\\.");
             if (parts.length >= 2) {
-                String payload = new String(Base64.getUrlDecoder().decode(parts[1]));
+                String payload = new String(Base64.getUrlDecoder().decode(parts[1]), StandardCharsets.UTF_8);
                 // Simple JSON parsing for tenantDomain
                 if (payload.contains("\"tenantDomain\"")) {
                     int start = payload.indexOf("\"tenantDomain\"") + 16;

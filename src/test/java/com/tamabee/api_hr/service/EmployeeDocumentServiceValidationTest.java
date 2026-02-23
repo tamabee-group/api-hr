@@ -274,7 +274,6 @@ class EmployeeDocumentServiceValidationTest {
         employee.setRole(UserRole.EMPLOYEE_COMPANY);
         employee.setStatus(UserStatus.ACTIVE);
         employee.setLanguage("vi");
-        employee.setLocale("vi");
         employee.setDeleted(false);
         return employee;
     }

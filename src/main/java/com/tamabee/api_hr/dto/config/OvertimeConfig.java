@@ -1,12 +1,12 @@
 package com.tamabee.api_hr.dto.config;
 
+import java.math.BigDecimal;
+import java.time.LocalTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.time.LocalTime;
 
 /**
  * Cấu hình tăng ca của công ty
@@ -20,9 +20,6 @@ public class OvertimeConfig {
     // Bật/tắt tính overtime
     @Builder.Default
     private Boolean overtimeEnabled = true;
-
-    @Builder.Default
-    private Boolean requireApproval = false;
 
     // Số giờ làm việc tiêu chuẩn (mặc định 8 tiếng)
     @Builder.Default
@@ -58,9 +55,9 @@ public class OvertimeConfig {
     @Builder.Default
     private Boolean useLegalMinimum = true;
 
-    // Locale cho legal requirements (vi, ja)
+    // Region cho legal requirements (vi, ja)
     @Builder.Default
-    private String locale = "ja";
+    private String region = "ja";
 
     // Giới hạn tăng ca
     @Builder.Default

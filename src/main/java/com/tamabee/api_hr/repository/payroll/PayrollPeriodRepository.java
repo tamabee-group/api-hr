@@ -1,7 +1,9 @@
 package com.tamabee.api_hr.repository.payroll;
 
-import com.tamabee.api_hr.entity.payroll.PayrollPeriodEntity;
-import com.tamabee.api_hr.enums.PayrollPeriodStatus;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
@@ -9,9 +11,8 @@ import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
+import com.tamabee.api_hr.entity.payroll.PayrollPeriodEntity;
+import com.tamabee.api_hr.enums.PayrollPeriodStatus;
 
 /**
  * Repository quản lý kỳ lương.
@@ -23,6 +24,15 @@ public interface PayrollPeriodRepository extends JpaRepository<PayrollPeriodEnti
          * Lấy payroll period theo năm và tháng
          */
         Optional<PayrollPeriodEntity> findByYearAndMonth(Integer year, Integer month);
+        /**
+         * Lấy danh sách payroll periods theo năm và danh sách statuses
+         */
+        List<PayrollPeriodEntity> findByYearAndStatusIn(Integer year, List<PayrollPeriodStatus> statuses);
+
+        /**
+         * Lấy danh sách payroll periods theo danh sách statuses
+         */
+        List<PayrollPeriodEntity> findByStatusIn(List<PayrollPeriodStatus> statuses);
 
         /**
          * Lấy danh sách payroll periods (phân trang)
@@ -36,9 +46,24 @@ public interface PayrollPeriodRepository extends JpaRepository<PayrollPeriodEnti
         Page<PayrollPeriodEntity> findByStatus(PayrollPeriodStatus status, Pageable pageable);
 
         /**
+         * Lấy danh sách payroll periods theo status (không phân trang)
+         */
+        List<PayrollPeriodEntity> findByStatus(PayrollPeriodStatus status);
+
+        /**
          * Lấy danh sách payroll periods theo năm
          */
         List<PayrollPeriodEntity> findByYear(Integer year);
+
+        /**
+         * Lấy danh sách payroll periods theo năm (phân trang)
+         */
+        Page<PayrollPeriodEntity> findByYear(Integer year, Pageable pageable);
+
+        /**
+         * Lấy danh sách payroll periods theo năm và status (phân trang)
+         */
+        Page<PayrollPeriodEntity> findByYearAndStatus(Integer year, PayrollPeriodStatus status, Pageable pageable);
 
         /**
          * Lấy danh sách payroll periods trong khoảng thời gian

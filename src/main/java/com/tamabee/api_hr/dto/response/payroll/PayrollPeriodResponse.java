@@ -1,14 +1,15 @@
 package com.tamabee.api_hr.dto.response.payroll;
 
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import com.tamabee.api_hr.enums.PayrollPeriodStatus;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
  * Response DTO cho kỳ lương
@@ -40,6 +41,9 @@ public class PayrollPeriodResponse {
     // Thông tin thanh toán
     private LocalDateTime paidAt;
     private String paymentReference;
+
+    // Lý do từ chối
+    private String rejectionReason;
 
     // Thông tin tổng hợp
     private BigDecimal totalGrossSalary;

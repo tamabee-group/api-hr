@@ -43,10 +43,12 @@ public interface IPayrollPeriodService {
     /**
      * Lấy danh sách kỳ lương của công ty (phân trang)
      *
+     * @param year     Filter theo năm (optional)
+     * @param status   Filter theo status (optional)
      * @param pageable Thông tin phân trang
      * @return Danh sách kỳ lương
      */
-    Page<PayrollPeriodResponse> getPayrollPeriods(Pageable pageable);
+    Page<PayrollPeriodResponse> getPayrollPeriods(Integer year, String status, Pageable pageable);
 
     /**
      * Điều chỉnh payroll item - lưu số tiền và lý do điều chỉnh
@@ -61,10 +63,11 @@ public interface IPayrollPeriodService {
     /**
      * Submit kỳ lương để review - chuyển status từ DRAFT sang REVIEWING
      *
-     * @param periodId ID kỳ lương
+     * @param periodId    ID kỳ lương
+     * @param submittedBy ID người gửi duyệt
      * @return Thông tin kỳ lương sau khi submit
      */
-    PayrollPeriodResponse submitForReview(Long periodId);
+    PayrollPeriodResponse submitForReview(Long periodId, Long submittedBy);
 
     /**
      * Duyệt kỳ lương - chuyển status từ REVIEWING sang APPROVED
@@ -116,10 +119,11 @@ public interface IPayrollPeriodService {
      * Lấy lịch sử payslip của employee
      *
      * @param employeeId ID nhân viên
+     * @param status     Status filter (optional)
      * @param pageable   Thông tin phân trang
      * @return Danh sách payslip của nhân viên
      */
-    Page<PayrollItemResponse> getEmployeePayslips(Long employeeId, Pageable pageable);
+    Page<PayrollItemResponse> getEmployeePayslips(Long employeeId, String status, Pageable pageable);
 
     /**
      * Lấy tất cả payslips của công ty
@@ -138,4 +142,40 @@ public interface IPayrollPeriodService {
      * @return PDF data dưới dạng byte array
      */
     byte[] generatePayslipPdf(Long itemId);
+
+    /**
+     * Generate ZIP file chứa tất cả payslip PDF của một period
+     *
+     * @param periodId ID của payroll period
+     * @return ZIP data dưới dạng byte array
+     */
+    byte[] generateAllPayslipsZip(Long periodId);
+
+    /**
+     * Format filename cho payslip PDF theo region
+     *
+     * @param employeeCode Mã nhân viên
+     * @param year         Năm
+     * @param month        Tháng
+     * @param region       Region (vi, ja, en)
+     * @return Filename đã format
+     */
+    String formatPayslipFilename(String employeeCode, Integer year, Integer month, String region);
+
+    /**
+     * Rollback payroll periods về trạng thái DRAFT (dùng cho testing)
+     *
+     * @param companyId ID công ty (null = tất cả công ty)
+     * @param year      Năm (null = tất cả năm)
+     * @param month     Tháng (null = tất cả tháng)
+     * @return Số lượng periods đã rollback
+     */
+    int rollbackPayrollPeriodsToDraft(Long companyId, Integer year, Integer month);
+
+    /**
+     * Xóa kỳ lương (chỉ xóa được khi status = DRAFT)
+     *
+     * @param periodId ID kỳ lương
+     */
+    void deletePayrollPeriod(Long periodId);
 }

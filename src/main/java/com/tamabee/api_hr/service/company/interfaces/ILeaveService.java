@@ -1,13 +1,18 @@
 package com.tamabee.api_hr.service.company.interfaces;
 
-import com.tamabee.api_hr.dto.request.leave.CreateLeaveRequest;
-import com.tamabee.api_hr.dto.response.leave.LeaveBalanceResponse;
-import com.tamabee.api_hr.dto.response.leave.LeaveRequestResponse;
-import com.tamabee.api_hr.enums.LeaveType;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
-import java.util.List;
+import com.tamabee.api_hr.dto.request.leave.BulkAllocateLeaveRequest;
+import com.tamabee.api_hr.dto.request.leave.CreateLeaveRequest;
+import com.tamabee.api_hr.dto.request.leave.UpdateLeaveBalanceRequest;
+import com.tamabee.api_hr.dto.response.leave.BulkAllocateResponse;
+import com.tamabee.api_hr.dto.response.leave.LeaveBalanceResponse;
+import com.tamabee.api_hr.dto.response.leave.LeaveBalanceSummaryResponse;
+import com.tamabee.api_hr.dto.response.leave.LeaveRequestResponse;
+import com.tamabee.api_hr.enums.LeaveType;
 
 /**
  * Service quản lý nghỉ phép.
@@ -111,4 +116,33 @@ public interface ILeaveService {
      * @param adjustment số ngày điều chỉnh (dương = thêm, âm = trừ)
      */
     void updateLeaveBalance(Long employeeId, LeaveType type, Integer year, Integer adjustment);
+
+    // ==================== Leave Balance Management ====================
+
+    /**
+     * Lấy danh sách số ngày phép của tất cả nhân viên (phân trang)
+     *
+     * @param year     năm (mặc định năm hiện tại)
+     * @param search   từ khóa tìm kiếm theo tên hoặc mã nhân viên
+     * @param pageable thông tin phân trang
+     * @return danh sách tổng hợp số ngày phép của nhân viên
+     */
+    Page<LeaveBalanceSummaryResponse> getAllLeaveBalances(Integer year, String search, Pageable pageable);
+
+    /**
+     * Cập nhật số ngày phép cho một nhân viên
+     *
+     * @param employeeId ID nhân viên
+     * @param request    thông tin cập nhật (year, leaveType, totalDays)
+     * @return thông tin số ngày phép đã cập nhật
+     */
+    LeaveBalanceResponse updateEmployeeLeaveBalance(Long employeeId, UpdateLeaveBalanceRequest request);
+
+    /**
+     * Cấp phát số ngày phép hàng loạt cho nhiều nhân viên
+     *
+     * @param request thông tin cấp phát (year, leaveType, totalDays, employeeIds)
+     * @return kết quả cấp phát với số lượng bản ghi đã cập nhật
+     */
+    BulkAllocateResponse bulkAllocateLeaveBalance(BulkAllocateLeaveRequest request);
 }

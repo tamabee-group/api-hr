@@ -57,4 +57,33 @@ public interface EmployeeSalaryRepository extends JpaRepository<EmployeeSalaryEn
                 List<EmployeeSalaryEntity> salaries = findLatestSalaries(employeeId);
                 return salaries.isEmpty() ? Optional.empty() : Optional.of(salaries.get(0));
         }
+
+        /**
+         * Tìm config đang active của nhân viên (thay thế findAll().stream().filter())
+         */
+        @Query("SELECT s FROM EmployeeSalaryEntity s WHERE s.deleted = false " +
+                        "AND s.employeeId = :employeeId " +
+                        "AND s.active = true")
+        Optional<EmployeeSalaryEntity> findActiveByEmployeeId(@Param("employeeId") Long employeeId);
+
+        /**
+         * Lấy tất cả config của nhân viên, sắp xếp theo effectiveFrom giảm dần
+         * (thay thế findAll().stream().filter().sorted())
+         */
+        @Query("SELECT s FROM EmployeeSalaryEntity s WHERE s.deleted = false " +
+                        "AND s.employeeId = :employeeId " +
+                        "ORDER BY s.effectiveFrom DESC, s.createdAt DESC")
+        List<EmployeeSalaryEntity> findAllByEmployeeIdOrdered(@Param("employeeId") Long employeeId);
+
+        /**
+         * Deactivate tất cả config active của employee trừ config chỉ định
+         * (thay thế findAll().stream().filter().forEach(save))
+         */
+        @Query("SELECT s FROM EmployeeSalaryEntity s WHERE s.deleted = false " +
+                        "AND s.employeeId = :employeeId " +
+                        "AND s.active = true " +
+                        "AND s.id <> :excludeId")
+        List<EmployeeSalaryEntity> findActiveByEmployeeIdExcluding(
+                        @Param("employeeId") Long employeeId,
+                        @Param("excludeId") Long excludeId);
 }

@@ -4,23 +4,20 @@ import java.util.List;
 
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
-import com.tamabee.api_hr.dto.response.wallet.PlanFeaturesResponse;
-import com.tamabee.api_hr.dto.response.wallet.PlanResponse;
-import com.tamabee.api_hr.dto.response.company.PublicSettingsResponse;
 import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.dto.response.company.PublicSettingsResponse;
+import com.tamabee.api_hr.dto.response.wallet.PlanResponse;
 import com.tamabee.api_hr.service.admin.interfaces.IPlanService;
 import com.tamabee.api_hr.service.admin.interfaces.ISettingService;
-import com.tamabee.api_hr.service.core.interfaces.IPlanFeaturesService;
 
 import lombok.RequiredArgsConstructor;
 
 /**
  * Controller công khai cho gói dịch vụ (Plan)
- * Không yêu cầu xác thực - dùng cho trang landing page và sidebar
+ * Không yêu cầu xác thực - dùng cho trang landing page
  */
 @RestController
 @RequestMapping("/api/plans")
@@ -28,7 +25,6 @@ import lombok.RequiredArgsConstructor;
 public class PublicPlanController {
 
     private final IPlanService planService;
-    private final IPlanFeaturesService planFeaturesService;
     private final ISettingService settingService;
 
     /**
@@ -53,28 +49,6 @@ public class PublicPlanController {
                 .referralBonusMonths(settingService.getReferralBonusMonths())
                 .customPricePerEmployee(settingService.getCustomPricePerEmployee())
                 .build();
-        return ResponseEntity.ok(BaseResponse.success(response));
-    }
-
-    /**
-     * Lấy danh sách features của plan theo planId.
-     * GET /api/plans/{planId}/features
-     * Dùng cho frontend để render sidebar động.
-     */
-    @GetMapping("/{planId}/features")
-    public ResponseEntity<BaseResponse<PlanFeaturesResponse>> getFeatures(@PathVariable Long planId) {
-        PlanFeaturesResponse response = planFeaturesService.getFeaturesByPlanId(planId);
-        return ResponseEntity.ok(BaseResponse.success(response));
-    }
-
-    /**
-     * Lấy tất cả features với enabled = true.
-     * GET /api/plans/all-features
-     * Dùng cho Tamabee users (không có planId).
-     */
-    @GetMapping("/all-features")
-    public ResponseEntity<BaseResponse<PlanFeaturesResponse>> getAllFeatures() {
-        PlanFeaturesResponse response = planFeaturesService.getAllFeaturesEnabled();
         return ResponseEntity.ok(BaseResponse.success(response));
     }
 }

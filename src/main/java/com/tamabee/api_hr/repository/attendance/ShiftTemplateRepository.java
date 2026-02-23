@@ -1,13 +1,14 @@
 package com.tamabee.api_hr.repository.attendance;
 
-import com.tamabee.api_hr.entity.attendance.ShiftTemplateEntity;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;
 
-import java.util.List;
-import java.util.Optional;
+import com.tamabee.api_hr.entity.attendance.ShiftTemplateEntity;
 
 /**
  * Repository quản lý mẫu ca làm việc.
@@ -39,4 +40,9 @@ public interface ShiftTemplateRepository extends JpaRepository<ShiftTemplateEnti
      * Kiểm tra shift template có tồn tại không
      */
     boolean existsByIdAndDeletedFalse(Long id);
+
+    /**
+     * Kiểm tra tên shift template đã tồn tại chưa
+     */
+    boolean existsByNameAndDeletedFalse(String name);
 }

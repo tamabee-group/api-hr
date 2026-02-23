@@ -37,4 +37,8 @@ public class UpdateCompanyProfileRequest {
     private String zipcode;
 
     private String logo;
+
+    // Chỉ ADMIN_TAMABEE mới được thay đổi region/language
+    private String region;
+    private String language;
 }

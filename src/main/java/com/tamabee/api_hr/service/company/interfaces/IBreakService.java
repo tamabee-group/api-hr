@@ -1,11 +1,12 @@
 package com.tamabee.api_hr.service.company.interfaces;
 
+import java.time.LocalDate;
+import java.util.List;
+
+import com.tamabee.api_hr.dto.request.attendance.EndBreakRequest;
 import com.tamabee.api_hr.dto.request.attendance.StartBreakRequest;
 import com.tamabee.api_hr.dto.response.attendance.BreakRecordResponse;
 import com.tamabee.api_hr.dto.response.attendance.BreakSummaryResponse;
-
-import java.time.LocalDate;
-import java.util.List;
 
 /**
  * Service quản lý giờ giải lao của nhân viên.
@@ -29,9 +30,10 @@ public interface IBreakService {
      *
      * @param employeeId    ID nhân viên
      * @param breakRecordId ID bản ghi giải lao
+     * @param request       thông tin kết thúc giải lao (location)
      * @return bản ghi giải lao đã cập nhật
      */
-    BreakRecordResponse endBreak(Long employeeId, Long breakRecordId);
+    BreakRecordResponse endBreak(Long employeeId, Long breakRecordId, EndBreakRequest request);
 
     // ==================== Query Operations ====================
 
@@ -64,11 +66,11 @@ public interface IBreakService {
     /**
      * Lấy thời gian giải lao tối thiểu theo quy định pháp luật
      *
-     * @param locale       locale code (ja, vi, en)
+     * @param region       region code (ja, vi)
      * @param workingHours số giờ làm việc
      * @return số phút giải lao tối thiểu
      */
-    Integer getLegalMinimumBreak(String locale, Integer workingHours);
+    Integer getLegalMinimumBreak(String region, Integer workingHours);
 
     /**
      * Lấy thời gian giải lao tối thiểu hiệu lực (max của legal và company config)

@@ -15,7 +15,7 @@ public class UserResponse {
     private String email;
     private UserRole role;
     private UserStatus status;
-    private String locale;
+    private String region;
     private String language;
     private Long companyId;
     private String companyName;

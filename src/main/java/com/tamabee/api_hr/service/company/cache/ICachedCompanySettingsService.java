@@ -1,51 +1,59 @@
 package com.tamabee.api_hr.service.company.cache;
 
-import com.tamabee.api_hr.dto.config.AllowanceConfig;
 import com.tamabee.api_hr.dto.config.AttendanceConfig;
 import com.tamabee.api_hr.dto.config.BreakConfig;
-import com.tamabee.api_hr.dto.config.DeductionConfig;
 import com.tamabee.api_hr.dto.config.OvertimeConfig;
 import com.tamabee.api_hr.dto.config.PayrollConfig;
 
 /**
- * Service cung cấp company settings với caching và fallback to defaults.
+ * Service cung cấp company settings với per-entity caching.
  * Sử dụng request-scoped cache để tránh truy vấn database nhiều lần trong cùng request.
- * Tự động sử dụng default values khi config bị thiếu và log warning.
+ * Cache từng setting entity riêng biệt (attendance, break, payroll, overtime).
  */
 public interface ICachedCompanySettingsService {
 
     /**
-     * Lấy AttendanceConfig với caching và fallback to defaults
+     * Lấy AttendanceConfig với caching
      */
     AttendanceConfig getAttendanceConfig();
 
     /**
-     * Lấy PayrollConfig với caching và fallback to defaults
+     * Lấy PayrollConfig với caching
      */
     PayrollConfig getPayrollConfig();
 
     /**
-     * Lấy OvertimeConfig với caching và fallback to defaults
+     * Lấy OvertimeConfig với caching
      */
     OvertimeConfig getOvertimeConfig();
 
     /**
-     * Lấy AllowanceConfig với caching và fallback to defaults
-     */
-    AllowanceConfig getAllowanceConfig();
-
-    /**
-     * Lấy DeductionConfig với caching và fallback to defaults
-     */
-    DeductionConfig getDeductionConfig();
-
-    /**
-     * Lấy BreakConfig với caching và fallback to defaults
+     * Lấy BreakConfig với caching
      */
     BreakConfig getBreakConfig();
 
     /**
-     * Invalidate cache (gọi khi settings được cập nhật)
+     * Invalidate toàn bộ cache
      */
     void invalidateCache();
+
+    /**
+     * Invalidate chỉ attendance cache
+     */
+    void invalidateAttendanceCache();
+
+    /**
+     * Invalidate chỉ break cache
+     */
+    void invalidateBreakCache();
+
+    /**
+     * Invalidate chỉ payroll cache
+     */
+    void invalidatePayrollCache();
+
+    /**
+     * Invalidate chỉ overtime cache
+     */
+    void invalidateOvertimeCache();
 }

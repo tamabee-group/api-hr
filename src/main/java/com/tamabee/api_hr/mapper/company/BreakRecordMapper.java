@@ -1,12 +1,13 @@
 package com.tamabee.api_hr.mapper.company;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
+import org.springframework.stereotype.Component;
+
 import com.tamabee.api_hr.dto.request.attendance.StartBreakRequest;
 import com.tamabee.api_hr.dto.response.attendance.BreakRecordResponse;
 import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
-import org.springframework.stereotype.Component;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
  * Mapper chuyển đổi giữa BreakRecordEntity và DTOs
@@ -34,6 +35,12 @@ public class BreakRecordMapper {
             entity.setNotes(request.getNotes());
         }
 
+        // Lưu vị trí bắt đầu giải lao
+        if (request != null) {
+            entity.setBreakStartLatitude(request.getLatitude());
+            entity.setBreakStartLongitude(request.getLongitude());
+        }
+
         return entity;
     }
 
@@ -54,6 +61,10 @@ public class BreakRecordMapper {
                 .effectiveBreakMinutes(entity.getEffectiveBreakMinutes())
                 .notes(entity.getNotes())
                 .isActive(entity.getBreakEnd() == null)
+                .breakStartLatitude(entity.getBreakStartLatitude())
+                .breakStartLongitude(entity.getBreakStartLongitude())
+                .breakEndLatitude(entity.getBreakEndLatitude())
+                .breakEndLongitude(entity.getBreakEndLongitude())
                 .build();
     }
 

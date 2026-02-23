@@ -4,103 +4,48 @@ import org.springframework.beans.factory.ObjectProvider;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.tamabee.api_hr.dto.config.AllowanceConfig;
 import com.tamabee.api_hr.dto.config.AttendanceConfig;
 import com.tamabee.api_hr.dto.config.BreakConfig;
-import com.tamabee.api_hr.dto.config.DeductionConfig;
 import com.tamabee.api_hr.dto.config.OvertimeConfig;
 import com.tamabee.api_hr.dto.config.PayrollConfig;
-import com.tamabee.api_hr.entity.company.CompanySettingEntity;
-import com.tamabee.api_hr.exception.InternalServerException;
-import com.tamabee.api_hr.repository.company.CompanySettingsRepository;
+import com.tamabee.api_hr.entity.company.AttendanceSettingEntity;
+import com.tamabee.api_hr.entity.company.BreakSettingEntity;
+import com.tamabee.api_hr.entity.company.OvertimeSettingEntity;
+import com.tamabee.api_hr.entity.company.PayrollSettingEntity;
+import com.tamabee.api_hr.mapper.company.AttendanceSettingMapper;
+import com.tamabee.api_hr.mapper.company.BreakSettingMapper;
+import com.tamabee.api_hr.mapper.company.OvertimeSettingMapper;
+import com.tamabee.api_hr.mapper.company.PayrollSettingMapper;
+import com.tamabee.api_hr.repository.company.AttendanceSettingRepository;
+import com.tamabee.api_hr.repository.company.BreakSettingRepository;
+import com.tamabee.api_hr.repository.company.OvertimeSettingRepository;
+import com.tamabee.api_hr.repository.company.PayrollSettingRepository;
+import com.tamabee.api_hr.service.company.interfaces.ICompanySettingsService;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
- * Service cung cấp company settings với caching.
- * Sử dụng request-scoped cache để tránh truy vấn database nhiều lần trong cùng request.
+ * Service cung cấp company settings với per-entity caching.
+ * Cache từng setting entity riêng biệt trong request scope.
+ * Khi đọc: kiểm tra cache trước, nếu chưa có thì query DB và lưu cache.
+ * Khi invalidate: chỉ xóa cache của entity type tương ứng.
  */
 @Slf4j
 @Service
 @RequiredArgsConstructor
 public class CachedCompanySettingsServiceImpl implements ICachedCompanySettingsService {
 
-    private final CompanySettingsRepository companySettingsRepository;
+    private final ICompanySettingsService companySettingsService;
     private final ObjectProvider<CompanySettingsCache> settingsCacheProvider;
-    private final ObjectMapper objectMapper;
-
-    @Override
-    @Transactional(readOnly = true)
-    public AttendanceConfig getAttendanceConfig() {
-        CompanySettingEntity entity = getOrLoadEntity();
-        if (entity != null && entity.getAttendanceConfig() != null) {
-            return deserializeConfig(entity.getAttendanceConfig(), AttendanceConfig.class);
-        }
-        return AttendanceConfig.builder().build();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public PayrollConfig getPayrollConfig() {
-        CompanySettingEntity entity = getOrLoadEntity();
-        if (entity != null && entity.getPayrollConfig() != null) {
-            return deserializeConfig(entity.getPayrollConfig(), PayrollConfig.class);
-        }
-        return PayrollConfig.builder().build();
-    }
-
-
-    @Override
-    @Transactional(readOnly = true)
-    public OvertimeConfig getOvertimeConfig() {
-        CompanySettingEntity entity = getOrLoadEntity();
-        if (entity != null && entity.getOvertimeConfig() != null) {
-            return deserializeConfig(entity.getOvertimeConfig(), OvertimeConfig.class);
-        }
-        return OvertimeConfig.builder().build();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public AllowanceConfig getAllowanceConfig() {
-        CompanySettingEntity entity = getOrLoadEntity();
-        if (entity != null && entity.getAllowanceConfig() != null) {
-            return deserializeConfig(entity.getAllowanceConfig(), AllowanceConfig.class);
-        }
-        return AllowanceConfig.builder().build();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public DeductionConfig getDeductionConfig() {
-        CompanySettingEntity entity = getOrLoadEntity();
-        if (entity != null && entity.getDeductionConfig() != null) {
-            return deserializeConfig(entity.getDeductionConfig(), DeductionConfig.class);
-        }
-        return DeductionConfig.builder().build();
-    }
-
-    @Override
-    @Transactional(readOnly = true)
-    public BreakConfig getBreakConfig() {
-        CompanySettingEntity entity = getOrLoadEntity();
-        if (entity != null && entity.getBreakConfig() != null) {
-            return deserializeConfig(entity.getBreakConfig(), BreakConfig.class);
-        }
-        return BreakConfig.builder().build();
-    }
-
-    @Override
-    public void invalidateCache() {
-        CompanySettingsCache cache = getCache();
-        if (cache != null) {
-            cache.invalidate();
-            log.info("[CACHE] Invalidated company settings cache");
-        }
-    }
+    private final AttendanceSettingRepository attendanceSettingRepository;
+    private final BreakSettingRepository breakSettingRepository;
+    private final PayrollSettingRepository payrollSettingRepository;
+    private final OvertimeSettingRepository overtimeSettingRepository;
+    private final AttendanceSettingMapper attendanceSettingMapper;
+    private final BreakSettingMapper breakSettingMapper;
+    private final PayrollSettingMapper payrollSettingMapper;
+    private final OvertimeSettingMapper overtimeSettingMapper;
 
     /**
      * Lấy cache instance, trả về null nếu không có request context
@@ -109,49 +54,172 @@ public class CachedCompanySettingsServiceImpl implements ICachedCompanySettingsS
         try {
             return settingsCacheProvider.getIfAvailable();
         } catch (Exception e) {
-            log.debug("No request context available for cache");
+            log.debug("Không có request context cho cache");
             return null;
         }
     }
 
-    /**
-     * Lấy entity từ cache hoặc load từ database
-     */
-    private CompanySettingEntity getOrLoadEntity() {
+    @Override
+    @Transactional
+    public AttendanceConfig getAttendanceConfig() {
         CompanySettingsCache cache = getCache();
-        
-        // Kiểm tra cache trước
-        if (cache != null && cache.isEntityQueried()) {
-            log.info("[CACHE HIT] CompanySettings entity");
-            return cache.getEntity();
+
+        // Kiểm tra cache
+        if (cache != null && cache.isAttendanceQueried()) {
+            AttendanceSettingEntity cached = cache.getAttendanceSetting();
+            if (cached != null) {
+                log.debug("[CACHE HIT] AttendanceConfig");
+                return attendanceSettingMapper.toResponse(cached);
+            }
         }
 
-        // Load từ database
-        log.info("[DATABASE] Loading CompanySettings entity");
-        CompanySettingEntity entity = companySettingsRepository
-                .findFirstByDeletedFalse()
-                .orElse(null);
+        // Cache miss - delegate sang service để query DB
+        AttendanceConfig config = companySettingsService.getAttendanceConfig();
 
-        // Lưu vào cache (kể cả null để tránh query lại)
+        // Lưu entity vào cache nếu có
         if (cache != null) {
-            cache.putEntity(entity);
+            AttendanceSettingEntity entity = attendanceSettingRepository.findFirstByDeletedFalse().orElse(null);
+            if (entity != null) {
+                cache.putAttendanceSetting(entity);
+            }
+            log.debug("[CACHE MISS] AttendanceConfig - đã cache");
         }
 
-        return entity;
+        return config;
     }
 
-    /**
-     * Deserialize JSON string thành config object
-     */
-    private <T> T deserializeConfig(String json, Class<T> clazz) {
-        if (json == null || json.isEmpty()) {
-            return null;
+    @Override
+    @Transactional
+    public BreakConfig getBreakConfig() {
+        CompanySettingsCache cache = getCache();
+
+        // Kiểm tra cache
+        if (cache != null && cache.isBreakQueried()) {
+            BreakSettingEntity cached = cache.getBreakSetting();
+            if (cached != null) {
+                log.debug("[CACHE HIT] BreakConfig");
+                return breakSettingMapper.toResponse(cached);
+            }
         }
-        try {
-            return objectMapper.readValue(json, clazz);
-        } catch (JsonProcessingException e) {
-            log.error("Lỗi deserialize config: {}", e.getMessage());
-            throw new InternalServerException("Lỗi deserialize config", e);
+
+        // Cache miss - delegate sang service để query DB
+        BreakConfig config = companySettingsService.getBreakConfig();
+
+        // Lưu entity vào cache nếu có
+        if (cache != null) {
+            BreakSettingEntity entity = breakSettingRepository.findFirstByDeletedFalse().orElse(null);
+            if (entity != null) {
+                cache.putBreakSetting(entity);
+            }
+            log.debug("[CACHE MISS] BreakConfig - đã cache");
         }
+
+        return config;
+    }
+
+    @Override
+    @Transactional
+    public PayrollConfig getPayrollConfig() {
+        CompanySettingsCache cache = getCache();
+
+        // Kiểm tra cache
+        if (cache != null && cache.isPayrollQueried()) {
+            PayrollSettingEntity cached = cache.getPayrollSetting();
+            if (cached != null) {
+                log.debug("[CACHE HIT] PayrollConfig");
+                return payrollSettingMapper.toResponse(cached);
+            }
+        }
+
+        // Cache miss - delegate sang service để query DB
+        PayrollConfig config = companySettingsService.getPayrollConfig();
+
+        // Lưu entity vào cache nếu có
+        if (cache != null) {
+            PayrollSettingEntity entity = payrollSettingRepository.findFirstByDeletedFalse().orElse(null);
+            if (entity != null) {
+                cache.putPayrollSetting(entity);
+            }
+            log.debug("[CACHE MISS] PayrollConfig - đã cache");
+        }
+
+        return config;
+    }
+
+    @Override
+    @Transactional
+    public OvertimeConfig getOvertimeConfig() {
+        CompanySettingsCache cache = getCache();
+
+        // Kiểm tra cache
+        if (cache != null && cache.isOvertimeQueried()) {
+            OvertimeSettingEntity cached = cache.getOvertimeSetting();
+            if (cached != null) {
+                log.debug("[CACHE HIT] OvertimeConfig");
+                return overtimeSettingMapper.toResponse(cached);
+            }
+        }
+
+        // Cache miss - delegate sang service để query DB
+        OvertimeConfig config = companySettingsService.getOvertimeConfig();
+
+        // Lưu entity vào cache nếu có
+        if (cache != null) {
+            OvertimeSettingEntity entity = overtimeSettingRepository.findFirstByDeletedFalse().orElse(null);
+            if (entity != null) {
+                cache.putOvertimeSetting(entity);
+            }
+            log.debug("[CACHE MISS] OvertimeConfig - đã cache");
+        }
+
+        return config;
+    }
+
+
+    // ==================== Invalidate methods ====================
+
+    @Override
+    public void invalidateCache() {
+        CompanySettingsCache cache = getCache();
+        if (cache != null) {
+            cache.invalidateAll();
+        }
+        log.info("[CACHE] Invalidated toàn bộ company settings cache");
+    }
+
+    @Override
+    public void invalidateAttendanceCache() {
+        CompanySettingsCache cache = getCache();
+        if (cache != null) {
+            cache.invalidateAttendance();
+        }
+        log.info("[CACHE] Invalidated attendance settings cache");
+    }
+
+    @Override
+    public void invalidateBreakCache() {
+        CompanySettingsCache cache = getCache();
+        if (cache != null) {
+            cache.invalidateBreak();
+        }
+        log.info("[CACHE] Invalidated break settings cache");
+    }
+
+    @Override
+    public void invalidatePayrollCache() {
+        CompanySettingsCache cache = getCache();
+        if (cache != null) {
+            cache.invalidatePayroll();
+        }
+        log.info("[CACHE] Invalidated payroll settings cache");
+    }
+
+    @Override
+    public void invalidateOvertimeCache() {
+        CompanySettingsCache cache = getCache();
+        if (cache != null) {
+            cache.invalidateOvertime();
+        }
+        log.info("[CACHE] Invalidated overtime settings cache");
     }
 }

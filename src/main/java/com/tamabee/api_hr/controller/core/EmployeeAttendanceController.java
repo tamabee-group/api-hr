@@ -1,19 +1,9 @@
 package com.tamabee.api_hr.controller.core;
 
-import com.tamabee.api_hr.dto.request.attendance.AttendanceQueryRequest;
-import com.tamabee.api_hr.dto.request.attendance.CheckInRequest;
-import com.tamabee.api_hr.dto.request.attendance.CheckOutRequest;
-import com.tamabee.api_hr.dto.request.attendance.StartBreakRequest;
-import com.tamabee.api_hr.dto.response.attendance.AttendanceRecordResponse;
-import com.tamabee.api_hr.dto.response.attendance.AttendanceSummaryResponse;
-import com.tamabee.api_hr.entity.user.UserEntity;
-import com.tamabee.api_hr.enums.AttendanceStatus;
-import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.dto.common.BaseResponse;
-import com.tamabee.api_hr.repository.user.UserRepository;
-import com.tamabee.api_hr.service.company.interfaces.IAttendanceService;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -22,10 +12,33 @@ import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
-import java.time.YearMonth;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.dto.request.attendance.AttendanceQueryRequest;
+import com.tamabee.api_hr.dto.request.attendance.CheckInRequest;
+import com.tamabee.api_hr.dto.request.attendance.CheckOutRequest;
+import com.tamabee.api_hr.dto.request.attendance.EndBreakRequest;
+import com.tamabee.api_hr.dto.request.attendance.StartBreakRequest;
+import com.tamabee.api_hr.dto.response.attendance.AttendanceAlertResponse;
+import com.tamabee.api_hr.dto.response.attendance.AttendanceLocationResponse;
+import com.tamabee.api_hr.dto.response.attendance.AttendanceRecordResponse;
+import com.tamabee.api_hr.dto.response.attendance.AttendanceSummaryResponse;
+import com.tamabee.api_hr.entity.user.UserEntity;
+import com.tamabee.api_hr.enums.AttendanceStatus;
+import com.tamabee.api_hr.enums.RoleConstants;
+import com.tamabee.api_hr.exception.NotFoundException;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.IAttendanceLocationService;
+import com.tamabee.api_hr.service.company.interfaces.IAttendanceService;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Controller cho Employee Attendance API.
@@ -39,6 +52,7 @@ import java.time.YearMonth;
 public class EmployeeAttendanceController {
 
     private final IAttendanceService attendanceService;
+    private final IAttendanceLocationService attendanceLocationService;
     private final UserRepository userRepository;
 
     /**
@@ -189,10 +203,42 @@ public class EmployeeAttendanceController {
      * POST /api/employee/attendance/break/{id}/end
      */
     @PostMapping("/break/{id}/end")
-    public ResponseEntity<BaseResponse<AttendanceRecordResponse>> endBreak(@PathVariable Long id) {
+    public ResponseEntity<BaseResponse<AttendanceRecordResponse>> endBreak(
+            @PathVariable Long id,
+            @RequestBody(required = false) EndBreakRequest request) {
         Long employeeId = getCurrentUserId();
-        AttendanceRecordResponse response = attendanceService.endBreak(employeeId, id);
+        // Nếu request null, tạo request rỗng
+        if (request == null) {
+            request = new EndBreakRequest();
+        }
+        AttendanceRecordResponse response = attendanceService.endBreak(employeeId, id, request);
         return ResponseEntity.ok(BaseResponse.success(response, "Kết thúc giờ giải lao thành công"));
+    }
+
+    /**
+     * Lấy danh sách cảnh báo chấm công tháng hiện tại
+     * GET /api/employee/attendance/alerts?year=2026&month=2
+     */
+    @GetMapping("/alerts")
+    public ResponseEntity<BaseResponse<List<AttendanceAlertResponse>>> getAttendanceAlerts(
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month) {
+        Long employeeId = getCurrentUserId();
+        YearMonth period = (year != null && month != null)
+                ? YearMonth.of(year, month)
+                : YearMonth.now();
+        List<AttendanceAlertResponse> alerts = attendanceService.getAttendanceAlerts(employeeId, period);
+        return ResponseEntity.ok(BaseResponse.success(alerts, "Lấy cảnh báo chấm công thành công"));
+    }
+
+    /**
+     * Lấy danh sách vị trí chấm công đang hoạt động (cho nhân viên kiểm tra trước khi chấm công)
+     * GET /api/employee/attendance/locations/active
+     */
+    @GetMapping("/locations/active")
+    public ResponseEntity<BaseResponse<java.util.List<AttendanceLocationResponse>>> getActiveLocations() {
+        var locations = attendanceLocationService.getActiveLocations();
+        return ResponseEntity.ok(BaseResponse.success(locations, "Lấy danh sách vị trí chấm công thành công"));
     }
 
     /**

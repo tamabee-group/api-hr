@@ -3,6 +3,9 @@ package com.tamabee.api_hr.mapper.core;
 import com.tamabee.api_hr.entity.wallet.WalletEntity;
 import org.springframework.stereotype.Component;
 
+import com.tamabee.api_hr.datasource.RegionContext;
+import com.tamabee.api_hr.util.RegionUtil;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -24,7 +27,7 @@ public class WalletFactory {
         WalletEntity wallet = new WalletEntity();
         wallet.setCompanyId(companyId);
         wallet.setBalance(BigDecimal.ZERO);
-        wallet.setLastBillingDate(LocalDateTime.now());
+        wallet.setLastBillingDate(LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())));
         // nextBillingDate được set sau khi hết free trial
         wallet.setNextBillingDate(freeTrialEndDate);
         wallet.setFreeTrialEndDate(freeTrialEndDate);
@@ -40,6 +43,6 @@ public class WalletFactory {
      * @return WalletEntity mới
      */
     public WalletEntity createForCompany(Long companyId) {
-        return createForCompany(companyId, LocalDateTime.now().plusMonths(1));
+        return createForCompany(companyId, LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())).plusMonths(1));
     }
 }

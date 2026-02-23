@@ -11,6 +11,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
+import com.tamabee.api_hr.config.ratelimit.RateLimited;
 import com.tamabee.api_hr.dto.auth.ForgotPasswordRequest;
 import com.tamabee.api_hr.dto.auth.LoginRequest;
 import com.tamabee.api_hr.dto.auth.LoginResponse;
@@ -50,6 +51,7 @@ public class AuthController {
     @Value("${jwt.refresh-token-expiration}")
     private long refreshTokenExpiration;
 
+    @RateLimited(requests = 3, durationSeconds = 60, name = "auth:send-verification")
     @PostMapping("/send-verification")
     public ResponseEntity<BaseResponse<Void>> sendVerification(@Valid @RequestBody SendVerificationRequest request) {
         authService.validateEmailNotExists(request.getEmail());
@@ -69,6 +71,7 @@ public class AuthController {
         return ResponseEntity.ok(BaseResponse.success(null, "Xác thực email thành công"));
     }
 
+    @RateLimited(requests = 3, durationSeconds = 60, name = "auth:register")
     @PostMapping("/register")
     public ResponseEntity<BaseResponse<Void>> register(@Valid @RequestBody RegisterRequest request) {
         authService.register(request);
@@ -77,13 +80,16 @@ public class AuthController {
                 .body(BaseResponse.created(null, "Đăng ký thành công"));
     }
 
+    @RateLimited(requests = 3, durationSeconds = 300, name = "auth:forgot-password")
     @PostMapping("/forgot-password")
     public ResponseEntity<BaseResponse<Void>> forgotPassword(
             @Valid @RequestBody ForgotPasswordRequest request) {
         // Lấy thông tin user từ email
         var user = authService.getUserByEmail(request.getEmail());
         String language = request.getLanguage() != null ? request.getLanguage() : user.getLanguage();
-        if (language == null) language = "vi";
+        if (language == null) {
+            language = "vi";
+        }
         
         // Lấy tên user từ profile
         String userName = user.getProfile() != null ? user.getProfile().getName() : "";
@@ -132,12 +138,14 @@ public class AuthController {
 
     @PostMapping("/logout")
     public ResponseEntity<BaseResponse<Void>> logout(HttpServletResponse response) {
+        // accessToken: httpOnly=false (giống login)
         Cookie accessTokenCookie = new Cookie("accessToken", "");
-        accessTokenCookie.setHttpOnly(true);
+        accessTokenCookie.setHttpOnly(false);
         accessTokenCookie.setPath("/");
         accessTokenCookie.setMaxAge(0);
         response.addCookie(accessTokenCookie);
 
+        // refreshToken: httpOnly=true (giống login)
         Cookie refreshTokenCookie = new Cookie("refreshToken", "");
         refreshTokenCookie.setHttpOnly(true);
         refreshTokenCookie.setPath("/");
@@ -153,6 +161,7 @@ public class AuthController {
         return ResponseEntity.ok(BaseResponse.success(user, "Lấy thông tin user thành công"));
     }
 
+    @RateLimited(requests = 5, durationSeconds = 60, name = "auth:login")
     @PostMapping("/login")
     public ResponseEntity<BaseResponse<UserResponse>> login(
             @Valid @RequestBody LoginRequest request,

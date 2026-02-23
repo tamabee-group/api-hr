@@ -1,14 +1,21 @@
 package com.tamabee.api_hr.entity.attendance;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+
 import com.tamabee.api_hr.entity.BaseEntity;
 import com.tamabee.api_hr.enums.AttendanceStatus;
 import com.tamabee.api_hr.enums.BreakType;
-import jakarta.persistence.*;
+import com.tamabee.api_hr.enums.CheckInSource;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
 
 /**
  * Entity lưu trữ bản ghi chấm công của nhân viên.
@@ -59,13 +66,7 @@ public class AttendanceRecordEntity extends BaseEntity {
     @Column(nullable = false)
     private AttendanceStatus status = AttendanceStatus.PRESENT;
 
-    // === Device & Location info ===
-    // ID thiết bị check-in
-    private String checkInDeviceId;
-
-    // ID thiết bị check-out
-    private String checkOutDeviceId;
-
+    // === Location info ===
     // Vị trí check-in
     private Double checkInLatitude;
     private Double checkInLongitude;
@@ -73,6 +74,18 @@ public class AttendanceRecordEntity extends BaseEntity {
     // Vị trí check-out
     private Double checkOutLatitude;
     private Double checkOutLongitude;
+
+    // === Nguồn chấm công ===
+    @Enumerated(EnumType.STRING)
+    @Column(length = 20)
+    private CheckInSource checkInSource;
+
+    // Chấm công ngoài phạm vi
+    private Boolean checkInOutOfRange;
+    private Boolean checkOutOutOfRange;
+
+    // ID kiosk (nếu chấm công qua kiosk)
+    private Long kioskId;
 
     // === Audit info ===
     // Lý do điều chỉnh (nếu có)

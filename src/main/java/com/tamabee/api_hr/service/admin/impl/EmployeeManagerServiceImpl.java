@@ -25,8 +25,8 @@ import com.tamabee.api_hr.service.admin.interfaces.IEmployeeManagerService;
 import com.tamabee.api_hr.service.core.interfaces.IEmailService;
 import com.tamabee.api_hr.service.core.interfaces.IUploadService;
 import com.tamabee.api_hr.util.EmployeeCodeGenerator;
-import com.tamabee.api_hr.util.LocaleUtil;
 import com.tamabee.api_hr.util.ReferralCodeGenerator;
+import com.tamabee.api_hr.util.RegionUtil;
 
 import lombok.RequiredArgsConstructor;
 
@@ -47,7 +47,7 @@ public class EmployeeManagerServiceImpl implements IEmployeeManagerService {
     @Transactional(readOnly = true)
     public Page<UserResponse> getTamabeeUsers(Pageable pageable) {
         Page<UserEntity> users = userRepository.findByDeletedFalse(pageable);
-        return users.map(userMapper::toResponse);
+        return users.map(user -> userMapper.toResponse(user, (CompanyEntity) null));
     }
 
     @Override
@@ -55,7 +55,7 @@ public class EmployeeManagerServiceImpl implements IEmployeeManagerService {
     public UserResponse getTamabeeUser(Long id) {
         UserEntity user = userRepository.findById(id)
                 .orElseThrow(() -> NotFoundException.user(id));
-        return userMapper.toResponse(user);
+        return userMapper.toResponse(user, (CompanyEntity) null);
     }
 
     @Override
@@ -73,14 +73,14 @@ public class EmployeeManagerServiceImpl implements IEmployeeManagerService {
         Long companyId = TAMABEE_COMPANY_ID;
 
         // Xác định timezone: nếu là Tamabee thì dùng mặc định, ngược lại lấy từ company
-        // locale
+        // region
         String timezone;
         if (TAMABEE_COMPANY_ID.equals(companyId)) {
-            timezone = LocaleUtil.getDefaultTimezone();
+            timezone = RegionUtil.toTimezoneString(null);
         } else {
             CompanyEntity company = companyRepository.findById(companyId)
                     .orElseThrow(() -> NotFoundException.company(companyId));
-            timezone = LocaleUtil.toTimezone(company.getLocale());
+            timezone = RegionUtil.toTimezoneString(company.getRegion());
         }
 
         // Tạo user entity
@@ -90,7 +90,6 @@ public class EmployeeManagerServiceImpl implements IEmployeeManagerService {
         user.setRole(request.getRole());
         user.setStatus(UserStatus.ACTIVE);
         user.setLanguage(request.getLanguage());
-        user.setLocale(timezone);
 
         // Tạo mã giới thiệu duy nhất
         String referralCode;
@@ -125,7 +124,7 @@ public class EmployeeManagerServiceImpl implements IEmployeeManagerService {
         emailService.sendTemporaryPassword(savedUser.getEmail(), savedUser.getEmployeeCode(), temporaryPassword,
                 savedUser.getLanguage());
 
-        return userMapper.toResponse(savedUser);
+        return userMapper.toResponse(savedUser, (CompanyEntity) null);
     }
 
     @Override
@@ -152,53 +151,72 @@ public class EmployeeManagerServiceImpl implements IEmployeeManagerService {
         }
 
         UserProfileEntity profile = user.getProfile();
-        if (request.getName() != null)
+        if (request.getName() != null) {
             profile.setName(request.getName());
-        if (request.getPhone() != null)
+        }
+        if (request.getPhone() != null) {
             profile.setPhone(request.getPhone());
-        if (request.getZipCode() != null)
+        }
+        if (request.getZipCode() != null) {
             profile.setZipCode(request.getZipCode());
-        if (request.getAddress() != null)
+        }
+        if (request.getAddress() != null) {
             profile.setAddress(request.getAddress());
+        }
         // Bank info - Common
-        if (request.getBankAccountType() != null)
+        if (request.getBankAccountType() != null) {
             profile.setBankAccountType(request.getBankAccountType());
-        if (request.getJapanBankType() != null)
+        }
+        if (request.getJapanBankType() != null) {
             profile.setJapanBankType(request.getJapanBankType());
-        if (request.getBankName() != null)
+        }
+        if (request.getBankName() != null) {
             profile.setBankName(request.getBankName());
-        if (request.getBankAccount() != null)
+        }
+        if (request.getBankAccount() != null) {
             profile.setBankAccount(request.getBankAccount());
-        if (request.getBankAccountName() != null)
+        }
+        if (request.getBankAccountName() != null) {
             profile.setBankAccountName(request.getBankAccountName());
+        }
         // Bank info - Japan specific
-        if (request.getBankCode() != null)
+        if (request.getBankCode() != null) {
             profile.setBankCode(request.getBankCode());
-        if (request.getBankBranchCode() != null)
+        }
+        if (request.getBankBranchCode() != null) {
             profile.setBankBranchCode(request.getBankBranchCode());
-        if (request.getBankBranchName() != null)
+        }
+        if (request.getBankBranchName() != null) {
             profile.setBankBranchName(request.getBankBranchName());
-        if (request.getBankAccountCategory() != null)
+        }
+        if (request.getBankAccountCategory() != null) {
             profile.setBankAccountCategory(request.getBankAccountCategory());
+        }
         // Bank info - Japan Post Bank (ゆうちょ銀行)
-        if (request.getBankSymbol() != null)
+        if (request.getBankSymbol() != null) {
             profile.setBankSymbol(request.getBankSymbol());
-        if (request.getBankNumber() != null)
+        }
+        if (request.getBankNumber() != null) {
             profile.setBankNumber(request.getBankNumber());
-        if (request.getEmergencyContactName() != null)
+        }
+        if (request.getEmergencyContactName() != null) {
             profile.setEmergencyContactName(request.getEmergencyContactName());
-        if (request.getEmergencyContactPhone() != null)
+        }
+        if (request.getEmergencyContactPhone() != null) {
             profile.setEmergencyContactPhone(request.getEmergencyContactPhone());
-        if (request.getEmergencyContactRelation() != null)
+        }
+        if (request.getEmergencyContactRelation() != null) {
             profile.setEmergencyContactRelation(request.getEmergencyContactRelation());
-        if (request.getEmergencyContactAddress() != null)
+        }
+        if (request.getEmergencyContactAddress() != null) {
             profile.setEmergencyContactAddress(request.getEmergencyContactAddress());
+        }
 
         // Tính toán lại % hoàn thiện profile
         user.calculateProfileCompleteness();
 
         UserEntity savedUser = userRepository.save(user);
-        return userMapper.toResponse(savedUser);
+        return userMapper.toResponse(savedUser, (CompanyEntity) null);
     }
 
     @Override

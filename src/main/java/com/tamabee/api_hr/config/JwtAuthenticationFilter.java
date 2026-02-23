@@ -11,6 +11,7 @@ import org.springframework.security.web.authentication.WebAuthenticationDetailsS
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
+import com.tamabee.api_hr.datasource.RegionContext;
 import com.tamabee.api_hr.datasource.TenantContext;
 import com.tamabee.api_hr.util.JwtUtil;
 
@@ -34,9 +35,15 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
             throws ServletException, IOException {
 
         String path = request.getRequestURI();
+        
+        // Skip WebSocket endpoints - authentication được xử lý bởi WebSocketAuthInterceptor
+        if (path.startsWith("/ws/")) {
+            filterChain.doFilter(request, response);
+            return;
+        }
+        
         String token = getToken(request);
-        System.out.println(">>> JwtAuthenticationFilter: path=" + path + ", token present=" + (token != null));
-        log.info("Processing request: {}, token present: {}", path, token != null);
+        log.debug("Processing request: {}, token present: {}", path, token != null);
 
         if (token != null) {
             Map<String, Object> claims = jwtUtil.validateToken(token);
@@ -45,17 +52,22 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 String email = (String) claims.get("sub");
                 String role = (String) claims.get("role");
                 String tenantDomain = (String) claims.get("tenantDomain");
+                String region = (String) claims.get("region");
 
-                log.info("JWT claims - email: {}, role: {}, tenantDomain: {}", email, role, tenantDomain);
+                log.debug("JWT claims - email: {}, role: {}, tenantDomain: {}", email, role, tenantDomain);
+
+                // Set RegionContext từ JWT claim "region"
+                if (region != null && !region.isEmpty()) {
+                    RegionContext.setCurrentRegion(region);
+                }
 
                 // Set TenantContext từ JWT cho tất cả authenticated requests (trừ master
                 // endpoints)
                 boolean isMaster = isMasterEndpoint(request);
-                log.info("Is master endpoint: {}", isMaster);
 
                 if (!isMaster && tenantDomain != null && !tenantDomain.isEmpty()) {
                     TenantContext.setCurrentTenant(tenantDomain);
-                    log.info("Set tenant context from JWT: {} for user: {}", tenantDomain, email);
+                    log.debug("Set tenant context from JWT: {} for user: {}", tenantDomain, email);
                 }
 
                 // Tạo authority từ role (Spring Security yêu cầu prefix ROLE_)
@@ -98,6 +110,8 @@ public class JwtAuthenticationFilter extends OncePerRequestFilter {
                 path.startsWith("/api/public/") ||
                 path.startsWith("/api/company/deposits") ||
                 path.startsWith("/api/company/wallet") ||
+                path.startsWith("/api/employee/commissions") ||
+                path.startsWith("/api/users/me/feedbacks") ||
                 path.startsWith("/swagger") ||
                 path.startsWith("/v3/api-docs") ||
                 path.startsWith("/actuator/");

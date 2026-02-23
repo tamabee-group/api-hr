@@ -70,9 +70,9 @@ public interface CompanyRepository extends JpaRepository<CompanyEntity, Long> {
          */
         @Modifying
         @Query(value = "INSERT INTO companies (id, name, owner_name, email, phone, address, industry, zipcode, " +
-                        "locale, language, tenant_domain, plan_id, status, deleted, created_at, updated_at) " +
+                        "region, language, tenant_domain, plan_id, status, deleted, created_at, updated_at) " +
                         "VALUES (0, :name, :ownerName, :email, :phone, :address, :industry, :zipcode, " +
-                        ":locale, :language, :tenantDomain, :planId, :status, false, NOW(), NOW()) " +
+                        ":region, :language, :tenantDomain, :planId, :status, false, NOW(), NOW()) " +
                         "ON CONFLICT (id) DO NOTHING", nativeQuery = true)
         void insertTamabeeCompany(
                         @Param("name") String name,
@@ -82,7 +82,7 @@ public interface CompanyRepository extends JpaRepository<CompanyEntity, Long> {
                         @Param("address") String address,
                         @Param("industry") String industry,
                         @Param("zipcode") String zipcode,
-                        @Param("locale") String locale,
+                        @Param("region") String region,
                         @Param("language") String language,
                         @Param("tenantDomain") String tenantDomain,
                         @Param("planId") Long planId,

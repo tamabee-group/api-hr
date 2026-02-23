@@ -1,23 +1,28 @@
 package com.tamabee.api_hr.mapper.company;
 
-import com.tamabee.api_hr.dto.config.AttendanceConfig;
-import com.tamabee.api_hr.dto.config.BreakConfig;
-import com.tamabee.api_hr.dto.config.RoundingConfig;
-import com.tamabee.api_hr.dto.request.attendance.CheckInRequest;
-import com.tamabee.api_hr.dto.response.attendance.*;
-import com.tamabee.api_hr.dto.response.payroll.AppliedSettingsSnapshot;
-import com.tamabee.api_hr.dto.response.payroll.RoundingConfigSnapshot;
-import com.tamabee.api_hr.entity.attendance.AttendanceRecordEntity;
-import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
-import com.tamabee.api_hr.enums.AttendanceStatus;
-import org.springframework.stereotype.Component;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.YearMonth;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Component;
+
+import com.tamabee.api_hr.dto.config.AttendanceConfig;
+import com.tamabee.api_hr.dto.config.BreakConfig;
+import com.tamabee.api_hr.dto.config.RoundingConfig;
+import com.tamabee.api_hr.dto.request.attendance.CheckInRequest;
+import com.tamabee.api_hr.dto.response.attendance.AttendanceRecordResponse;
+import com.tamabee.api_hr.dto.response.attendance.AttendanceSummaryResponse;
+import com.tamabee.api_hr.dto.response.attendance.BreakConfigSnapshot;
+import com.tamabee.api_hr.dto.response.attendance.BreakRecordResponse;
+import com.tamabee.api_hr.dto.response.attendance.ShiftInfoResponse;
+import com.tamabee.api_hr.dto.response.payroll.AppliedSettingsSnapshot;
+import com.tamabee.api_hr.dto.response.payroll.RoundingConfigSnapshot;
+import com.tamabee.api_hr.entity.attendance.AttendanceRecordEntity;
+import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
+import com.tamabee.api_hr.enums.AttendanceStatus;
 
 /**
  * Mapper chuyển đổi giữa AttendanceRecordEntity và DTOs
@@ -42,7 +47,6 @@ public class AttendanceMapper {
         entity.setStatus(AttendanceStatus.PRESENT);
 
         if (request != null) {
-            entity.setCheckInDeviceId(request.getDeviceId());
             entity.setCheckInLatitude(request.getLatitude());
             entity.setCheckInLongitude(request.getLongitude());
         }
@@ -72,17 +76,18 @@ public class AttendanceMapper {
                 .earlyLeaveMinutes(entity.getEarlyLeaveMinutes())
                 .netWorkingMinutes(calculateNetWorkingMinutes(entity))
                 .status(entity.getStatus())
-                .checkInDeviceId(entity.getCheckInDeviceId())
-                .checkOutDeviceId(entity.getCheckOutDeviceId())
                 .checkInLatitude(entity.getCheckInLatitude())
                 .checkInLongitude(entity.getCheckInLongitude())
                 .checkOutLatitude(entity.getCheckOutLatitude())
                 .checkOutLongitude(entity.getCheckOutLongitude())
+                .checkInOutOfRange(entity.getCheckInOutOfRange())
+                .checkOutOutOfRange(entity.getCheckOutOutOfRange())
+                // Nguồn chấm công
+                .checkInSource(entity.getCheckInSource() != null ? entity.getCheckInSource().name() : null)
+                .kioskId(entity.getKioskId())
                 // Break time fields
                 .totalBreakMinutes(entity.getTotalBreakMinutes())
                 .effectiveBreakMinutes(entity.getEffectiveBreakMinutes())
-                .breakType(entity.getBreakType())
-                .breakCompliant(entity.getBreakCompliant())
                 .breakRecords(new ArrayList<>())
                 // Audit info
                 .adjustmentReason(entity.getAdjustmentReason())
@@ -158,6 +163,12 @@ public class AttendanceMapper {
                 .effectiveBreakMinutes(breakRecord.getEffectiveBreakMinutes())
                 .notes(breakRecord.getNotes())
                 .isActive(breakRecord.getBreakEnd() == null)
+                .breakStartLatitude(breakRecord.getBreakStartLatitude())
+                .breakStartLongitude(breakRecord.getBreakStartLongitude())
+                .breakEndLatitude(breakRecord.getBreakEndLatitude())
+                .breakEndLongitude(breakRecord.getBreakEndLongitude())
+                .breakStartOutOfRange(breakRecord.getBreakStartOutOfRange())
+                .breakEndOutOfRange(breakRecord.getBreakEndOutOfRange())
                 .build();
     }
 
@@ -205,11 +216,8 @@ public class AttendanceMapper {
             return null;
         }
         return BreakConfigSnapshot.builder()
-                .breakType(config.getBreakType())
-                .minimumBreakMinutes(config.getMinimumBreakMinutes())
-                .maximumBreakMinutes(config.getMaximumBreakMinutes())
+                .defaultBreakMinutes(config.getDefaultBreakMinutes())
                 .maxBreaksPerDay(config.getMaxBreaksPerDay())
-                .legalMinimumBreakMinutes(config.getMinimumBreakMinutes())
                 .build();
     }
 

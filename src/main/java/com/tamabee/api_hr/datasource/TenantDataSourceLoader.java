@@ -9,7 +9,6 @@ import org.springframework.context.event.EventListener;
 import org.springframework.stereotype.Component;
 
 import com.tamabee.api_hr.entity.company.CompanyEntity;
-import com.tamabee.api_hr.enums.CompanyStatus;
 import com.tamabee.api_hr.repository.company.CompanyRepository;
 
 import lombok.RequiredArgsConstructor;

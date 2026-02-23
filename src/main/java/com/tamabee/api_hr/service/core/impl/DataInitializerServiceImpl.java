@@ -10,6 +10,7 @@ import org.springframework.transaction.annotation.Transactional;
 import static com.tamabee.api_hr.constants.PlanConstants.FREE_PLAN_ID;
 import static com.tamabee.api_hr.constants.PlanConstants.TAMABEE_FREE_TRIAL_YEARS;
 import static com.tamabee.api_hr.constants.PlanConstants.TAMABEE_TENANT;
+import com.tamabee.api_hr.datasource.RegionContext;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.entity.user.UserProfileEntity;
@@ -24,6 +25,7 @@ import com.tamabee.api_hr.repository.wallet.WalletRepository;
 import com.tamabee.api_hr.service.core.interfaces.IDataInitializerService;
 import com.tamabee.api_hr.util.EmployeeCodeGenerator;
 import com.tamabee.api_hr.util.ReferralCodeGenerator;
+import com.tamabee.api_hr.util.RegionUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -63,7 +65,7 @@ public class DataInitializerServiceImpl implements IDataInitializerService {
                 "Tokyo",
                 "technology",
                 "1000001",
-                "Asia/Tokyo",
+                "ja",
                 "ja",
                 TAMABEE_TENANT,
                 FREE_PLAN_ID,
@@ -86,6 +88,11 @@ public class DataInitializerServiceImpl implements IDataInitializerService {
                 company.setStatus(CompanyStatus.ACTIVE);
                 needUpdate = true;
             }
+            // Fix region cũ dùng timezone thay vì language code
+            if (company.getRegion() != null && company.getRegion().contains("/")) {
+                company.setRegion("ja");
+                needUpdate = true;
+            }
             if (needUpdate) {
                 company = companyRepository.save(company);
                 log.info("✅ Updated Tamabee company with plan_id: {}", FREE_PLAN_ID);
@@ -96,7 +103,9 @@ public class DataInitializerServiceImpl implements IDataInitializerService {
         
         // Kiểm tra và tạo wallet nếu chưa có
         if (!walletRepository.existsByCompanyIdAndDeletedFalse(company.getId())) {
-            LocalDateTime freeTrialEndDate = LocalDateTime.now().plusYears(TAMABEE_FREE_TRIAL_YEARS);
+            LocalDateTime freeTrialEndDate = LocalDateTime.now(
+                    RegionUtil.getTimezone(RegionContext.getCurrentRegion()))
+                    .plusYears(TAMABEE_FREE_TRIAL_YEARS);
             WalletEntity wallet = walletFactory.createForCompany(company.getId(), freeTrialEndDate);
             walletRepository.save(wallet);
             log.info("✅ Created wallet for Tamabee with free trial until: {}", freeTrialEndDate);
@@ -116,10 +125,9 @@ public class DataInitializerServiceImpl implements IDataInitializerService {
         if (!userRepository.existsByEmail(adminEmail)) {
             UserEntity admin = new UserEntity();
             admin.setEmail(adminEmail);
-            admin.setPassword(passwordEncoder.encode("Admin@123"));
+            admin.setPassword(passwordEncoder.encode("hiep1234"));
             admin.setRole(UserRole.ADMIN_TAMABEE);
             admin.setStatus(UserStatus.ACTIVE);
-            admin.setLocale("vi");
             admin.setLanguage("vi");
             admin.setTenantDomain(TAMABEE_TENANT);
 
@@ -129,6 +137,7 @@ public class DataInitializerServiceImpl implements IDataInitializerService {
 
             // Tạo profile với mã giới thiệu
             UserProfileEntity profile = new UserProfileEntity();
+            profile.setName("Triệu Quang Hiệp");
             profile.setDateOfBirth(adminDateOfBirth);
             String referralCode;
             do {

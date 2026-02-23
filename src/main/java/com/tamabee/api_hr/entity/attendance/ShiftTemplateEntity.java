@@ -1,12 +1,16 @@
 package com.tamabee.api_hr.entity.attendance;
 
-import com.tamabee.api_hr.entity.BaseEntity;
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 import java.math.BigDecimal;
 import java.time.LocalTime;
+
+import com.tamabee.api_hr.entity.BaseEntity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * Entity lưu trữ mẫu ca làm việc.

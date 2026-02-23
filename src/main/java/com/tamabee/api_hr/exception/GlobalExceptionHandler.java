@@ -16,6 +16,8 @@ import org.springframework.web.bind.annotation.RestControllerAdvice;
 import org.springframework.web.multipart.MaxUploadSizeExceededException;
 
 import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.datasource.RegionContext;
+import com.tamabee.api_hr.util.RegionUtil;
 
 import lombok.extern.slf4j.Slf4j;
 
@@ -61,7 +63,7 @@ public class GlobalExceptionHandler {
                 false,
                 firstError,
                 errors,
-                java.time.LocalDateTime.now(),
+                java.time.LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())),
                 "VALIDATION_ERROR");
 
         return ResponseEntity.badRequest().body(response);
@@ -98,6 +100,18 @@ public class GlobalExceptionHandler {
         return ResponseEntity
                 .status(HttpStatus.FORBIDDEN)
                 .body(BaseResponse.forbidden("Không có quyền truy cập"));
+    }
+
+    /**
+     * Xử lý rate limit exceeded (HTTP 429)
+     */
+    @ExceptionHandler(RateLimitExceededException.class)
+    public ResponseEntity<BaseResponse<Void>> handleRateLimitExceededException(RateLimitExceededException ex) {
+        log.warn("Rate limit exceeded: {}", ex.getMessage());
+        return ResponseEntity
+                .status(HttpStatus.TOO_MANY_REQUESTS)
+                .body(BaseResponse.error(HttpStatus.TOO_MANY_REQUESTS.value(),
+                        ex.getMessage(), "RATE_LIMIT_EXCEEDED"));
     }
 
     /**

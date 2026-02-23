@@ -31,4 +31,35 @@ build/
 
 ### VS Code ###
 .vscode/
+
+### AI tools ###
 .agent
+.gemini
+
+### Test artifacts ###
+.jqwik-database
+test-data-*.sql
+
+### Environment files (QUAN TRỌNG: không push credentials lên git) ###
+.env
+.env.local
+.env.production
+.env.staging
+!.env.example
+!.env.production.example
+
+### Docker ###
+docker-volumes/
+prometheus-data/
+grafana-data/
+
+### Uploads ###
+uploads/
+
+### Logs ###
+*.log
+logs/
+
+### OS ###
+.DS_Store
+Thumbs.db

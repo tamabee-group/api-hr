@@ -5,16 +5,16 @@ import org.springframework.stereotype.Component;
 import com.tamabee.api_hr.dto.auth.RegisterRequest;
 import com.tamabee.api_hr.dto.response.user.UserProfileResponse;
 import com.tamabee.api_hr.dto.response.user.UserResponse;
+import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.CompanyStatus;
-import com.tamabee.api_hr.util.LocaleUtil;
 
 @Component
 public class UserMapper {
 
     /**
      * Convert RegisterRequest to UserEntity (partial)
-     * Chuyển đổi locale code (vi, ja) sang timezone (Asia/Ho_Chi_Minh, Asia/Tokyo)
+     * Region là thuộc tính của company, không set trên UserEntity
      */
     public UserEntity toEntity(RegisterRequest request) {
         if (request == null) {
@@ -23,38 +23,50 @@ public class UserMapper {
 
         UserEntity entity = new UserEntity();
         entity.setEmail(request.getEmail());
-        // Chuyển đổi locale code sang timezone
-        entity.setLocale(LocaleUtil.toTimezone(request.getLocale()));
         entity.setLanguage(request.getLanguage());
 
         return entity;
     }
 
     /**
-     * Convert UserEntity to UserResponse
+     * Convert UserEntity to UserResponse (không có company info)
+     * Region sẽ là null vì không có CompanyEntity
      */
     public UserResponse toResponse(UserEntity entity) {
-        return toResponse(entity, null, null, null, null, null);
+        return toResponse(entity, null, null, null, null, null, null);
+    }
+
+    /**
+     * Convert UserEntity to UserResponse với CompanyEntity
+     * Region lấy từ company, language lấy từ user
+     */
+    public UserResponse toResponse(UserEntity entity, CompanyEntity company) {
+        return toResponse(entity, company, null, null, null, null, null);
     }
 
     /**
      * Convert UserEntity to UserResponse với companyName
      */
     public UserResponse toResponse(UserEntity entity, String companyName) {
-        return toResponse(entity, companyName, null, null, null, null);
+        return toResponse(entity, null, companyName, null, null, null, null);
     }
 
     /**
      * Convert UserEntity to UserResponse với đầy đủ thông tin
      * 
      * @param entity        UserEntity
+     * @param company       CompanyEntity (để lấy region)
      * @param companyName   Tên công ty
      * @param companyLogo   Logo công ty
      * @param tenantDomain  Tenant domain ("tamabee" cho Tamabee users)
      * @param planId        Plan ID của company (null cho Tamabee users)
      * @param companyStatus Trạng thái công ty (ACTIVE, INACTIVE)
      */
-    public UserResponse toResponse(UserEntity entity, String companyName, String companyLogo, String tenantDomain, Long planId, CompanyStatus companyStatus) {
+    public UserResponse toResponse(
+            UserEntity entity, CompanyEntity company,
+            String companyName, String companyLogo,
+            String tenantDomain, Long planId,
+            CompanyStatus companyStatus) {
         if (entity == null) {
             return null;
         }
@@ -65,7 +77,8 @@ public class UserMapper {
         response.setEmail(entity.getEmail());
         response.setRole(entity.getRole());
         response.setStatus(entity.getStatus());
-        response.setLocale(entity.getLocale());
+        // Region lấy từ company, language lấy từ user
+        response.setRegion(company != null ? company.getRegion() : null);
         response.setLanguage(entity.getLanguage());
         // companyId được tính từ tenantDomain, không lưu trong UserEntity
         response.setCompanyId(null);

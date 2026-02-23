@@ -14,10 +14,10 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class CheckInRequest {
 
-    // ID thiết bị (nếu yêu cầu đăng ký thiết bị)
-    private String deviceId;
-
     // Vị trí check-in (nếu yêu cầu geo-location)
     private Double latitude;
     private Double longitude;
+
+    // Chấm công ngoài phạm vi cho phép
+    private Boolean outOfRange;
 }

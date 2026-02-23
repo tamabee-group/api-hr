@@ -26,6 +26,11 @@ public interface IAuthService {
     void resetPassword(String email, String newPassword);
 
     /**
+     * Đổi mật khẩu cho user đang đăng nhập
+     */
+    void changePassword(String email, String currentPassword, String newPassword);
+
+    /**
      * Kiểm tra email có tồn tại trong hệ thống
      */
     void validateEmailExists(String email);

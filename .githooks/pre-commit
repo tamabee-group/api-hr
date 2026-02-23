@@ -1,0 +1,38 @@
+#!/usr/bin/env sh
+
+echo ""
+echo "🔍 Pre-commit checks (api-hr)..."
+echo ""
+
+# Kiểm tra xem có file Java nào được staged không
+STAGED_JAVA=$(git diff --cached --name-only --diff-filter=ACM | grep '\.java$' || true)
+if [ -z "$STAGED_JAVA" ]; then
+  echo "ℹ️  No Java files staged. Skipping checks."
+  exit 0
+fi
+
+# Bước 1: Checkstyle
+echo "[1/2] Checkstyle..."
+./mvnw checkstyle:check -q 2>&1
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ Checkstyle violations found. Please fix before committing."
+  echo "   Run: ./mvnw checkstyle:check"
+  exit 1
+fi
+echo "✅ Checkstyle OK"
+echo ""
+
+# Bước 2: SpotBugs
+echo "[2/2] SpotBugs..."
+./mvnw spotbugs:check -q 2>&1
+if [ $? -ne 0 ]; then
+  echo ""
+  echo "❌ SpotBugs issues found. Please fix before committing."
+  echo "   Run: ./mvnw spotbugs:check"
+  exit 1
+fi
+echo "✅ SpotBugs OK"
+echo ""
+
+echo "🎉 All checks passed!"

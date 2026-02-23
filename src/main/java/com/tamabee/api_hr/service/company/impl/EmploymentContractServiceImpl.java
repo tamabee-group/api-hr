@@ -4,7 +4,8 @@ import java.time.LocalDate;
 import java.util.List;
 import java.util.stream.Collectors;
 
-import com.tamabee.api_hr.enums.UserStatus;
+import com.tamabee.api_hr.datasource.RegionContext;
+import com.tamabee.api_hr.util.RegionUtil;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
@@ -17,6 +18,7 @@ import com.tamabee.api_hr.entity.contract.EmploymentContractEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.ContractStatus;
 import com.tamabee.api_hr.enums.ErrorCode;
+import com.tamabee.api_hr.enums.UserStatus;
 import com.tamabee.api_hr.exception.BadRequestException;
 import com.tamabee.api_hr.exception.ConflictException;
 import com.tamabee.api_hr.exception.NotFoundException;
@@ -50,7 +52,7 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
         }
 
         // Kiểm tra có hợp đồng ACTIVE không
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion()));
         boolean hasActiveContract = contractRepository.findActiveByEmployeeId(employeeId, today).isPresent();
 
         // Cập nhật status
@@ -85,7 +87,7 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
         entity.setContractNumber(contractNumber);
 
         // Kiểm tra nếu endDate trong quá khứ thì set status = EXPIRED
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion()));
         if (request.getEndDate() != null && request.getEndDate().isBefore(today)) {
             entity.setStatus(ContractStatus.EXPIRED);
         }
@@ -104,7 +106,7 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
      * Ví dụ: HD-2026-0001
      */
     private String generateContractNumber() {
-        int currentYear = LocalDate.now().getYear();
+        int currentYear = LocalDate.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())).getYear();
         long count = contractRepository.countByYear(currentYear);
         return String.format("HD-%d-%04d", currentYear, count + 1);
     }
@@ -148,7 +150,7 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
         contractMapper.updateEntity(contract, request);
 
         // Kiểm tra nếu endDate trong quá khứ và contract đang ACTIVE thì chuyển sang EXPIRED
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion()));
         if (contract.getStatus() == ContractStatus.ACTIVE && 
             request.getEndDate() != null && 
             request.getEndDate().isBefore(today)) {
@@ -183,7 +185,7 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
         // Cập nhật trạng thái
         contract.setStatus(ContractStatus.TERMINATED);
         contract.setTerminationReason(reason);
-        contract.setTerminatedAt(LocalDate.now());
+        contract.setTerminatedAt(LocalDate.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())));
 
         // Lưu vào database
         contract = contractRepository.save(contract);
@@ -202,7 +204,7 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
                 .orElseThrow(() -> new NotFoundException(ErrorCode.USER_NOT_FOUND));
 
         // Tìm contract hiện tại
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion()));
         return contractRepository.findActiveByEmployeeId(employeeId, today)
                 .map(contract -> contractMapper.toResponse(contract, employee))
                 .orElse(null);
@@ -227,7 +229,7 @@ public class EmploymentContractServiceImpl implements IEmploymentContractService
     @Override
     @Transactional(readOnly = true)
     public Page<ContractResponse> getExpiringContracts(int daysUntilExpiry, Pageable pageable) {
-        LocalDate today = LocalDate.now();
+        LocalDate today = LocalDate.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion()));
         LocalDate expiryDate = today.plusDays(daysUntilExpiry);
 
         Page<EmploymentContractEntity> contracts = contractRepository

@@ -12,6 +12,9 @@ import org.springframework.transaction.annotation.Transactional;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import com.tamabee.api_hr.datasource.RegionContext;
+import com.tamabee.api_hr.util.RegionUtil;
+
 /**
  * Scheduled job để archive/delete tenant databases đã inactive quá thời gian
  * retention.
@@ -51,7 +54,7 @@ public class TenantCleanupScheduler {
 
         log.info("=== BẮT ĐẦU SCHEDULED JOB: Tenant Cleanup ===");
         try {
-            LocalDateTime cutoffDate = LocalDateTime.now().minusDays(retentionDays);
+            LocalDateTime cutoffDate = LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())).minusDays(retentionDays);
             List<CompanyEntity> companiesForCleanup = companyRepository
                     .findInactiveCompaniesForCleanup(cutoffDate);
 

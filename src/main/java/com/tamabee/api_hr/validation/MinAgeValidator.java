@@ -3,6 +3,9 @@ package com.tamabee.api_hr.validation;
 import java.time.LocalDate;
 import java.time.Period;
 
+import com.tamabee.api_hr.datasource.RegionContext;
+import com.tamabee.api_hr.util.RegionUtil;
+
 import jakarta.validation.ConstraintValidator;
 import jakarta.validation.ConstraintValidatorContext;
 
@@ -26,7 +29,7 @@ public class MinAgeValidator implements ConstraintValidator<MinAge, LocalDate> {
             return true;
         }
 
-        int age = Period.between(dateOfBirth, LocalDate.now()).getYears();
+        int age = Period.between(dateOfBirth, LocalDate.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion()))).getYears();
         return age >= minAge;
     }
 }

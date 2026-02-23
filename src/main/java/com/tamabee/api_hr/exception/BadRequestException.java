@@ -135,4 +135,42 @@ public class BadRequestException extends BaseException {
     public static BadRequestException invalidFileType(String allowedTypes) {
         return new BadRequestException("Loại file không được phép. Các loại cho phép: " + allowedTypes, ErrorCode.INVALID_FILE_TYPE);
     }
+
+    /**
+     * Factory method cho lỗi chuyển trạng thái feedback không hợp lệ
+     */
+    public static BadRequestException invalidStatusTransition(String currentStatus, String newStatus) {
+        return new BadRequestException(
+                "Không thể chuyển trạng thái từ " + currentStatus + " sang " + newStatus,
+                ErrorCode.INVALID_STATUS_TRANSITION);
+    }
+
+    /**
+     * Factory method cho lỗi hết thời gian hủy upgrade
+     */
+    public static BadRequestException upgradeGracePeriodExpired() {
+        return new BadRequestException("Đã hết thời gian cho phép hủy nâng cấp", ErrorCode.UPGRADE_GRACE_PERIOD_EXPIRED);
+    }
+
+    /**
+     * Factory method cho lỗi không thể hủy upgrade
+     */
+    public static BadRequestException cannotCancelUpgrade() {
+        return new BadRequestException("Không thể hủy nâng cấp", ErrorCode.CANNOT_CANCEL_UPGRADE);
+    }
+
+    /**
+     * Factory method cho lỗi spam đổi plan
+     */
+    public static BadRequestException planChangeSpamDetected() {
+        return new BadRequestException("Bạn đã đổi gói quá 3 lần trong ngày hôm nay", ErrorCode.PLAN_CHANGE_SPAM);
+    }
+
+    /**
+     * Factory method cho lỗi region không hợp lệ
+     */
+    public static BadRequestException invalidRegion(String region) {
+        return new BadRequestException("Region không hợp lệ: " + region + ". Chỉ chấp nhận 'vi' hoặc 'ja'",
+                ErrorCode.INVALID_REGION);
+    }
 }

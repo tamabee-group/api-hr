@@ -45,9 +45,6 @@ public class UserEntity extends BaseEntity {
     private UserStatus status = UserStatus.ACTIVE;
 
     @Column(nullable = false)
-    private String locale;
-
-    @Column(nullable = false)
     private String language;
 
     // Tenant domain cho multi-tenant routing
@@ -78,34 +75,46 @@ public class UserEntity extends BaseEntity {
         int filledFields = 0;
 
         // Thông tin cơ bản (6 fields)
-        if (hasValue(profile.getName()))
+        if (hasValue(profile.getName())) {
             filledFields++;
-        if (hasValue(profile.getPhone()))
+        }
+        if (hasValue(profile.getPhone())) {
             filledFields++;
-        if (hasValue(profile.getAddress()))
+        }
+        if (hasValue(profile.getAddress())) {
             filledFields++;
-        if (hasValue(profile.getZipCode()))
+        }
+        if (hasValue(profile.getZipCode())) {
             filledFields++;
-        if (hasValue(profile.getDateOfBirth()))
+        }
+        if (hasValue(profile.getDateOfBirth())) {
             filledFields++;
-        if (hasValue(profile.getGender()))
+        }
+        if (hasValue(profile.getGender())) {
             filledFields++;
+        }
 
         // Thông tin ngân hàng (3 fields)
-        if (hasValue(profile.getBankName()))
+        if (hasValue(profile.getBankName())) {
             filledFields++;
-        if (hasValue(profile.getBankAccount()))
+        }
+        if (hasValue(profile.getBankAccount())) {
             filledFields++;
-        if (hasValue(profile.getBankAccountName()))
+        }
+        if (hasValue(profile.getBankAccountName())) {
             filledFields++;
+        }
 
         // Liên hệ khẩn cấp (3 fields - chỉ tính name, phone, relation)
-        if (hasValue(profile.getEmergencyContactName()))
+        if (hasValue(profile.getEmergencyContactName())) {
             filledFields++;
-        if (hasValue(profile.getEmergencyContactPhone()))
+        }
+        if (hasValue(profile.getEmergencyContactPhone())) {
             filledFields++;
-        if (hasValue(profile.getEmergencyContactRelation()))
+        }
+        if (hasValue(profile.getEmergencyContactRelation())) {
             filledFields++;
+        }
 
         this.profileCompleteness = (filledFields * 100) / totalFields;
     }

@@ -52,7 +52,7 @@ public class CompanyEntity extends BaseEntity {
     private String zipcode;
 
     @Column(nullable = false)
-    private String locale;
+    private String region;
 
     @Column(nullable = false)
     private String language;
@@ -81,6 +81,13 @@ public class CompanyEntity extends BaseEntity {
     // Thời điểm deactivate (dùng để tính 90 ngày retention)
     @Column(name = "deactivated_at")
     private java.time.LocalDateTime deactivatedAt;
+
+    // Scheduled plan change (downgrade có hiệu lực từ kỳ tiếp theo)
+    @Column(name = "scheduled_plan_id")
+    private Long scheduledPlanId;
+
+    @Column(name = "scheduled_plan_effective_date")
+    private java.time.LocalDate scheduledPlanEffectiveDate;
 
     // Tenant domain cho multi-tenant (ví dụ: "acme" trong acme.tamabee.vn)
     @Column(name = "tenant_domain", unique = true, nullable = false)

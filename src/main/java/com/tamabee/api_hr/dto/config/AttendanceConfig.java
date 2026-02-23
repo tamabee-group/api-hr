@@ -1,11 +1,11 @@
 package com.tamabee.api_hr.dto.config;
 
+import java.time.LocalTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalTime;
 
 /**
  * Cấu hình chấm công của công ty
@@ -59,20 +59,24 @@ public class AttendanceConfig {
     @Builder.Default
     private Integer earlyLeaveGraceMinutes = 0;
 
-    // Device & Location
-    @Builder.Default
-    private Boolean requireDeviceRegistration = false;
-
+    // Location
     @Builder.Default
     private Boolean requireGeoLocation = false;
 
     @Builder.Default
-    private Integer geoFenceRadiusMeters = 100;
+    private Integer geoFenceRadiusMeters = 500;
 
     // Cho phép chấm công
     @Builder.Default
-    private Boolean allowMobileCheckIn = true;
+    private Boolean allowWebCheckIn = true;
+
+    // Nghỉ cuối tuần & ngày lễ
+    @Builder.Default
+    private Boolean saturdayOff = true;
 
     @Builder.Default
-    private Boolean allowWebCheckIn = true;
+    private Boolean sundayOff = true;
+
+    @Builder.Default
+    private Boolean holidayOff = true;
 }

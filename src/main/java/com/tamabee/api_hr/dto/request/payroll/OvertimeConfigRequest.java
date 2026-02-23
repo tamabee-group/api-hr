@@ -21,7 +21,6 @@ import java.time.LocalTime;
 public class OvertimeConfigRequest {
 
     private Boolean enableOvertime;
-    private Boolean requireApproval;
 
     @DecimalMin("1.0")
     private BigDecimal regularOvertimeRate;

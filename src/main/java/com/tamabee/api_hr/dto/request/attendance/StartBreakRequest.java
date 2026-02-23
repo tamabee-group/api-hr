@@ -16,4 +16,12 @@ public class StartBreakRequest {
 
     // Ghi chú (tùy chọn)
     private String notes;
+
+    // Vị trí bắt đầu giải lao (nếu yêu cầu geo-location)
+    private Double latitude;
+    private Double longitude;
+
+    // Giải lao ngoài phạm vi cho phép
+    private Boolean outOfRange;
 }
+

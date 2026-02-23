@@ -9,6 +9,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tamabee.api_hr.datasource.RegionContext;
 import com.tamabee.api_hr.dto.request.wallet.RefundRequest;
 import com.tamabee.api_hr.dto.request.wallet.TransactionFilterRequest;
 import com.tamabee.api_hr.dto.response.wallet.WalletOverviewResponse;
@@ -33,6 +34,7 @@ import com.tamabee.api_hr.repository.wallet.WalletRepository;
 import com.tamabee.api_hr.repository.wallet.WalletTransactionRepository;
 import com.tamabee.api_hr.service.admin.interfaces.IWalletService;
 import com.tamabee.api_hr.service.core.interfaces.IEmailService;
+import com.tamabee.api_hr.util.RegionUtil;
 import com.tamabee.api_hr.util.SecurityUtil;
 
 import lombok.RequiredArgsConstructor;
@@ -167,8 +169,8 @@ public class WalletServiceImpl implements IWalletService {
                 walletTransactionRepository.save(transaction);
 
                 // Cập nhật nextBillingDate
-                wallet.setLastBillingDate(java.time.LocalDateTime.now());
-                wallet.setNextBillingDate(java.time.LocalDateTime.now().plusMonths(1));
+                wallet.setLastBillingDate(java.time.LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())));
+                wallet.setNextBillingDate(java.time.LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())).plusMonths(1));
                 walletRepository.save(wallet);
 
                 // Reactivate company
@@ -193,7 +195,9 @@ public class WalletServiceImpl implements IWalletService {
      * Lấy tên plan theo ngôn ngữ
      */
     private String getPlanNameByLanguage(PlanEntity plan, String language) {
-        if (plan == null) return "N/A";
+        if (plan == null) {
+            return "N/A";
+        }
         return switch (language) {
             case "vi" -> plan.getNameVi();
             case "ja" -> plan.getNameJa();
@@ -271,7 +275,7 @@ public class WalletServiceImpl implements IWalletService {
             CompanyEntity company = companyRepository.findById(wallet.getCompanyId()).orElse(null);
             String companyName = company != null ? company.getName() : "Unknown";
 
-            // Lấy plan names theo các locale
+            // Lấy plan names theo các region
             PlanEntity plan = getPlanFromCompany(company);
             String planNameVi = plan != null ? plan.getNameVi() : null;
             String planNameEn = plan != null ? plan.getNameEn() : null;
@@ -300,7 +304,10 @@ public class WalletServiceImpl implements IWalletService {
         response.setCompaniesWithLowBalance(walletRepository.countCompaniesWithLowBalance());
 
         // Số công ty đang trong thời gian miễn phí
-        response.setCompaniesInFreeTrial(walletRepository.countCompaniesInFreeTrial(LocalDateTime.now()));
+        response.setCompaniesInFreeTrial(
+                walletRepository.countCompaniesInFreeTrial(
+                        LocalDateTime.now(RegionUtil.getTimezone(
+                                RegionContext.getCurrentRegion()))));
 
         // Tổng deposits và billings
         response.setTotalDeposits(walletTransactionRepository.sumAllDeposits());

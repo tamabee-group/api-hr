@@ -41,10 +41,10 @@ public class EmployeeReferralController {
     /**
      * Lấy danh sách companies đã giới thiệu của chính mình (phân trang)
      * GET /api/employee/referrals
-     * Chỉ EMPLOYEE_TAMABEE có quyền truy cập
+     * Tất cả Tamabee roles có quyền truy cập
      */
     @GetMapping("/api/employee/referrals")
-    @PreAuthorize(RoleConstants.HAS_EMPLOYEE_TAMABEE)
+    @PreAuthorize(RoleConstants.HAS_ALL_TAMABEE_ACCESS)
     public ResponseEntity<BaseResponse<Page<ReferredCompanyResponse>>> getReferredCompanies(
             @RequestParam(defaultValue = "0") int page,
             @RequestParam(defaultValue = "20") int size,

@@ -10,6 +10,8 @@ import com.tamabee.api_hr.enums.AuditEntityType;
 import com.tamabee.api_hr.enums.ErrorCode;
 import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.repository.audit.AuditLogRepository;
+import com.tamabee.api_hr.datasource.RegionContext;
+import com.tamabee.api_hr.util.RegionUtil;
 import com.tamabee.api_hr.service.core.interfaces.IAuditLogService;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -127,7 +129,7 @@ public class AuditLogServiceImpl implements IAuditLogService {
             auditLog.setAction(action);
             auditLog.setUserId(userId);
             auditLog.setUserName(userName);
-            auditLog.setTimestamp(LocalDateTime.now());
+            auditLog.setTimestamp(LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())));
             auditLog.setDescription(description);
 
             // Serialize before/after values to JSON

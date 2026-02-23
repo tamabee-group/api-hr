@@ -1,17 +1,24 @@
 package com.tamabee.api_hr.entity.payroll;
 
+import java.math.BigDecimal;
+import java.time.LocalDateTime;
+
+import org.hibernate.annotations.JdbcTypeCode;
+import org.hibernate.type.SqlTypes;
+
 import com.tamabee.api_hr.entity.BaseEntity;
 import com.tamabee.api_hr.enums.BreakType;
 import com.tamabee.api_hr.enums.PayrollItemStatus;
 import com.tamabee.api_hr.enums.SalaryType;
-import jakarta.persistence.*;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.EnumType;
+import jakarta.persistence.Enumerated;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
 import lombok.Data;
 import lombok.EqualsAndHashCode;
-import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.type.SqlTypes;
-
-import java.math.BigDecimal;
-import java.time.LocalDateTime;
 
 /**
  * Entity lưu trữ chi tiết lương của từng nhân viên trong kỳ lương.

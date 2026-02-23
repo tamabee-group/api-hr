@@ -1,34 +1,42 @@
 package com.tamabee.api_hr.controller.core;
 
-import com.tamabee.api_hr.dto.request.wallet.CommissionFilterRequest;
-import com.tamabee.api_hr.dto.response.wallet.CommissionResponse;
-import com.tamabee.api_hr.dto.response.wallet.CommissionSummaryResponse;
-import com.tamabee.api_hr.enums.CommissionStatus;
-import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.dto.common.BaseResponse;
-import com.tamabee.api_hr.service.admin.interfaces.ICommissionService;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDateTime;
+
+import com.tamabee.api_hr.dto.response.CommissionSettingsResponse;
+import com.tamabee.api_hr.service.admin.interfaces.ISettingService;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.dto.request.wallet.CommissionFilterRequest;
+import com.tamabee.api_hr.dto.response.wallet.CommissionResponse;
+import com.tamabee.api_hr.dto.response.wallet.CommissionSummaryResponse;
+import com.tamabee.api_hr.enums.CommissionStatus;
+import com.tamabee.api_hr.enums.RoleConstants;
+import com.tamabee.api_hr.service.admin.interfaces.ICommissionService;
+
+import lombok.RequiredArgsConstructor;
 
 /**
  * Controller quản lý hoa hồng cho nhân viên Tamabee
- * EMPLOYEE_TAMABEE có quyền xem commission của mình
+ * Tất cả role Tamabee có quyền xem commission và referral code của mình
  */
 @RestController
 @RequestMapping("/api/employee/commissions")
 @RequiredArgsConstructor
-@PreAuthorize(RoleConstants.HAS_EMPLOYEE_TAMABEE)
+@PreAuthorize(RoleConstants.HAS_ALL_TAMABEE_ACCESS)
 public class EmployeeCommissionController {
 
     private final ICommissionService commissionService;
+    private final ISettingService settingService;
 
     /**
      * Lấy danh sách commissions của nhân viên hiện tại (phân trang)
@@ -75,5 +83,19 @@ public class EmployeeCommissionController {
     public ResponseEntity<BaseResponse<CommissionSummaryResponse>> getMySummary() {
         CommissionSummaryResponse summary = commissionService.getMySummary();
         return ResponseEntity.ok(BaseResponse.success(summary));
+    }
+
+    /**
+     * Lấy thông tin cấu hình hoa hồng (số tiền, điều kiện...)
+     * GET /api/employee/commissions/settings
+     */
+    @GetMapping("/settings")
+    public ResponseEntity<BaseResponse<CommissionSettingsResponse>> getSettings() {
+        CommissionSettingsResponse settings = CommissionSettingsResponse.builder()
+                .commissionAmount(settingService.getCommissionAmount())
+                .referralBonusMonths(settingService.getReferralBonusMonths())
+                .freeTrialMonths(settingService.getFreeTrialMonths())
+                .build();
+        return ResponseEntity.ok(BaseResponse.success(settings));
     }
 }

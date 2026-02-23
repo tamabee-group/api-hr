@@ -1,12 +1,13 @@
 package com.tamabee.api_hr.mapper.company;
 
+import java.math.BigDecimal;
+import java.time.LocalTime;
+
+import org.springframework.stereotype.Component;
+
 import com.tamabee.api_hr.dto.config.OvertimeConfig;
 import com.tamabee.api_hr.dto.request.payroll.OvertimeConfigRequest;
 import com.tamabee.api_hr.dto.response.payroll.OvertimeConfigResponse;
-import org.springframework.stereotype.Component;
-
-import java.math.BigDecimal;
-import java.time.LocalTime;
 
 /**
  * Mapper chuyển đổi giữa OvertimeConfig và DTOs
@@ -24,7 +25,6 @@ public class OvertimeConfigMapper {
 
         return OvertimeConfigResponse.builder()
                 .overtimeEnabled(config.getOvertimeEnabled())
-                .requireApproval(config.getRequireApproval())
                 .standardWorkingHours(config.getStandardWorkingHours())
                 .nightStartTime(config.getNightStartTime())
                 .nightEndTime(config.getNightEndTime())
@@ -35,7 +35,7 @@ public class OvertimeConfigMapper {
                 .holidayNightOvertimeRate(config.getHolidayNightOvertimeRate())
                 .weekendOvertimeRate(config.getWeekendOvertimeRate())
                 .useLegalMinimum(config.getUseLegalMinimum())
-                .locale(config.getLocale())
+                .region(config.getRegion())
                 .maxOvertimeHoursPerDay(config.getMaxOvertimeHoursPerDay())
                 .maxOvertimeHoursPerMonth(config.getMaxOvertimeHoursPerMonth())
                 .build();
@@ -51,7 +51,6 @@ public class OvertimeConfigMapper {
 
         return OvertimeConfig.builder()
                 .overtimeEnabled(request.getEnableOvertime() != null ? request.getEnableOvertime() : true)
-                .requireApproval(request.getRequireApproval() != null ? request.getRequireApproval() : false)
                 .nightStartTime(request.getNightStartTime() != null ? request.getNightStartTime() : LocalTime.of(22, 0))
                 .nightEndTime(request.getNightEndTime() != null ? request.getNightEndTime() : LocalTime.of(5, 0))
                 .regularOvertimeRate(request.getRegularOvertimeRate() != null ? request.getRegularOvertimeRate()
@@ -79,9 +78,6 @@ public class OvertimeConfigMapper {
 
         if (request.getEnableOvertime() != null) {
             config.setOvertimeEnabled(request.getEnableOvertime());
-        }
-        if (request.getRequireApproval() != null) {
-            config.setRequireApproval(request.getRequireApproval());
         }
         if (request.getRegularOvertimeRate() != null) {
             config.setRegularOvertimeRate(request.getRegularOvertimeRate());

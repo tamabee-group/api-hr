@@ -1,12 +1,16 @@
 package com.tamabee.api_hr.entity.attendance;
 
-import com.tamabee.api_hr.entity.BaseEntity;
-import jakarta.persistence.*;
-import lombok.Data;
-import lombok.EqualsAndHashCode;
-
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+
+import com.tamabee.api_hr.entity.BaseEntity;
+
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Index;
+import jakarta.persistence.Table;
+import lombok.Data;
+import lombok.EqualsAndHashCode;
 
 /**
  * Entity lưu trữ bản ghi giờ giải lao của nhân viên.
@@ -55,4 +59,17 @@ public class BreakRecordEntity extends BaseEntity {
     // Ghi chú
     @Column(length = 500)
     private String notes;
+
+    // === Location info ===
+    // Vị trí bắt đầu giải lao
+    private Double breakStartLatitude;
+    private Double breakStartLongitude;
+
+    // Vị trí kết thúc giải lao
+    private Double breakEndLatitude;
+    private Double breakEndLongitude;
+
+    // Giải lao ngoài phạm vi
+    private Boolean breakStartOutOfRange;
+    private Boolean breakEndOutOfRange;
 }

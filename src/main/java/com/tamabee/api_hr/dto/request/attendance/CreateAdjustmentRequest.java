@@ -1,5 +1,12 @@
 package com.tamabee.api_hr.dto.request.attendance;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.util.List;
+
+import com.tamabee.api_hr.enums.AdjustmentRequestType;
+
+import jakarta.validation.Valid;
 import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import jakarta.validation.constraints.Size;
@@ -8,12 +15,9 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-
 /**
  * Request tạo yêu cầu điều chỉnh chấm công.
- * Nhân viên có thể yêu cầu thay đổi giờ check-in, check-out hoặc cả hai.
+ * Nhân viên có thể yêu cầu thay đổi giờ check-in, check-out và nhiều break records.
  * Hỗ trợ cả trường hợp có và không có attendance record.
  */
 @Data
@@ -21,6 +25,12 @@ import java.time.LocalDateTime;
 @NoArgsConstructor
 @AllArgsConstructor
 public class CreateAdjustmentRequest {
+
+    /**
+     * Loại yêu cầu: ADJUST, DELETE_RECORD
+     * Mặc định là ADJUST nếu không truyền
+     */
+    private AdjustmentRequestType requestType;
 
     /**
      * ID bản ghi chấm công cần điều chỉnh (optional - có thể null khi tạo mới)
@@ -43,19 +53,11 @@ public class CreateAdjustmentRequest {
     private LocalDateTime requestedCheckOut;
 
     /**
-     * ID của break record cần điều chỉnh (bắt buộc khi điều chỉnh break)
+     * Danh sách các break items cần điều chỉnh/xóa
+     * Mỗi item chứa breakRecordId, actionType (ADJUST/DELETE), và thời gian yêu cầu
      */
-    private Long breakRecordId;
-
-    /**
-     * Giờ break-in yêu cầu (null nếu không thay đổi)
-     */
-    private LocalDateTime requestedBreakStart;
-
-    /**
-     * Giờ break-out yêu cầu (null nếu không thay đổi)
-     */
-    private LocalDateTime requestedBreakEnd;
+    @Valid
+    private List<BreakAdjustmentItem> breakItems;
 
     /**
      * Lý do yêu cầu điều chỉnh

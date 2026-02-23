@@ -21,6 +21,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.dto.request.leave.UpdateLeaveBalanceRequest;
 import com.tamabee.api_hr.dto.request.user.CreateCompanyEmployeeRequest;
 import com.tamabee.api_hr.dto.request.user.UpdateUserProfileRequest;
 import com.tamabee.api_hr.dto.response.attendance.AttendanceRecordResponse;
@@ -148,6 +149,18 @@ public class CompanyEmployeeController {
     }
 
     /**
+     * Lấy chi tiết chấm công của nhân viên theo ngày
+     * GET /api/company/employees/{id}/attendance/date/{date}
+     */
+    @GetMapping("/{id}/attendance/date/{date}")
+    public ResponseEntity<BaseResponse<AttendanceRecordResponse>> getEmployeeAttendanceByDate(
+            @PathVariable Long id,
+            @PathVariable @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) java.time.LocalDate date) {
+        AttendanceRecordResponse record = attendanceService.getAttendanceByEmployeeAndDate(id, date);
+        return ResponseEntity.ok(BaseResponse.success(record, "Lấy thông tin chấm công thành công"));
+    }
+
+    /**
      * Lấy danh sách người có quyền duyệt (admin và manager)
      * Cho phép tất cả nhân viên công ty truy cập để chọn người duyệt khi tạo yêu
      * cầu
@@ -177,8 +190,9 @@ public class CompanyEmployeeController {
     @GetMapping("/{id}/payroll")
     public ResponseEntity<BaseResponse<Page<PayrollItemResponse>>> getEmployeePayrollHistory(
             @PathVariable Long id,
+            @RequestParam(required = false) String status,
             Pageable pageable) {
-        Page<PayrollItemResponse> payrollHistory = payrollPeriodService.getEmployeePayslips(id, pageable);
+        Page<PayrollItemResponse> payrollHistory = payrollPeriodService.getEmployeePayslips(id, status, pageable);
         return ResponseEntity.ok(BaseResponse.success(payrollHistory, "Lấy lịch sử bảng lương thành công"));
     }
 
@@ -284,6 +298,18 @@ public class CompanyEmployeeController {
         Integer effectiveYear = year != null ? year : java.time.Year.now().getValue();
         List<LeaveBalanceResponse> leaveBalance = leaveService.getLeaveBalance(id, effectiveYear);
         return ResponseEntity.ok(BaseResponse.success(leaveBalance, "Lấy số ngày phép còn lại thành công"));
+    }
+
+    /**
+     * Cập nhật số ngày phép cho nhân viên
+     * PUT /api/company/employees/{id}/leave-balance
+     */
+    @PutMapping("/{id}/leave-balance")
+    public ResponseEntity<BaseResponse<LeaveBalanceResponse>> updateEmployeeLeaveBalance(
+            @PathVariable Long id,
+            @Valid @RequestBody UpdateLeaveBalanceRequest request) {
+        LeaveBalanceResponse leaveBalance = leaveService.updateEmployeeLeaveBalance(id, request);
+        return ResponseEntity.ok(BaseResponse.success(leaveBalance, "Cập nhật số ngày phép thành công"));
     }
 
     /**

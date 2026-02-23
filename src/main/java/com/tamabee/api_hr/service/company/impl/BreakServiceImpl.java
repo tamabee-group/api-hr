@@ -1,7 +1,19 @@
 package com.tamabee.api_hr.service.company.impl;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.ZoneId;
+import java.time.temporal.ChronoUnit;
+import java.util.List;
+import java.util.Optional;
+import java.util.stream.Collectors;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
+import com.tamabee.api_hr.datasource.RegionContext;
 import com.tamabee.api_hr.dto.config.BreakConfig;
-import com.tamabee.api_hr.dto.config.BreakPeriod;
+import com.tamabee.api_hr.dto.request.attendance.EndBreakRequest;
 import com.tamabee.api_hr.dto.request.attendance.StartBreakRequest;
 import com.tamabee.api_hr.dto.response.attendance.BreakRecordResponse;
 import com.tamabee.api_hr.dto.response.attendance.BreakSummaryResponse;
@@ -13,25 +25,16 @@ import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.repository.attendance.AttendanceRecordRepository;
 import com.tamabee.api_hr.repository.attendance.BreakRecordRepository;
 import com.tamabee.api_hr.repository.user.UserRepository;
-import com.tamabee.api_hr.service.calculator.interfaces.IBreakCalculator;
-import com.tamabee.api_hr.service.calculator.LegalBreakRequirements;
 import com.tamabee.api_hr.service.company.interfaces.IBreakService;
 import com.tamabee.api_hr.service.company.interfaces.ICompanySettingsService;
+import com.tamabee.api_hr.util.RegionUtil;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.util.List;
-import java.util.Optional;
-import java.util.stream.Collectors;
 
 /**
- * Service implementation quản lý giờ giải lao.
- * Hỗ trợ ghi nhận break start/end, validation, và tính toán legal minimum.
+ * Service quản lý giờ giải lao.
+ * Logic đơn giản: khi chấm giải lao, thời gian đó bị trừ khỏi giờ làm việc, không tính lương.
  */
 @Slf4j
 @Service
@@ -42,18 +45,16 @@ public class BreakServiceImpl implements IBreakService {
     private final AttendanceRecordRepository attendanceRecordRepository;
     private final UserRepository userRepository;
     private final ICompanySettingsService companySettingsService;
-    private final IBreakCalculator breakCalculator;
-    private final LegalBreakRequirements legalBreakRequirements;
 
     // ==================== Break Recording ====================
 
     @Override
     @Transactional
     public BreakRecordResponse startBreak(Long employeeId, StartBreakRequest request) {
-        LocalDate today = LocalDate.now();
-        LocalDateTime now = LocalDateTime.now();
+        ZoneId zone = RegionUtil.getTimezone(RegionContext.getCurrentRegion());
+        LocalDate today = LocalDate.now(zone);
+        LocalDateTime now = LocalDateTime.now(zone);
 
-        // Lấy cấu hình break
         BreakConfig config = companySettingsService.getBreakConfig();
 
         // Kiểm tra break có được bật không
@@ -61,19 +62,7 @@ public class BreakServiceImpl implements IBreakService {
             throw new BadRequestException("Giờ giải lao không được bật cho công ty này", ErrorCode.INVALID_CONFIG);
         }
 
-        // Kiểm tra fixed break mode - không cần tracking
-        if (Boolean.TRUE.equals(config.getFixedBreakMode())) {
-            throw new BadRequestException("Công ty sử dụng fixed break mode, không cần ghi nhận giờ giải lao",
-                    ErrorCode.INVALID_CONFIG);
-        }
-
-        // Kiểm tra break tracking có được bật không
-        if (!Boolean.TRUE.equals(config.getBreakTrackingEnabled())) {
-            throw new BadRequestException("Tracking giờ giải lao không được bật", ErrorCode.INVALID_CONFIG);
-        }
-
         // Tìm bản ghi chấm công hôm nay
-        // AttendanceRecord không có soft delete
         AttendanceRecordEntity attendance = attendanceRecordRepository
                 .findByEmployeeIdAndWorkDate(employeeId, today)
                 .orElseThrow(() -> new BadRequestException("Chưa check-in, không thể bắt đầu giải lao",
@@ -85,7 +74,7 @@ public class BreakServiceImpl implements IBreakService {
                     ErrorCode.ALREADY_CHECKED_OUT);
         }
 
-        // Kiểm tra có break đang active không (breakEnd is null)
+        // Kiểm tra có break đang active không
         Optional<BreakRecordEntity> activeBreak = breakRecordRepository
                 .findActiveBreakByEmployeeIdAndWorkDate(employeeId, today);
         if (activeBreak.isPresent()) {
@@ -93,10 +82,7 @@ public class BreakServiceImpl implements IBreakService {
         }
 
         // Kiểm tra số lần break đã đạt giới hạn chưa
-        // BreakRecord không có soft delete
-        int maxBreaksPerDay = config.getMaxBreaksPerDay() != null
-                ? config.getMaxBreaksPerDay()
-                : 3;
+        int maxBreaksPerDay = config.getMaxBreaksPerDay() != null ? config.getMaxBreaksPerDay() : 3;
         long currentBreakCount = breakRecordRepository.countByAttendanceRecordId(attendance.getId());
         if (currentBreakCount >= maxBreaksPerDay) {
             throw new BadRequestException("Đã đạt số lần giải lao tối đa trong ngày", ErrorCode.MAX_BREAKS_REACHED);
@@ -105,7 +91,7 @@ public class BreakServiceImpl implements IBreakService {
         // Kiểm tra break mới không overlap với các completed breaks
         validateNoOverlappingBreaks(attendance.getId(), now);
 
-        // Lấy breakNumber tiếp theo = max + 1
+        // Lấy breakNumber tiếp theo
         Integer maxBreakNumber = breakRecordRepository.findMaxBreakNumberByAttendanceRecordId(attendance.getId());
         int nextBreakNumber = (maxBreakNumber != null ? maxBreakNumber : 0) + 1;
 
@@ -118,6 +104,11 @@ public class BreakServiceImpl implements IBreakService {
         breakRecord.setBreakNumber(nextBreakNumber);
         breakRecord.setNotes(request != null ? request.getNotes() : null);
 
+        if (request != null) {
+            breakRecord.setBreakStartLatitude(request.getLatitude());
+            breakRecord.setBreakStartLongitude(request.getLongitude());
+        }
+
         breakRecord = breakRecordRepository.save(breakRecord);
         log.info("Nhân viên {} bắt đầu giải lao #{} lúc {}", employeeId, nextBreakNumber, now);
 
@@ -126,52 +117,42 @@ public class BreakServiceImpl implements IBreakService {
 
     @Override
     @Transactional
-    public BreakRecordResponse endBreak(Long employeeId, Long breakRecordId) {
-        LocalDateTime now = LocalDateTime.now();
+    public BreakRecordResponse endBreak(Long employeeId, Long breakRecordId, EndBreakRequest request) {
+        LocalDateTime now = LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion()));
 
-        // Tìm bản ghi break
-        // BreakRecord không có soft delete
         BreakRecordEntity breakRecord = breakRecordRepository.findById(breakRecordId)
                 .orElseThrow(() -> new NotFoundException("Không tìm thấy bản ghi giải lao", ErrorCode.NOT_FOUND));
 
-        // Kiểm tra quyền sở hữu
         if (!breakRecord.getEmployeeId().equals(employeeId)) {
             throw new BadRequestException("Không có quyền kết thúc giờ giải lao này", ErrorCode.ACCESS_DENIED);
         }
 
-        // Kiểm tra đã kết thúc chưa
         if (breakRecord.getBreakEnd() != null) {
             throw new BadRequestException("Giờ giải lao đã kết thúc", ErrorCode.BAD_REQUEST);
         }
 
-        // Kiểm tra break start có tồn tại không
         if (breakRecord.getBreakStart() == null) {
             throw new BadRequestException("Giờ giải lao chưa bắt đầu", ErrorCode.BAD_REQUEST);
         }
 
-        // Lấy cấu hình break
-        BreakConfig config = companySettingsService.getBreakConfig();
-
         // Cập nhật thời gian kết thúc
         breakRecord.setBreakEnd(now);
 
-        // Tính thời gian giải lao thực tế
-        int actualMinutes = breakCalculator.calculateBreakMinutes(breakRecord.getBreakStart(), now);
+        // Tính thời gian giải lao thực tế (phút)
+        int actualMinutes = (int) ChronoUnit.MINUTES.between(breakRecord.getBreakStart(), now);
         breakRecord.setActualBreakMinutes(actualMinutes);
+        // Effective = actual (đơn giản, không capping)
+        breakRecord.setEffectiveBreakMinutes(actualMinutes);
 
-        // Kiểm tra night shift
-        boolean isNightShift = isNightShiftBreak(breakRecord.getBreakStart(), config);
-
-        // Tính thời gian giải lao hiệu lực (sau khi áp dụng min/max)
-        int workingHours = 8; // Mặc định 8 giờ, có thể tính từ attendance record
-        int effectiveMinutes = breakCalculator.calculateEffectiveBreakMinutes(
-                actualMinutes, config, workingHours, isNightShift);
-        breakRecord.setEffectiveBreakMinutes(effectiveMinutes);
+        if (request != null) {
+            breakRecord.setBreakEndLatitude(request.getLatitude());
+            breakRecord.setBreakEndLongitude(request.getLongitude());
+        }
 
         breakRecord = breakRecordRepository.save(breakRecord);
 
-        // Cập nhật attendance record
-        updateAttendanceBreakInfo(breakRecord.getAttendanceRecordId(), config);
+        // Cập nhật tổng break trong attendance record
+        updateAttendanceBreakInfo(breakRecord.getAttendanceRecordId());
 
         log.info("Nhân viên {} kết thúc giải lao lúc {}, thời gian: {} phút",
                 employeeId, now, actualMinutes);
@@ -184,7 +165,6 @@ public class BreakServiceImpl implements IBreakService {
     @Override
     @Transactional(readOnly = true)
     public List<BreakRecordResponse> getBreakRecordsByAttendance(Long attendanceRecordId) {
-        // BreakRecord không có soft delete
         List<BreakRecordEntity> records = breakRecordRepository
                 .findByAttendanceRecordId(attendanceRecordId);
 
@@ -196,52 +176,14 @@ public class BreakServiceImpl implements IBreakService {
     @Override
     @Transactional(readOnly = true)
     public BreakSummaryResponse getBreakSummary(Long employeeId, LocalDate date) {
-        // BreakRecord không có soft delete
         List<BreakRecordEntity> records = breakRecordRepository
                 .findByEmployeeIdAndWorkDate(employeeId, date);
 
-        // Lấy thông tin nhân viên
         String employeeName = getEmployeeName(employeeId);
 
-        // Lấy attendance record
-        // AttendanceRecord không có soft delete
-        AttendanceRecordEntity attendance = attendanceRecordRepository
-                .findByEmployeeIdAndWorkDate(employeeId, date)
-                .orElse(null);
-
-        if (attendance == null) {
-            return BreakSummaryResponse.builder()
-                    .employeeId(employeeId)
-                    .employeeName(employeeName)
-                    .workDate(date)
-                    .totalActualBreakMinutes(0)
-                    .totalEffectiveBreakMinutes(0)
-                    .breakCount(0)
-                    .breakCompliant(true)
-                    .breakRecords(List.of())
-                    .build();
-        }
-
-        // Lấy cấu hình break
-        BreakConfig config = companySettingsService.getBreakConfig();
-
-        // Tính tổng thời gian giải lao
-        int totalActual = records.stream()
+        int totalMinutes = records.stream()
                 .mapToInt(r -> r.getActualBreakMinutes() != null ? r.getActualBreakMinutes() : 0)
                 .sum();
-
-        int totalEffective = records.stream()
-                .mapToInt(r -> r.getEffectiveBreakMinutes() != null ? r.getEffectiveBreakMinutes() : 0)
-                .sum();
-
-        // Tính minimum break required
-        int workingHours = attendance.getWorkingMinutes() != null
-                ? attendance.getWorkingMinutes() / 60
-                : 8;
-        int minimumRequired = getEffectiveMinimumBreak(workingHours);
-
-        // Kiểm tra compliance
-        boolean compliant = totalEffective >= minimumRequired;
 
         List<BreakRecordResponse> breakResponses = records.stream()
                 .map(this::toResponse)
@@ -251,30 +193,53 @@ public class BreakServiceImpl implements IBreakService {
                 .employeeId(employeeId)
                 .employeeName(employeeName)
                 .workDate(date)
-                .totalActualBreakMinutes(totalActual)
-                .totalEffectiveBreakMinutes(totalEffective)
+                .totalActualBreakMinutes(totalMinutes)
+                .totalEffectiveBreakMinutes(totalMinutes)
                 .breakCount(records.size())
-                .breakType(config.getBreakType())
-                .breakCompliant(compliant)
-                .minimumBreakRequired(minimumRequired)
                 .breakRecords(breakResponses)
                 .build();
     }
 
     // ==================== Validation ====================
 
-    /**
-     * Kiểm tra thời gian break mới không overlap với các completed breaks.
-     * Một break được coi là overlap nếu thời gian bắt đầu nằm trong khoảng
-     * [breakStart, breakEnd] của break khác.
-     */
+    @Override
+    public void validateBreakDuration(Integer breakMinutes) {
+        if (breakMinutes == null || breakMinutes < 0) {
+            throw new BadRequestException("Thời gian giải lao không hợp lệ", ErrorCode.BAD_REQUEST);
+        }
+    }
+
+    @Override
+    public Integer getLegalMinimumBreak(String region, Integer workingHours) {
+        return 0; // Không còn dùng legal minimum
+    }
+
+    @Override
+    public Integer getEffectiveMinimumBreak(Integer workingHours) {
+        return 0; // Không còn dùng minimum break
+    }
+
+    // ==================== Calculation ====================
+
+    @Override
+    @Transactional(readOnly = true)
+    public Integer calculateTotalBreakMinutes(Long attendanceRecordId) {
+        List<BreakRecordEntity> breaks = breakRecordRepository
+                .findByAttendanceRecordId(attendanceRecordId);
+
+        return breaks.stream()
+                .mapToInt(b -> b.getActualBreakMinutes() != null ? b.getActualBreakMinutes() : 0)
+                .sum();
+    }
+
+    // ==================== Private Helper Methods ====================
+
     private void validateNoOverlappingBreaks(Long attendanceRecordId, LocalDateTime newBreakStart) {
         List<BreakRecordEntity> completedBreaks = breakRecordRepository
                 .findCompletedBreaksByAttendanceRecordId(attendanceRecordId);
 
         for (BreakRecordEntity existingBreak : completedBreaks) {
             if (existingBreak.getBreakStart() != null && existingBreak.getBreakEnd() != null) {
-                // Check if newBreakStart falls within existing break period
                 if (!newBreakStart.isBefore(existingBreak.getBreakStart())
                         && !newBreakStart.isAfter(existingBreak.getBreakEnd())) {
                     throw new BadRequestException(
@@ -285,182 +250,11 @@ public class BreakServiceImpl implements IBreakService {
         }
     }
 
-    @Override
-    public void validateBreakDuration(Integer breakMinutes) {
-        if (breakMinutes == null || breakMinutes < 0) {
-            throw new BadRequestException("Thời gian giải lao không hợp lệ", ErrorCode.BAD_REQUEST);
-        }
-
-        BreakConfig config = companySettingsService.getBreakConfig();
-
-        // Kiểm tra minimum
-        if (config.getMinimumBreakMinutes() != null && breakMinutes < config.getMinimumBreakMinutes()) {
-            throw new BadRequestException("Thời gian giải lao dưới mức tối thiểu", ErrorCode.BAD_REQUEST);
-        }
-
-        // Kiểm tra maximum
-        if (config.getMaximumBreakMinutes() != null && breakMinutes > config.getMaximumBreakMinutes()) {
-            throw new BadRequestException("Thời gian giải lao vượt quá mức tối đa", ErrorCode.BAD_REQUEST);
-        }
-    }
-
-    @Override
-    public Integer getLegalMinimumBreak(String locale, Integer workingHours) {
-        if (workingHours == null || workingHours <= 0) {
-            return 0;
-        }
-        return legalBreakRequirements.getMinimumBreak(locale, workingHours, false);
-    }
-
-    @Override
-    public Integer getEffectiveMinimumBreak(Integer workingHours) {
-        if (workingHours == null || workingHours <= 0) {
-            return 0;
-        }
-
-        BreakConfig config = companySettingsService.getBreakConfig();
-
-        // Lấy legal minimum
-        int legalMinimum = legalBreakRequirements.getMinimumBreak(
-                config.getLocale(), workingHours, false);
-
-        // Nếu sử dụng legal minimum
-        if (Boolean.TRUE.equals(config.getUseLegalMinimum())) {
-            // Trả về max của legal và company config
-            int companyMinimum = config.getMinimumBreakMinutes() != null
-                    ? config.getMinimumBreakMinutes()
-                    : 0;
-            return Math.max(legalMinimum, companyMinimum);
-        }
-
-        // Nếu không sử dụng legal minimum, trả về company config
-        return config.getMinimumBreakMinutes() != null ? config.getMinimumBreakMinutes() : 0;
-    }
-
-    // ==================== Calculation ====================
-
-    @Override
-    @Transactional(readOnly = true)
-    public Integer calculateTotalBreakMinutes(Long attendanceRecordId) {
-        // BreakRecord không có soft delete
-        List<BreakRecordEntity> breaks = breakRecordRepository
-                .findByAttendanceRecordId(attendanceRecordId);
-
-        return breaks.stream()
-                .mapToInt(b -> b.getActualBreakMinutes() != null ? b.getActualBreakMinutes() : 0)
-                .sum();
-    }
-
-    // ==================== Fixed Break Mode ====================
-
     /**
-     * Tự động tạo break records cho fixed break mode.
-     * Được gọi khi check-out hoặc khi tính payroll.
+     * Cập nhật tổng break trong attendance record.
+     * Thời gian giải lao luôn bị trừ khỏi giờ làm việc.
      */
-    @Transactional
-    public void autoCreateFixedBreakRecords(Long attendanceRecordId) {
-        // AttendanceRecord không có soft delete
-        AttendanceRecordEntity attendance = attendanceRecordRepository.findById(attendanceRecordId)
-                .orElseThrow(() -> new NotFoundException("Không tìm thấy bản ghi chấm công",
-                        ErrorCode.ATTENDANCE_RECORD_NOT_FOUND));
-
-        BreakConfig config = companySettingsService.getBreakConfig();
-
-        // Chỉ áp dụng cho fixed break mode
-        if (!Boolean.TRUE.equals(config.getFixedBreakMode())) {
-            return;
-        }
-
-        // Kiểm tra đã có break records chưa
-        // BreakRecord không có soft delete
-        List<BreakRecordEntity> existingBreaks = breakRecordRepository
-                .findByAttendanceRecordId(attendanceRecordId);
-        if (!existingBreaks.isEmpty()) {
-            return; // Đã có break records
-        }
-
-        // Tạo break records từ fixed break periods
-        List<BreakPeriod> fixedPeriods = config.getFixedBreakPeriods();
-        if (fixedPeriods == null || fixedPeriods.isEmpty()) {
-            // Sử dụng default break
-            createDefaultFixedBreakRecord(attendance, config);
-        } else {
-            // Tạo từ configured periods
-            for (BreakPeriod period : fixedPeriods) {
-                createFixedBreakRecord(attendance, period, config);
-            }
-        }
-
-        // Cập nhật attendance record
-        updateAttendanceBreakInfo(attendanceRecordId, config);
-    }
-
-    // ==================== Private Helper Methods ====================
-
-    /**
-     * Tạo break record mặc định cho fixed break mode
-     */
-    private void createDefaultFixedBreakRecord(AttendanceRecordEntity attendance, BreakConfig config) {
-        int defaultMinutes = config.getDefaultBreakMinutes() != null
-                ? config.getDefaultBreakMinutes()
-                : 60;
-
-        // Lấy breakNumber tiếp theo
-        Integer maxBreakNumber = breakRecordRepository.findMaxBreakNumberByAttendanceRecordId(attendance.getId());
-        int nextBreakNumber = (maxBreakNumber != null ? maxBreakNumber : 0) + 1;
-
-        BreakRecordEntity breakRecord = new BreakRecordEntity();
-        breakRecord.setAttendanceRecordId(attendance.getId());
-        breakRecord.setEmployeeId(attendance.getEmployeeId());
-        breakRecord.setWorkDate(attendance.getWorkDate());
-        breakRecord.setBreakNumber(nextBreakNumber);
-        breakRecord.setActualBreakMinutes(defaultMinutes);
-        breakRecord.setEffectiveBreakMinutes(defaultMinutes);
-        breakRecord.setNotes("Auto-created (fixed break mode)");
-
-        breakRecordRepository.save(breakRecord);
-    }
-
-    /**
-     * Tạo break record từ fixed break period
-     */
-    private void createFixedBreakRecord(AttendanceRecordEntity attendance, BreakPeriod period, BreakConfig config) {
-        LocalDate workDate = attendance.getWorkDate();
-
-        LocalDateTime breakStart = period.getStartTime() != null
-                ? LocalDateTime.of(workDate, period.getStartTime())
-                : null;
-        LocalDateTime breakEnd = period.getEndTime() != null
-                ? LocalDateTime.of(workDate, period.getEndTime())
-                : null;
-
-        int durationMinutes = period.getDurationMinutes() != null
-                ? period.getDurationMinutes()
-                : 60;
-
-        // Lấy breakNumber tiếp theo
-        Integer maxBreakNumber = breakRecordRepository.findMaxBreakNumberByAttendanceRecordId(attendance.getId());
-        int nextBreakNumber = (maxBreakNumber != null ? maxBreakNumber : 0) + 1;
-
-        BreakRecordEntity breakRecord = new BreakRecordEntity();
-        breakRecord.setAttendanceRecordId(attendance.getId());
-        breakRecord.setEmployeeId(attendance.getEmployeeId());
-        breakRecord.setWorkDate(workDate);
-        breakRecord.setBreakNumber(nextBreakNumber);
-        breakRecord.setBreakStart(breakStart);
-        breakRecord.setBreakEnd(breakEnd);
-        breakRecord.setActualBreakMinutes(durationMinutes);
-        breakRecord.setEffectiveBreakMinutes(durationMinutes);
-        breakRecord.setNotes("Auto-created: " + (period.getName() != null ? period.getName() : "Fixed break"));
-
-        breakRecordRepository.save(breakRecord);
-    }
-
-    /**
-     * Cập nhật thông tin break trong attendance record
-     */
-    private void updateAttendanceBreakInfo(Long attendanceRecordId, BreakConfig config) {
-        // AttendanceRecord không có soft delete
+    private void updateAttendanceBreakInfo(Long attendanceRecordId) {
         AttendanceRecordEntity attendance = attendanceRecordRepository.findById(attendanceRecordId)
                 .orElse(null);
 
@@ -468,69 +262,26 @@ public class BreakServiceImpl implements IBreakService {
             return;
         }
 
-        // BreakRecord không có soft delete
         List<BreakRecordEntity> breaks = breakRecordRepository
                 .findByAttendanceRecordId(attendanceRecordId);
 
-        // Tính tổng break
         int totalBreak = breaks.stream()
                 .mapToInt(b -> b.getActualBreakMinutes() != null ? b.getActualBreakMinutes() : 0)
                 .sum();
 
-        int effectiveBreak = breaks.stream()
-                .mapToInt(b -> b.getEffectiveBreakMinutes() != null ? b.getEffectiveBreakMinutes() : 0)
-                .sum();
-
         attendance.setTotalBreakMinutes(totalBreak);
-        attendance.setEffectiveBreakMinutes(effectiveBreak);
-        attendance.setBreakType(config.getBreakType());
-
-        // Tính working hours từ attendance record
-        int workingHours = attendance.getWorkingMinutes() != null
-                ? attendance.getWorkingMinutes() / 60
-                : 8;
-        int minimumRequired = getEffectiveMinimumBreak(workingHours);
-        attendance.setBreakCompliant(effectiveBreak >= minimumRequired);
+        attendance.setEffectiveBreakMinutes(totalBreak);
+        attendance.setBreakCompliant(true);
 
         attendanceRecordRepository.save(attendance);
     }
 
-    /**
-     * Kiểm tra break có nằm trong night shift không
-     */
-    private boolean isNightShiftBreak(LocalDateTime breakStart, BreakConfig config) {
-        if (breakStart == null) {
-            return false;
-        }
-
-        LocalTime breakTime = breakStart.toLocalTime();
-        LocalTime nightStart = config.getNightShiftStartTime() != null
-                ? config.getNightShiftStartTime()
-                : LocalTime.of(22, 0);
-        LocalTime nightEnd = config.getNightShiftEndTime() != null
-                ? config.getNightShiftEndTime()
-                : LocalTime.of(5, 0);
-
-        // Night shift spans midnight
-        if (nightStart.isAfter(nightEnd)) {
-            return breakTime.isAfter(nightStart) || breakTime.isBefore(nightEnd);
-        }
-
-        return breakTime.isAfter(nightStart) && breakTime.isBefore(nightEnd);
-    }
-
-    /**
-     * Lấy tên nhân viên
-     */
     private String getEmployeeName(Long employeeId) {
-        return userRepository.findById(employeeId)
+        return userRepository.findWithProfileByIdAndDeletedFalse(employeeId)
                 .map(user -> user.getProfile() != null ? user.getProfile().getName() : user.getEmail())
                 .orElse("Unknown");
     }
 
-    /**
-     * Chuyển entity thành response
-     */
     private BreakRecordResponse toResponse(BreakRecordEntity entity) {
         return BreakRecordResponse.builder()
                 .id(entity.getId())
@@ -541,6 +292,10 @@ public class BreakServiceImpl implements IBreakService {
                 .effectiveBreakMinutes(entity.getEffectiveBreakMinutes())
                 .notes(entity.getNotes())
                 .isActive(entity.getBreakEnd() == null)
+                .breakStartLatitude(entity.getBreakStartLatitude())
+                .breakStartLongitude(entity.getBreakStartLongitude())
+                .breakEndLatitude(entity.getBreakEndLatitude())
+                .breakEndLongitude(entity.getBreakEndLongitude())
                 .build();
     }
 }

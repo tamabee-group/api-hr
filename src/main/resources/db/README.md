@@ -12,7 +12,6 @@ PostgreSQL Server
 │   ├── companies
 │   ├── plans
 │   ├── plan_features
-│   ├── plan_feature_codes
 │   ├── wallets
 │   ├── wallet_transactions
 │   ├── deposit_requests

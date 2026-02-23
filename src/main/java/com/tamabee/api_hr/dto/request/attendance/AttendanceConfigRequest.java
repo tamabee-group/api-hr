@@ -1,14 +1,15 @@
 package com.tamabee.api_hr.dto.request.attendance;
 
+import java.time.LocalTime;
+
 import com.tamabee.api_hr.dto.config.RoundingConfig;
+
 import jakarta.validation.constraints.Max;
 import jakarta.validation.constraints.Min;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalTime;
 
 /**
  * Request cập nhật cấu hình chấm công
@@ -47,13 +48,16 @@ public class AttendanceConfigRequest {
     @Max(60)
     private Integer earlyLeaveGraceMinutes;
 
-    private Boolean requireDeviceRegistration;
     private Boolean requireGeoLocation;
 
     @Min(10)
     @Max(1000)
     private Integer geoFenceRadiusMeters;
 
-    private Boolean allowMobileCheckIn;
     private Boolean allowWebCheckIn;
+
+    // Nghỉ cuối tuần & ngày lễ
+    private Boolean saturdayOff;
+    private Boolean sundayOff;
+    private Boolean holidayOff;
 }

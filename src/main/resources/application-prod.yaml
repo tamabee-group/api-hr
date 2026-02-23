@@ -1,0 +1,134 @@
+# ============================================================
+# Tamabee API-HR — Production Configuration
+# ============================================================
+# VPS: VIETNIX — Ubuntu 24.04 — 8GB RAM — 4 Core — 40GB Disk
+# Domain: hr-api.tamabee.vn
+# ============================================================
+
+spring:
+  application:
+    name: api-hr
+
+  datasource:
+    url: ${DATABASE_URL}
+    username: ${DATABASE_USERNAME}
+    password: ${DATABASE_PASSWORD}
+    driver-class-name: org.postgresql.Driver
+    hikari:
+      maximum-pool-size: 20          # 8GB RAM → 20 connections là hợp lý
+      minimum-idle: 5
+      idle-timeout: 300000            # 5 phút
+      max-lifetime: 1800000           # 30 phút
+      connection-timeout: 30000       # 30 giây
+      pool-name: TamabeeHikariPool
+
+  jpa:
+    hibernate:
+      ddl-auto: none
+    show-sql: false
+    open-in-view: false               # QUAN TRỌNG: tắt lazy loading trong controller
+    properties:
+      hibernate:
+        format_sql: false             # Production: tắt format để tăng tốc log
+        dialect: org.hibernate.dialect.PostgreSQLDialect
+        jdbc:
+          lob:
+            non_contextual_creation: true
+          batch_size: 25              # Batch insert/update cho performance
+        order_inserts: true
+        order_updates: true
+
+  flyway:
+    enabled: false
+    baseline-on-migrate: true
+    clean-disabled: true
+
+  mail:
+    host: ${MAIL_HOST:mail.tamabee.vn}
+    port: ${MAIL_PORT:465}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    protocol: smtps
+    properties:
+      mail:
+        smtps:
+          auth: true
+          ssl:
+            enable: true
+          starttls:
+            enable: false
+        debug: false                  # Production: tắt mail debug
+
+server:
+  port: 8081
+  shutdown: graceful                  # Graceful shutdown cho Docker
+  tomcat:
+    max-threads: 200                  # 4 core → 200 threads
+    min-spare-threads: 20
+    max-connections: 10000
+    accept-count: 100
+    connection-timeout: 5000
+
+spring.lifecycle:
+  timeout-per-shutdown-phase: 30s     # Đợi 30s trước khi force shutdown
+
+logging:
+  level:
+    root: WARN
+    com.tamabee: INFO
+    org.springframework.security: WARN
+    org.hibernate.SQL: WARN
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+
+# Swagger: TẮT trên production (bảo mật)
+springdoc:
+  api-docs:
+    enabled: false
+  swagger-ui:
+    enabled: false
+
+jwt:
+  secret: ${JWT_SECRET}
+  access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
+  refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:2592000000}
+
+app:
+  admin-email: ${ADMIN_EMAIL}
+  mail-from: ${MAIL_FROM:Tamabee <info@tamabee.vn>}
+  base-url: ${BASE_URL:https://hr-api.tamabee.vn}
+  frontend-url: ${FRONTEND_URL:https://tamabee.vn}
+
+# SSH Tunnel: TẮT trên production (DB cùng VPS hoặc internal network)
+database:
+  tunnel:
+    enabled: false
+
+google:
+  calendar:
+    api-key: ${GOOGLE_CALENDAR_API_KEY:}
+
+# ============================================================
+# Spring Boot Actuator — Health Check & Monitoring
+# ============================================================
+management:
+  server:
+    port: 9090                        # Actuator chạy port riêng (không expose ra ngoài)
+  endpoints:
+    web:
+      exposure:
+        include: health,info,metrics,prometheus
+      base-path: /actuator
+  endpoint:
+    health:
+      show-details: when-authorized   # Chỉ show details khi authorized
+      probes:
+        enabled: true                 # Kubernetes-style probes cho Docker
+    prometheus:
+      enabled: true
+  metrics:
+    tags:
+      application: tamabee-api-hr
+    distribution:
+      percentiles-histogram:
+        http.server.requests: true    # Histogram cho request latency

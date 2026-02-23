@@ -26,6 +26,7 @@ import com.tamabee.api_hr.dto.request.attendance.BatchDeleteShiftAssignmentReque
 import com.tamabee.api_hr.dto.request.attendance.BatchShiftAssignmentRequest;
 import com.tamabee.api_hr.dto.request.attendance.ShiftAssignmentQuery;
 import com.tamabee.api_hr.dto.request.attendance.ShiftAssignmentRequest;
+import com.tamabee.api_hr.dto.request.attendance.ShiftNotifyRequest;
 import com.tamabee.api_hr.dto.request.attendance.ShiftSwapRequest;
 import com.tamabee.api_hr.dto.request.attendance.ShiftTemplateRequest;
 import com.tamabee.api_hr.dto.request.attendance.SwapRequestQuery;
@@ -253,6 +254,21 @@ public class ShiftController {
         Long approverId = getCurrentUserId();
         ShiftSwapRequestResponse response = shiftService.rejectSwap(id, approverId, reason);
         return ResponseEntity.ok(BaseResponse.success(response, "Từ chối yêu cầu đổi ca thành công"));
+    }
+
+    // ==================== Shift Notification Endpoints ====================
+
+    /**
+     * Gửi thông báo phân ca đến nhân viên
+     * POST /api/company/shifts/notify
+     * Nếu employeeIds rỗng, gửi đến tất cả nhân viên có assignment trong tuần.
+     */
+    @PostMapping("/notify")
+    public ResponseEntity<BaseResponse<Integer>> notifyShiftSchedule(
+            @Valid @RequestBody ShiftNotifyRequest request) {
+        int notifiedCount = shiftService.notifyShiftSchedule(request);
+        return ResponseEntity.ok(BaseResponse.success(notifiedCount,
+                "Đã gửi thông báo phân ca cho " + notifiedCount + " nhân viên"));
     }
 
     /**

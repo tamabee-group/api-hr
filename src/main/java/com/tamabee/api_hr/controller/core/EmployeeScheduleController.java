@@ -16,6 +16,7 @@ import org.springframework.web.bind.annotation.RestController;
 
 import com.tamabee.api_hr.dto.common.BaseResponse;
 import com.tamabee.api_hr.dto.request.attendance.EmployeeSwapRequest;
+import com.tamabee.api_hr.dto.response.attendance.EmployeeScheduleDataResponse;
 import com.tamabee.api_hr.dto.response.attendance.ShiftAssignmentResponse;
 import com.tamabee.api_hr.dto.response.attendance.ShiftSwapRequestResponse;
 import com.tamabee.api_hr.service.core.interfaces.IAuthService;
@@ -35,6 +36,19 @@ public class EmployeeScheduleController {
 
     private final IEmployeeScheduleService employeeScheduleService;
     private final IAuthService authService;
+
+    /**
+     * Lấy tất cả dữ liệu lịch làm việc (ca + lịch sử đổi ca) trong 1 API call
+     */
+    @GetMapping("/all")
+    public ResponseEntity<BaseResponse<EmployeeScheduleDataResponse>> getAllScheduleData(
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        Long employeeId = authService.getCurrentUser().getId();
+        EmployeeScheduleDataResponse data = employeeScheduleService.getAllScheduleData(
+                employeeId, startDate, endDate);
+        return ResponseEntity.ok(BaseResponse.success(data));
+    }
 
     /**
      * Lấy lịch làm việc của nhân viên trong khoảng thời gian

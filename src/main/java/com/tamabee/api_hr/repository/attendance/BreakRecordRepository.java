@@ -1,14 +1,15 @@
 package com.tamabee.api_hr.repository.attendance;
 
-import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
+import java.time.LocalDate;
+import java.util.List;
+import java.util.Optional;
+
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
-import java.time.LocalDate;
-import java.util.List;
-import java.util.Optional;
+import com.tamabee.api_hr.entity.attendance.BreakRecordEntity;
 
 /**
  * Repository quản lý bản ghi giờ giải lao của nhân viên.
@@ -24,6 +25,15 @@ public interface BreakRecordRepository extends JpaRepository<BreakRecordEntity, 
                         "ORDER BY b.breakStart ASC")
         List<BreakRecordEntity> findByAttendanceRecordId(
                         @Param("attendanceRecordId") Long attendanceRecordId);
+
+        /**
+         * Lấy danh sách bản ghi giải lao theo nhiều bản ghi chấm công (batch)
+         */
+        @Query("SELECT b FROM BreakRecordEntity b " +
+                        "WHERE b.attendanceRecordId IN :attendanceRecordIds " +
+                        "ORDER BY b.breakStart ASC")
+        List<BreakRecordEntity> findByAttendanceRecordIdIn(
+                        @Param("attendanceRecordIds") List<Long> attendanceRecordIds);
 
         /**
          * Lấy danh sách bản ghi giải lao của nhân viên theo ngày làm việc
@@ -79,4 +89,13 @@ public interface BreakRecordRepository extends JpaRepository<BreakRecordEntity, 
                         "ORDER BY b.breakStart ASC")
         List<BreakRecordEntity> findCompletedBreaksByAttendanceRecordId(
                         @Param("attendanceRecordId") Long attendanceRecordId);
+
+        /**
+         * Lấy danh sách break records theo ngày (cho kiosk)
+         */
+        @Query("SELECT b FROM BreakRecordEntity b " +
+                        "WHERE b.workDate = :workDate " +
+                        "ORDER BY b.breakStart DESC")
+        List<BreakRecordEntity> findByWorkDate(
+                        @Param("workDate") LocalDate workDate);
 }

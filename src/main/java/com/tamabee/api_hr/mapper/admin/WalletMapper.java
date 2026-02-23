@@ -5,6 +5,9 @@ import com.tamabee.api_hr.dto.response.wallet.WalletResponse;
 import com.tamabee.api_hr.entity.wallet.WalletEntity;
 import org.springframework.stereotype.Component;
 
+import com.tamabee.api_hr.datasource.RegionContext;
+import com.tamabee.api_hr.util.RegionUtil;
+
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
@@ -94,6 +97,6 @@ public class WalletMapper {
         if (freeTrialEndDate == null) {
             return false;
         }
-        return freeTrialEndDate.isAfter(LocalDateTime.now());
+        return freeTrialEndDate.isAfter(LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())));
     }
 }

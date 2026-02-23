@@ -1,12 +1,16 @@
 package com.tamabee.api_hr.service.admin.impl;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.util.List;
 
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tamabee.api_hr.datasource.RegionContext;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.wallet.PlanEntity;
 import com.tamabee.api_hr.entity.wallet.WalletEntity;
@@ -23,16 +27,16 @@ import com.tamabee.api_hr.service.admin.interfaces.IBillingService;
 import com.tamabee.api_hr.service.admin.interfaces.ICommissionService;
 import com.tamabee.api_hr.service.admin.interfaces.ISettingService;
 import com.tamabee.api_hr.service.core.interfaces.IEmailService;
+import com.tamabee.api_hr.util.RegionUtil;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 /**
  * Service xử lý billing tự động hàng tháng
  * Trừ tiền subscription từ wallet của company khi đến ngày billing
+ * Sử dụng masterJdbcTemplate cho plan_change_history vì nằm trong master database
  */
 @Service
-@RequiredArgsConstructor
 @Slf4j
 public class BillingServiceImpl implements IBillingService {
 
@@ -40,15 +44,37 @@ public class BillingServiceImpl implements IBillingService {
     private final WalletTransactionRepository walletTransactionRepository;
     private final CompanyRepository companyRepository;
     private final PlanRepository planRepository;
+    private final JdbcTemplate masterJdbcTemplate;
     private final ISettingService settingService;
     private final IEmailService emailService;
     private final WalletTransactionMapper walletTransactionMapper;
     private final ICommissionService commissionService;
 
+    public BillingServiceImpl(
+            WalletRepository walletRepository,
+            WalletTransactionRepository walletTransactionRepository,
+            CompanyRepository companyRepository,
+            PlanRepository planRepository,
+            @Qualifier("masterJdbcTemplate") JdbcTemplate masterJdbcTemplate,
+            ISettingService settingService,
+            IEmailService emailService,
+            WalletTransactionMapper walletTransactionMapper,
+            ICommissionService commissionService) {
+        this.walletRepository = walletRepository;
+        this.walletTransactionRepository = walletTransactionRepository;
+        this.companyRepository = companyRepository;
+        this.planRepository = planRepository;
+        this.masterJdbcTemplate = masterJdbcTemplate;
+        this.settingService = settingService;
+        this.emailService = emailService;
+        this.walletTransactionMapper = walletTransactionMapper;
+        this.commissionService = commissionService;
+    }
+
     @Override
     @Transactional
     public void processMonthlyBilling() {
-        LocalDateTime now = LocalDateTime.now();
+        LocalDateTime now = LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion()));
         log.info("Bắt đầu xử lý billing hàng tháng tại: {}", now);
 
         // Lấy danh sách wallets cần billing
@@ -81,7 +107,7 @@ public class BillingServiceImpl implements IBillingService {
             return false;
         }
 
-        return LocalDateTime.now().isBefore(wallet.getFreeTrialEndDate());
+        return LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())).isBefore(wallet.getFreeTrialEndDate());
     }
 
     @Override
@@ -98,9 +124,24 @@ public class BillingServiceImpl implements IBillingService {
     public LocalDateTime calculateFreeTrialEndDate(LocalDateTime companyCreatedAt, boolean hasReferral) {
         int freeTrialMonths = settingService.getFreeTrialMonths();
         int referralBonusMonths = hasReferral ? settingService.getReferralBonusMonths() : 0;
-
         int totalFreeMonths = freeTrialMonths + referralBonusMonths;
-        return companyCreatedAt.plusMonths(totalFreeMonths);
+
+        // Tính theo billing cycles (tháng đầy đủ)
+        // Nếu đăng ký giữa tháng, tháng đầu tiên không tính
+        // First billing sẽ là ngày 1 của tháng sau khi hết trial
+        LocalDate createdDate = companyCreatedAt.toLocalDate();
+        
+        // Tháng đầu tiên bắt đầu từ ngày 1 tháng sau
+        LocalDate firstFullMonth = createdDate.plusMonths(1).withDayOfMonth(1);
+        
+        // Trial kết thúc sau totalFreeMonths tháng đầy đủ
+        // Ví dụ: đăng ký 15/01, free 3 tháng
+        // First full month: 01/02
+        // Trial end: 01/05 (sau 3 tháng đầy đủ: 02, 03, 04)
+        LocalDate trialEndDate = firstFullMonth.plusMonths(totalFreeMonths);
+        
+        // Trả về 00:00:00 của ngày billing đầu tiên
+        return trialEndDate.atStartOfDay();
     }
 
     /**
@@ -116,7 +157,10 @@ public class BillingServiceImpl implements IBillingService {
             return;
         }
 
-        // Lấy thông tin plan
+        // Apply scheduled plan nếu có (downgrade)
+        applyScheduledPlanIfDue(company, now);
+
+        // Lấy thông tin plan hiện tại
         PlanEntity plan = null;
         if (company.getPlanId() != null) {
             plan = planRepository.findByIdAndDeletedFalse(company.getPlanId()).orElse(null);
@@ -127,7 +171,11 @@ public class BillingServiceImpl implements IBillingService {
             return;
         }
 
-        BigDecimal billingAmount = plan.getMonthlyPrice();
+        // Tính billing amount theo plan cao nhất trong kỳ (chống gian lận)
+        LocalDate periodStart = now.toLocalDate().withDayOfMonth(1).minusMonths(1);
+        LocalDate periodEnd = now.toLocalDate().withDayOfMonth(1).minusDays(1);
+        BigDecimal billingAmount = calculateBillingAmount(companyId, plan, periodStart, periodEnd);
+        
         BigDecimal currentBalance = wallet.getBalance();
         String language = company.getLanguage() != null ? company.getLanguage() : "vi";
 
@@ -149,7 +197,7 @@ public class BillingServiceImpl implements IBillingService {
 
         // Tạo transaction record với description theo language
         String planName = getPlanName(plan, language);
-        String description = getBillingDescription(planName, language);
+        String description = getBillingDescription(planName, billingAmount, plan.getMonthlyPrice(), language);
         WalletTransactionEntity transaction = walletTransactionMapper.createEntity(
                 wallet.getId(),
                 TransactionType.BILLING,
@@ -187,7 +235,107 @@ public class BillingServiceImpl implements IBillingService {
             log.warn("Lỗi khi recalculate commission eligibility cho company {}: {}", companyId, e.getMessage());
         }
 
-        log.info("Billing thành công cho company {}: {} -> {}", companyId, currentBalance, balanceAfter);
+        log.info("Billing thành công cho company {}: {} -> {} (amount: {})", 
+                companyId, currentBalance, balanceAfter, billingAmount);
+    }
+
+    /**
+     * Apply scheduled plan nếu đến ngày hiệu lực
+     */
+    private void applyScheduledPlanIfDue(CompanyEntity company, LocalDateTime now) {
+        if (company.getScheduledPlanId() == null || company.getScheduledPlanEffectiveDate() == null) {
+            return;
+        }
+
+        LocalDate today = now.toLocalDate();
+        if (!today.isBefore(company.getScheduledPlanEffectiveDate())) {
+            Long oldPlanId = company.getPlanId();
+            Long newPlanId = company.getScheduledPlanId();
+            
+            // Lấy giá plan cũ và mới để log
+            BigDecimal oldPrice = BigDecimal.ZERO;
+            BigDecimal newPrice = BigDecimal.ZERO;
+            
+            if (oldPlanId != null) {
+                PlanEntity oldPlan = planRepository.findByIdAndDeletedFalse(oldPlanId).orElse(null);
+                if (oldPlan != null) {
+                    oldPrice = oldPlan.getMonthlyPrice();
+                }
+            }
+            
+            PlanEntity newPlan = planRepository.findByIdAndDeletedFalse(newPlanId).orElse(null);
+            if (newPlan != null) {
+                newPrice = newPlan.getMonthlyPrice();
+            }
+            
+            // Apply scheduled plan
+            company.setPlanId(newPlanId);
+            company.setScheduledPlanId(null);
+            company.setScheduledPlanEffectiveDate(null);
+            companyRepository.save(company);
+            
+            // Log plan change
+            logPlanChange(company.getId(), oldPlanId, newPlanId, oldPrice, newPrice, "SCHEDULED_APPLY", today);
+            
+            log.info("Applied scheduled plan for company {}: {} -> {}", 
+                    company.getId(), oldPlanId, newPlanId);
+        }
+    }
+
+    /**
+     * Tính billing amount theo plan cao nhất trong kỳ (chống gian lận)
+     * Query trực tiếp master database vì plan_change_history nằm trong master
+     */
+    private BigDecimal calculateBillingAmount(Long companyId, PlanEntity currentPlan, 
+                                              LocalDate periodStart, LocalDate periodEnd) {
+        // Lấy giá plan cao nhất trong kỳ từ lịch sử thay đổi (master database)
+        String sql = """
+            SELECT MAX(GREATEST(COALESCE(from_plan_price, 0), COALESCE(to_plan_price, 0)))
+            FROM plan_change_history
+            WHERE company_id = ?
+              AND billing_period_start <= ?
+              AND billing_period_end >= ?
+            """;
+        
+        BigDecimal maxPriceInPeriod = masterJdbcTemplate.queryForObject(
+                sql, BigDecimal.class, companyId, periodEnd, periodStart);
+        
+        BigDecimal currentPrice = currentPlan.getMonthlyPrice();
+        
+        if (maxPriceInPeriod == null || maxPriceInPeriod.compareTo(BigDecimal.ZERO) == 0) {
+            // Không có thay đổi plan trong kỳ, dùng giá hiện tại
+            return currentPrice;
+        }
+        
+        // Trả về giá cao nhất giữa plan cao nhất trong kỳ và plan hiện tại
+        BigDecimal billingAmount = maxPriceInPeriod.max(currentPrice);
+        
+        if (billingAmount.compareTo(currentPrice) > 0) {
+            log.info("Company {} bị tính theo plan cao nhất trong kỳ: {} (thay vì {})", 
+                    companyId, billingAmount, currentPrice);
+        }
+        
+        return billingAmount;
+    }
+
+    /**
+     * Ghi log thay đổi plan vào master database
+     */
+    private void logPlanChange(Long companyId, Long fromPlanId, Long toPlanId,
+                               BigDecimal fromPrice, BigDecimal toPrice,
+                               String changeType, LocalDate effectiveDate) {
+        LocalDate billingPeriodStart = effectiveDate.withDayOfMonth(1);
+        LocalDate billingPeriodEnd = effectiveDate.withDayOfMonth(effectiveDate.lengthOfMonth());
+        
+        String sql = """
+            INSERT INTO plan_change_history 
+            (company_id, from_plan_id, to_plan_id, from_plan_price, to_plan_price, 
+             change_type, effective_date, billing_period_start, billing_period_end, created_at, updated_at)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, NOW(), NOW())
+            """;
+        
+        masterJdbcTemplate.update(sql, companyId, fromPlanId, toPlanId, fromPrice, toPrice,
+                changeType, effectiveDate, billingPeriodStart, billingPeriodEnd);
     }
 
     /**
@@ -211,7 +359,7 @@ public class BillingServiceImpl implements IBillingService {
 
         // Đánh dấu company là INACTIVE và set thời điểm deactivate
         company.setStatus(CompanyStatus.INACTIVE);
-        company.setDeactivatedAt(LocalDateTime.now());
+        company.setDeactivatedAt(LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())));
         companyRepository.save(company);
 
         // Gửi email thông báo
@@ -231,8 +379,9 @@ public class BillingServiceImpl implements IBillingService {
      * Lấy tên plan theo ngôn ngữ
      */
     private String getPlanName(PlanEntity plan, String language) {
-        if (plan == null)
+        if (plan == null) {
             return "N/A";
+        }
 
         return switch (language) {
             case "vi" -> plan.getNameVi();
@@ -244,7 +393,19 @@ public class BillingServiceImpl implements IBillingService {
     /**
      * Lấy description cho transaction billing theo ngôn ngữ
      */
-    private String getBillingDescription(String planName, String language) {
+    private String getBillingDescription(String planName, BigDecimal billingAmount, 
+                                         BigDecimal currentPlanPrice, String language) {
+        // Nếu billing amount cao hơn giá plan hiện tại, ghi chú thêm
+        boolean hasUpgradeCharge = billingAmount.compareTo(currentPlanPrice) > 0;
+        
+        if (hasUpgradeCharge) {
+            return switch (language) {
+                case "vi" -> "Thanh toán subscription: " + planName + " (tính theo plan cao nhất trong kỳ)";
+                case "ja" -> "サブスクリプション支払い: " + planName + " (期間中の最高プランで計算)";
+                default -> "Subscription payment: " + planName + " (charged at highest plan used in period)";
+            };
+        }
+        
         return switch (language) {
             case "vi" -> "Thanh toán subscription: " + planName;
             case "ja" -> "サブスクリプション支払い: " + planName;

@@ -1,15 +1,11 @@
 package com.tamabee.api_hr.service.company.interfaces;
 
-import com.tamabee.api_hr.dto.config.AllowanceConfig;
 import com.tamabee.api_hr.dto.config.AttendanceConfig;
 import com.tamabee.api_hr.dto.config.BreakConfig;
-import com.tamabee.api_hr.dto.config.DeductionConfig;
 import com.tamabee.api_hr.dto.config.OvertimeConfig;
 import com.tamabee.api_hr.dto.config.PayrollConfig;
 import com.tamabee.api_hr.dto.request.attendance.AttendanceConfigRequest;
 import com.tamabee.api_hr.dto.request.attendance.BreakConfigRequest;
-import com.tamabee.api_hr.dto.request.payroll.AllowanceConfigRequest;
-import com.tamabee.api_hr.dto.request.payroll.DeductionConfigRequest;
 import com.tamabee.api_hr.dto.request.payroll.OvertimeConfigRequest;
 import com.tamabee.api_hr.dto.request.payroll.PayrollConfigRequest;
 import com.tamabee.api_hr.dto.response.company.CompanySettingsResponse;
@@ -40,16 +36,6 @@ public interface ICompanySettingsService {
     OvertimeConfig updateOvertimeConfig(OvertimeConfigRequest request);
 
     /**
-     * Cập nhật cấu hình phụ cấp
-     */
-    AllowanceConfig updateAllowanceConfig(AllowanceConfigRequest request);
-
-    /**
-     * Cập nhật cấu hình khấu trừ
-     */
-    DeductionConfig updateDeductionConfig(DeductionConfigRequest request);
-
-    /**
      * Khởi tạo settings mặc định cho tenant mới
      */
     void initializeDefaultSettings();
@@ -68,16 +54,6 @@ public interface ICompanySettingsService {
      * Lấy cấu hình tăng ca
      */
     OvertimeConfig getOvertimeConfig();
-
-    /**
-     * Lấy cấu hình phụ cấp
-     */
-    AllowanceConfig getAllowanceConfig();
-
-    /**
-     * Lấy cấu hình khấu trừ
-     */
-    DeductionConfig getDeductionConfig();
 
     /**
      * Lấy cấu hình giờ giải lao

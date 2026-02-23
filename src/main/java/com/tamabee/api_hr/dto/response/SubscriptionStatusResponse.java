@@ -39,6 +39,18 @@ public class SubscriptionStatusResponse {
     // Số ngày còn lại trước khi bị xóa (nếu INACTIVE)
     private Integer daysUntilDeletion;
     
+    // Scheduled plan change (downgrade)
+    private Long scheduledPlanId;
+    private String scheduledPlanName;
+    private BigDecimal scheduledPlanPrice;
+    private String scheduledPlanEffectiveDate; // Format: yyyy-MM-dd
+    
+    // Grace period cho upgrade cancellation (15 phút)
+    private Boolean canCancelUpgrade;
+    private LocalDateTime cancelUpgradeDeadline;
+    private Long previousPlanId;
+    private String previousPlanName;
+    
     // Danh sách plans có thể chọn
     private List<PlanEligibilityResponse> availablePlans;
 }

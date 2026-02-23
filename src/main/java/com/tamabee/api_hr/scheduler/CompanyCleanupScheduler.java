@@ -12,6 +12,8 @@ import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.repository.company.CompanyRepository;
 import com.tamabee.api_hr.service.admin.interfaces.ISettingService;
 import com.tamabee.api_hr.service.core.interfaces.IEmailService;
+import com.tamabee.api_hr.datasource.RegionContext;
+import com.tamabee.api_hr.util.RegionUtil;
 
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -43,7 +45,7 @@ public class CompanyCleanupScheduler {
         
         try {
             retentionDays = settingService.getInactiveRetentionDays();
-            LocalDateTime cutoffDate = LocalDateTime.now().minusDays(retentionDays);
+            LocalDateTime cutoffDate = LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())).minusDays(retentionDays);
             
             List<CompanyEntity> companiesToDelete = companyRepository.findInactiveCompaniesForCleanup(cutoffDate);
             log.info("Tìm thấy {} companies INACTIVE cần xóa (retention: {} ngày)", 

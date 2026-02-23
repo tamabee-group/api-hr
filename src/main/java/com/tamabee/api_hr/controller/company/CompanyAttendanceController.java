@@ -1,19 +1,8 @@
 package com.tamabee.api_hr.controller.company;
 
-import com.tamabee.api_hr.dto.request.attendance.AdjustAttendanceRequest;
-import com.tamabee.api_hr.dto.request.attendance.AttendanceQueryRequest;
-import com.tamabee.api_hr.dto.response.attendance.AdjustmentRequestResponse;
-import com.tamabee.api_hr.dto.response.attendance.AttendanceRecordResponse;
-import com.tamabee.api_hr.entity.user.UserEntity;
-import com.tamabee.api_hr.enums.AttendanceStatus;
-import com.tamabee.api_hr.enums.RoleConstants;
-import com.tamabee.api_hr.exception.NotFoundException;
-import com.tamabee.api_hr.dto.common.BaseResponse;
-import com.tamabee.api_hr.repository.user.UserRepository;
-import com.tamabee.api_hr.service.company.interfaces.IAttendanceAdjustmentService;
-import com.tamabee.api_hr.service.company.interfaces.IAttendanceService;
-import jakarta.validation.Valid;
-import lombok.RequiredArgsConstructor;
+import java.time.LocalDate;
+import java.util.List;
+
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.data.domain.Pageable;
@@ -21,10 +10,32 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.DeleteMapping;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDate;
-import java.util.List;
+import com.tamabee.api_hr.dto.common.BaseResponse;
+import com.tamabee.api_hr.dto.request.attendance.AdjustAttendanceRequest;
+import com.tamabee.api_hr.dto.request.attendance.AttendanceQueryRequest;
+import com.tamabee.api_hr.dto.request.attendance.CreateAttendanceRequest;
+import com.tamabee.api_hr.dto.response.attendance.AdjustmentRequestResponse;
+import com.tamabee.api_hr.dto.response.attendance.AttendanceRecordResponse;
+import com.tamabee.api_hr.entity.user.UserEntity;
+import com.tamabee.api_hr.enums.AttendanceStatus;
+import com.tamabee.api_hr.enums.RoleConstants;
+import com.tamabee.api_hr.exception.NotFoundException;
+import com.tamabee.api_hr.repository.user.UserRepository;
+import com.tamabee.api_hr.service.company.interfaces.IAttendanceAdjustmentService;
+import com.tamabee.api_hr.service.company.interfaces.IAttendanceService;
+
+import jakarta.validation.Valid;
+import lombok.RequiredArgsConstructor;
 
 /**
  * Controller quản lý chấm công cho admin/manager công ty.
@@ -65,6 +76,26 @@ public class CompanyAttendanceController {
     }
 
     /**
+     * Lấy danh sách chấm công có vị trí (cho trang locations)
+     * GET /api/company/attendance/with-location
+     */
+    @GetMapping("/with-location")
+    public ResponseEntity<BaseResponse<Page<AttendanceRecordResponse>>> getAttendanceRecordsWithLocation(
+            @RequestParam(required = false) LocalDate startDate,
+            @RequestParam(required = false) LocalDate endDate,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        AttendanceQueryRequest request = AttendanceQueryRequest.builder()
+                .startDate(startDate)
+                .endDate(endDate)
+                .build();
+
+        Pageable pageable = PageRequest.of(page, size, Sort.by(Sort.Direction.DESC, "workDate"));
+        Page<AttendanceRecordResponse> records = attendanceService.getAttendanceRecordsWithLocation(request, pageable);
+        return ResponseEntity.ok(BaseResponse.success(records, "Lấy danh sách vị trí chấm công thành công"));
+    }
+
+    /**
      * Lấy chi tiết bản ghi chấm công theo ID
      * GET /api/company/attendance/{id}
      */
@@ -96,6 +127,29 @@ public class CompanyAttendanceController {
         Long adjustedBy = getCurrentUserId();
         AttendanceRecordResponse record = attendanceService.adjustAttendance(id, adjustedBy, request);
         return ResponseEntity.ok(BaseResponse.success(record, "Điều chỉnh chấm công thành công"));
+    }
+
+    /**
+     * Tạo bản ghi chấm công mới cho nhân viên (bởi manager)
+     * POST /api/company/attendance/create
+     */
+    @PostMapping("/create")
+    public ResponseEntity<BaseResponse<AttendanceRecordResponse>> createAttendanceRecord(
+            @Valid @RequestBody CreateAttendanceRequest request) {
+        Long createdBy = getCurrentUserId();
+        AttendanceRecordResponse record = attendanceService.createAttendanceRecord(createdBy, request);
+        return ResponseEntity.ok(BaseResponse.created(record, "Tạo bản ghi chấm công thành công"));
+    }
+
+    /**
+     * Xóa bản ghi chấm công (bởi admin/manager)
+     * DELETE /api/company/attendance/{id}
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<BaseResponse<Void>> deleteAttendanceRecord(@PathVariable Long id) {
+        Long deletedBy = getCurrentUserId();
+        attendanceService.deleteAttendanceRecord(id, deletedBy);
+        return ResponseEntity.ok(BaseResponse.success(null, "Xóa bản ghi chấm công thành công"));
     }
 
     /**

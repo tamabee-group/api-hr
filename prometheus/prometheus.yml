@@ -1,0 +1,34 @@
+# ============================================================
+# Prometheus Configuration — Tamabee Monitoring
+# ============================================================
+
+global:
+  scrape_interval: 15s        # Thu thập metrics mỗi 15 giây
+  evaluation_interval: 15s    # Evaluate rules mỗi 15 giây
+  scrape_timeout: 10s
+
+scrape_configs:
+  # ---- Spring Boot Actuator Metrics ----
+  - job_name: 'tamabee-api-hr'
+    metrics_path: '/actuator/prometheus'
+    scrape_interval: 10s
+    static_configs:
+      - targets: ['api-hr:9090']    # Actuator port (internal Docker network)
+        labels:
+          app: 'api-hr'
+          env: 'production'
+
+  # ---- Nginx: cài trực tiếp trên VPS, không qua Docker ----
+  # Nếu muốn monitor nginx, cài nginx-prometheus-exporter trên VPS:
+  #   sudo apt install prometheus-nginx-exporter
+  # Rồi thêm:
+  # - job_name: 'nginx'
+  #   static_configs:
+  #     - targets: ['host.docker.internal:9113']
+
+  # ---- Node Exporter (VPS system metrics) ----
+  - job_name: 'node-exporter'
+    static_configs:
+      - targets: ['node-exporter:9100']
+        labels:
+          instance: 'vietnix-vps'

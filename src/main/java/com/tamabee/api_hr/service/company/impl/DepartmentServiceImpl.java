@@ -3,11 +3,14 @@ package com.tamabee.api_hr.service.company.impl;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import com.tamabee.api_hr.datasource.TenantContext;
 import com.tamabee.api_hr.dto.request.department.CreateDepartmentRequest;
 import com.tamabee.api_hr.dto.request.department.UpdateDepartmentRequest;
 import com.tamabee.api_hr.dto.response.department.DefaultApproverResponse;
@@ -15,6 +18,7 @@ import com.tamabee.api_hr.dto.response.department.DepartmentResponse;
 import com.tamabee.api_hr.dto.response.department.DepartmentSummary;
 import com.tamabee.api_hr.dto.response.department.DepartmentTreeNode;
 import com.tamabee.api_hr.dto.response.user.UserResponse;
+import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.entity.company.DepartmentEntity;
 import com.tamabee.api_hr.entity.user.UserEntity;
 import com.tamabee.api_hr.enums.ErrorCode;
@@ -26,18 +30,30 @@ import com.tamabee.api_hr.repository.company.DepartmentRepository;
 import com.tamabee.api_hr.repository.user.UserRepository;
 import com.tamabee.api_hr.service.company.interfaces.IDepartmentService;
 
-import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 
 @Slf4j
 @Service
-@RequiredArgsConstructor
 public class DepartmentServiceImpl implements IDepartmentService {
 
     private final DepartmentRepository departmentRepository;
     private final UserRepository userRepository;
     private final DepartmentMapper departmentMapper;
     private final UserMapper userMapper;
+    private final JdbcTemplate masterJdbcTemplate;
+
+    public DepartmentServiceImpl(
+            DepartmentRepository departmentRepository,
+            UserRepository userRepository,
+            DepartmentMapper departmentMapper,
+            UserMapper userMapper,
+            @Qualifier("masterJdbcTemplate") JdbcTemplate masterJdbcTemplate) {
+        this.departmentRepository = departmentRepository;
+        this.userRepository = userRepository;
+        this.departmentMapper = departmentMapper;
+        this.userMapper = userMapper;
+        this.masterJdbcTemplate = masterJdbcTemplate;
+    }
 
 
     // ==================== Query Operations ====================
@@ -92,8 +108,9 @@ public class DepartmentServiceImpl implements IDepartmentService {
     @Transactional(readOnly = true)
     public List<UserResponse> getDepartmentEmployees(Long departmentId) {
         findDepartment(departmentId); // Validate department exists
+        CompanyEntity company = getCurrentCompanyEntity();
         return userRepository.findByProfileDepartmentEntityIdAndDeletedFalse(departmentId).stream()
-                .map(userMapper::toResponse)
+                .map(user -> userMapper.toResponse(user, company))
                 .collect(Collectors.toList());
     }
 
@@ -249,5 +266,35 @@ public class DepartmentServiceImpl implements IDepartmentService {
             current = current.getParent();
         }
         return false;
+    }
+
+    /**
+     * Lấy CompanyEntity từ tenant domain hiện tại.
+     * Region là thuộc tính của company, dùng để set vào UserResponse.
+     */
+    private CompanyEntity getCurrentCompanyEntity() {
+        String tenantDomain = TenantContext.getCurrentTenant();
+        if (tenantDomain == null) {
+            return null;
+        }
+        try {
+            String sql = "SELECT id, name, region, logo, status, tenant_domain FROM companies WHERE tenant_domain = ? AND deleted = false";
+            return masterJdbcTemplate.queryForObject(sql, (rs, rowNum) -> {
+                CompanyEntity company = new CompanyEntity();
+                company.setId(rs.getLong("id"));
+                company.setName(rs.getString("name"));
+                company.setRegion(rs.getString("region"));
+                company.setLogo(rs.getString("logo"));
+                company.setTenantDomain(rs.getString("tenant_domain"));
+                String status = rs.getString("status");
+                if (status != null) {
+                    company.setStatus(com.tamabee.api_hr.enums.CompanyStatus.valueOf(status));
+                }
+                return company;
+            }, tenantDomain);
+        } catch (Exception e) {
+            log.error("Lỗi khi lấy company entity từ master DB: {}", e.getMessage());
+            return null;
+        }
     }
 }

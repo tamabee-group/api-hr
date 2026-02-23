@@ -1,6 +1,5 @@
 package com.tamabee.api_hr.dto.response.attendance;
 
-import com.tamabee.api_hr.enums.BreakType;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
@@ -9,6 +8,7 @@ import lombok.NoArgsConstructor;
 /**
  * DTO snapshot cho cấu hình giải lao.
  * Lưu lại cấu hình giải lao đã áp dụng tại thời điểm chấm công.
+ * Đơn giản: giải lao luôn bị trừ khỏi giờ làm việc.
  */
 @Data
 @Builder
@@ -16,18 +16,9 @@ import lombok.NoArgsConstructor;
 @AllArgsConstructor
 public class BreakConfigSnapshot {
 
-    // Loại giải lao (PAID/UNPAID)
-    private BreakType breakType;
-
-    // Số phút giải lao tối thiểu
-    private Integer minimumBreakMinutes;
-
-    // Số phút giải lao tối đa
-    private Integer maximumBreakMinutes;
+    // Số phút giải lao mặc định
+    private Integer defaultBreakMinutes;
 
     // Số lần giải lao tối đa trong ngày
     private Integer maxBreaksPerDay;
-
-    // Số phút giải lao tối thiểu theo luật
-    private Integer legalMinimumBreakMinutes;
 }

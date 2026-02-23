@@ -11,6 +11,8 @@ import com.tamabee.api_hr.dto.response.company.CompanyResponse;
 import com.tamabee.api_hr.entity.company.CompanyEntity;
 import com.tamabee.api_hr.repository.wallet.PlanRepository;
 import com.tamabee.api_hr.repository.wallet.WalletRepository;
+import com.tamabee.api_hr.datasource.RegionContext;
+import com.tamabee.api_hr.util.RegionUtil;
 
 @Component
 public class CompanyMapper {
@@ -40,7 +42,7 @@ public class CompanyMapper {
         entity.setAddress(request.getAddress());
         entity.setIndustry(request.getIndustry());
         entity.setZipcode(request.getZipcode());
-        entity.setLocale(request.getLocale());
+        entity.setRegion(request.getRegion());
         entity.setLanguage(request.getLanguage());
         entity.setTenantDomain(request.getTenantDomain());
 
@@ -67,7 +69,7 @@ public class CompanyMapper {
         response.setAddress(entity.getAddress());
         response.setIndustry(entity.getIndustry());
         response.setZipcode(entity.getZipcode());
-        response.setLocale(entity.getLocale());
+        response.setRegion(entity.getRegion());
         response.setLanguage(entity.getLanguage());
         response.setTenantDomain(entity.getTenantDomain());
         response.setStatus(entity.getStatus() != null ? entity.getStatus().name() : null);
@@ -100,7 +102,7 @@ public class CompanyMapper {
             response.setFreeTrialEndDate(wallet.getFreeTrialEndDate());
             // Tính toán free trial active
             boolean isFreeTrialActive = wallet.getFreeTrialEndDate() != null 
-                && wallet.getFreeTrialEndDate().isAfter(LocalDateTime.now());
+                && wallet.getFreeTrialEndDate().isAfter(LocalDateTime.now(RegionUtil.getTimezone(RegionContext.getCurrentRegion())));
             response.setIsFreeTrialActive(isFreeTrialActive);
         });
 

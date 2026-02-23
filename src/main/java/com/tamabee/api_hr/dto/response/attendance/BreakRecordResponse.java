@@ -1,11 +1,11 @@
 package com.tamabee.api_hr.dto.response.attendance;
 
+import java.time.LocalDateTime;
+
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
-
-import java.time.LocalDateTime;
 
 /**
  * DTO response cho break record.
@@ -40,4 +40,17 @@ public class BreakRecordResponse {
 
     // Break đang diễn ra (chưa kết thúc)
     private Boolean isActive;
+
+    // === Location info ===
+    // Vị trí bắt đầu giải lao
+    private Double breakStartLatitude;
+    private Double breakStartLongitude;
+
+    // Vị trí kết thúc giải lao
+    private Double breakEndLatitude;
+    private Double breakEndLongitude;
+
+    // Giải lao ngoài phạm vi
+    private Boolean breakStartOutOfRange;
+    private Boolean breakEndOutOfRange;
 }

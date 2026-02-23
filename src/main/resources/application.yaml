@@ -3,15 +3,16 @@ spring:
     name: api-hr
 
   datasource:
-    url: ${DATABASE_URL:jdbc:postgresql://localhost:5433/stg_hr_tamabee}
-    username: ${DATABASE_USERNAME:quanghiep}
-    password: ${DATABASE_PASSWORD:avatar}
+    url: ${DATABASE_URL:jdbc:postgresql://localhost:5432/tamabee_master}
+    username: ${DATABASE_USERNAME:postgres}
+    password: ${DATABASE_PASSWORD}
     driver-class-name: org.postgresql.Driver
 
   jpa:
     hibernate:
       ddl-auto: none # Multi-tenant: Flyway quản lý schema, không validate vì entities có thể ở tenant DB
     show-sql: false
+    open-in-view: false # Tắt lazy loading ngoài @Transactional → tránh N+1 query ẩn
     properties:
       hibernate:
         format_sql: true
@@ -23,28 +24,28 @@ spring:
   flyway:
     enabled: false # Disable auto-run, FlywayMultiTenantConfig sẽ quản lý
     baseline-on-migrate: true
-    clean-disabled: true  # QUAN TRỌNG: Không cho phép clean database
+    clean-disabled: true # QUAN TRỌNG: Không cho phép clean database
     target: 2 # Chỉ chạy V1, V2 (bỏ qua V3 test data)
     # Multi-tenant: Master DB dùng db/master, Tenant DB dùng db/tenant
 
   mail:
-    host: smtp.gmail.com
-    port: 587
-    username: tamabee.info@gmail.com
-    password: aockadwfvzewihdp
+    host: ${MAIL_HOST}
+    port: ${MAIL_PORT}
+    username: ${MAIL_USERNAME}
+    password: ${MAIL_PASSWORD}
+    protocol: smtps
     properties:
       mail:
-        smtp:
+        smtps:
           auth: true
           ssl:
-            enable: false
-          starttls:
             enable: true
-            required: true
+          starttls:
+            enable: false
         debug: true
 
 server:
-  port: 8081
+  port: ${SERVER_PORT}
 
 logging:
   level:
@@ -59,25 +60,30 @@ springdoc:
     enabled: true
 
 jwt:
-  secret: ${JWT_SECRET:TamabeeHRSecretKeyForJWTTokenGenerationMustBeLongEnough}
+  secret: ${JWT_SECRET}
   access-token-expiration: ${JWT_ACCESS_TOKEN_EXPIRATION:3600000}
   refresh-token-expiration: ${JWT_REFRESH_TOKEN_EXPIRATION:2592000000}
 
 app:
-  admin-email: ${ADMIN_EMAIL:hiepdeptrai0908@gmail.com}
-  base-url: ${BASE_URL:https://tamabee.vn}
-  frontend-url: ${FRONTEND_URL:https://tamabee.vn}
+  admin-email: ${ADMIN_EMAIL}
+  mail-from: ${MAIL_FROM:Tamabee <info@tamabee.vn>}
+  base-url: ${BASE_URL}
+  frontend-url: ${FRONTEND_URL}
 
 database:
   tunnel:
     enabled: ${DATABASE_TUNNEL_ENABLED:false}
     ssh:
-      host: ${SSH_HOST:tamabee.vn}
+      host: ${SSH_HOST:}
       port: ${SSH_PORT:22}
-      username: ${SSH_USERNAME:root}
+      username: ${SSH_USERNAME:}
       password: ${SSH_PASSWORD:}
     local:
       port: ${LOCAL_PORT:5433}
     remote:
       host: ${REMOTE_HOST:localhost}
       port: ${REMOTE_PORT:5432}
+
+google:
+  calendar:
+    api-key: ${GOOGLE_CALENDAR_API_KEY:}

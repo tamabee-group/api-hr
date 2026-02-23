@@ -35,6 +35,7 @@ class TamabeeSpecialTenantPropertyTest {
     private static final String DEFAULT_EMPLOYEE_CODE = "EMP001";
     private static final String DEFAULT_NAME = "Test User";
     private static final String DEFAULT_LANGUAGE = "vi";
+    private static final String DEFAULT_REGION = "vi";
 
     /**
      * Tạo JwtUtil instance với test configuration
@@ -72,7 +73,7 @@ class TamabeeSpecialTenantPropertyTest {
         // Tamabee user: companyId = 0, tenantDomain = "tamabee", planId = null
         String token = jwtUtil.generateAccessToken(
                 userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null,
-                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE, DEFAULT_REGION);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -94,7 +95,7 @@ class TamabeeSpecialTenantPropertyTest {
         // Tamabee user: planId = null means all features enabled
         String token = jwtUtil.generateAccessToken(
                 userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null,
-                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE, DEFAULT_REGION);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -115,7 +116,7 @@ class TamabeeSpecialTenantPropertyTest {
 
         String token = jwtUtil.generateAccessToken(
                 userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null,
-                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE, DEFAULT_REGION);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -152,7 +153,7 @@ class TamabeeSpecialTenantPropertyTest {
 
         String token = jwtUtil.generateAccessToken(
                 userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null,
-                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE, DEFAULT_REGION);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -176,7 +177,7 @@ class TamabeeSpecialTenantPropertyTest {
 
         String token = jwtUtil.generateAccessToken(
                 userId, email, role, TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null,
-                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE, DEFAULT_REGION);
         Map<String, Object> claims = jwtUtil.validateToken(token);
 
         assertThat(claims).isNotNull();
@@ -211,13 +212,13 @@ class TamabeeSpecialTenantPropertyTest {
         // Tamabee user JWT
         String tamabeeToken = jwtUtil.generateAccessToken(
                 userId, email, "ADMIN_TAMABEE", TAMABEE_COMPANY_ID, TAMABEE_TENANT_DOMAIN, null,
-                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE, DEFAULT_REGION);
         Map<String, Object> tamabeeClaims = jwtUtil.validateToken(tamabeeToken);
 
         // Company user JWT
         String companyToken = jwtUtil.generateAccessToken(
                 userId, email, "ADMIN_COMPANY", companyId, companyTenantDomain, planId,
-                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE);
+                DEFAULT_EMPLOYEE_CODE, DEFAULT_NAME, DEFAULT_LANGUAGE, DEFAULT_REGION);
         Map<String, Object> companyClaims = jwtUtil.validateToken(companyToken);
 
         // Verify differences

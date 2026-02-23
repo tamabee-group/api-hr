@@ -15,12 +15,16 @@ import org.springframework.core.env.MapPropertySource;
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.Session;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * Khởi tạo SSH tunnel TRƯỚC KHI Spring context được refresh.
  * Load file .env và tạo tunnel trước khi DataSource được khởi tạo.
  */
 public class SshTunnelInitializer implements ApplicationContextInitializer<ConfigurableApplicationContext> {
 
+    private static final Logger log = Logger.getLogger(SshTunnelInitializer.class.getName());
     private static Session session;
 
     @Override
@@ -32,7 +36,7 @@ public class SshTunnelInitializer implements ApplicationContextInitializer<Confi
 
         String tunnelEnabled = env.getProperty("database.tunnel.enabled", "false");
         if (!"true".equalsIgnoreCase(tunnelEnabled)) {
-            System.out.println("SSH tunnel đã bị tắt");
+            log.info("SSH tunnel đã bị tắt");
             return;
         }
 
@@ -45,7 +49,7 @@ public class SshTunnelInitializer implements ApplicationContextInitializer<Confi
         int remotePort = Integer.parseInt(env.getProperty("database.tunnel.remote.port", "5432"));
 
         try {
-            System.out.println("Đang tạo SSH tunnel đến " + sshUsername + "@" + sshHost + ":" + sshPort + "...");
+            log.info("Đang tạo SSH tunnel đến " + sshUsername + "@" + sshHost + ":" + sshPort + "...");
 
             JSch jsch = new JSch();
             session = jsch.getSession(sshUsername, sshHost, sshPort);
@@ -53,27 +57,27 @@ public class SshTunnelInitializer implements ApplicationContextInitializer<Confi
             session.setConfig("StrictHostKeyChecking", "no");
 
             session.connect(30000);
-            System.out.println("SSH session đã kết nối thành công");
+            log.info("SSH session đã kết nối thành công");
 
             session.setPortForwardingL(localPort, remoteHost, remotePort);
 
-            System.out.println("SSH tunnel đã tạo thành công: localhost:" + localPort +
+            log.info("SSH tunnel đã tạo thành công: localhost:" + localPort +
                     " -> " + sshHost + ":" + remoteHost + ":" + remotePort);
 
             // Đợi tunnel ổn định
             Thread.sleep(2000);
-            System.out.println("SSH tunnel đã sẵn sàng");
+            log.info("SSH tunnel đã sẵn sàng");
 
             // Đăng ký shutdown hook để đóng tunnel khi app tắt
             Runtime.getRuntime().addShutdownHook(new Thread(() -> {
                 if (session != null && session.isConnected()) {
                     session.disconnect();
-                    System.out.println("SSH tunnel đã đóng");
+                    log.info("SSH tunnel đã đóng");
                 }
             }));
 
         } catch (Exception e) {
-            System.err.println("Lỗi khi tạo SSH tunnel: " + e.getMessage());
+            log.log(Level.SEVERE, "Lỗi khi tạo SSH tunnel: " + e.getMessage(), e);
             throw new RuntimeException("Không thể tạo SSH tunnel", e);
         }
     }
@@ -84,7 +88,7 @@ public class SshTunnelInitializer implements ApplicationContextInitializer<Confi
     private void loadEnvFile(ConfigurableEnvironment env) {
         Path envPath = Paths.get(".env");
         if (!Files.exists(envPath)) {
-            System.out.println("Không tìm thấy file .env, bỏ qua");
+            log.info("Không tìm thấy file .env, bỏ qua");
             return;
         }
 
@@ -109,10 +113,10 @@ public class SshTunnelInitializer implements ApplicationContextInitializer<Confi
 
             // Thêm vào đầu danh sách property sources để có độ ưu tiên cao nhất
             env.getPropertySources().addFirst(new MapPropertySource("dotenv", envVars));
-            System.out.println("Đã load " + envVars.size() + " properties từ file .env");
+            log.info("Đã load " + envVars.size() + " properties từ file .env");
 
         } catch (IOException e) {
-            System.err.println("Lỗi khi đọc file .env: " + e.getMessage());
+            log.log(Level.WARNING, "Lỗi khi đọc file .env: " + e.getMessage(), e);
         }
     }
 

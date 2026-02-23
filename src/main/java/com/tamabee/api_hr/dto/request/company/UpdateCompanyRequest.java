@@ -12,7 +12,7 @@ public class UpdateCompanyRequest {
     private String email;
     private String phone;
     private String industry;
-    private String locale;
+    private String region;
     private String language;
     private String zipcode;
     private String address;

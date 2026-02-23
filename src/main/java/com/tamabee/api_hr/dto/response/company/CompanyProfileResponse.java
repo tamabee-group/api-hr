@@ -22,7 +22,7 @@ public class CompanyProfileResponse {
     private String address;
     private String industry;
     private String zipcode;
-    private String locale;
+    private String region;
     private String language;
     private String logo;
     private String tenantDomain;

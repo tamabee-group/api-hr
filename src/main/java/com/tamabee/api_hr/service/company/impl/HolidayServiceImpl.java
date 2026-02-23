@@ -1,5 +1,14 @@
 package com.tamabee.api_hr.service.company.impl;
 
+import java.time.LocalDate;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.tamabee.api_hr.dto.request.leave.CreateHolidayRequest;
 import com.tamabee.api_hr.dto.request.leave.UpdateHolidayRequest;
 import com.tamabee.api_hr.dto.response.leave.HolidayResponse;
@@ -10,16 +19,9 @@ import com.tamabee.api_hr.exception.NotFoundException;
 import com.tamabee.api_hr.mapper.company.HolidayMapper;
 import com.tamabee.api_hr.repository.leave.HolidayRepository;
 import com.tamabee.api_hr.service.company.interfaces.IHolidayService;
+
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.data.domain.Page;
-import org.springframework.data.domain.Pageable;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
-
-import java.time.LocalDate;
-import java.util.List;
-import java.util.stream.Collectors;
 
 /**
  * Service implementation quản lý ngày nghỉ lễ.
@@ -81,6 +83,15 @@ public class HolidayServiceImpl implements IHolidayService {
         holidayRepository.save(entity);
 
         log.info("Đã xóa ngày nghỉ lễ {}", holidayId);
+    }
+
+    @Override
+    @Transactional
+    public void deleteAllHolidays() {
+        List<HolidayEntity> holidays = holidayRepository.findAllByDeletedFalse();
+        holidayRepository.deleteAll(holidays);
+
+        log.info("Đã xóa hẳn tất cả {} ngày nghỉ lễ", holidays.size());
     }
 
     // ==================== Query Operations ====================

@@ -79,4 +79,28 @@ public class NotFoundException extends BaseException {
     public static NotFoundException document(Long id) {
         return new NotFoundException("Không tìm thấy tài liệu với id: " + id, ErrorCode.DOCUMENT_NOT_FOUND);
     }
+
+    public static NotFoundException contract(Long id) {
+        return new NotFoundException("Không tìm thấy hợp đồng với id: " + id, ErrorCode.CONTRACT_NOT_FOUND);
+    }
+
+    public static NotFoundException notification(Long id) {
+        return new NotFoundException("Không tìm thấy thông báo với id: " + id, ErrorCode.NOTIFICATION_NOT_FOUND);
+    }
+
+    public static NotFoundException systemNotification(Long id) {
+        return new NotFoundException("Không tìm thấy thông báo hệ thống với id: " + id, ErrorCode.SYSTEM_NOTIFICATION_NOT_FOUND);
+    }
+
+    public static NotFoundException location(Long id) {
+        return new NotFoundException("Không tìm thấy vị trí chấm công với id: " + id, ErrorCode.LOCATION_NOT_FOUND);
+    }
+
+    public static NotFoundException feedback(Long id) {
+        return new NotFoundException("Không tìm thấy feedback với id: " + id, ErrorCode.FEEDBACK_NOT_FOUND);
+    }
+
+    public static NotFoundException kiosk(Long id) {
+        return new NotFoundException("Không tìm thấy máy chấm công với id: " + id, ErrorCode.KIOSK_NOT_FOUND);
+    }
 }
